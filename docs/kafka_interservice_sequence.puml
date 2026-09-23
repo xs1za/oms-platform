@@ -1,0 +1,120 @@
+@startuml
+title OMS Interservice Interaction Through Kafka
+
+autonumber
+skinparam sequenceMessageAlign center
+skinparam participantPadding 24
+skinparam BoxPadding 12
+
+actor "API Client / Postman / Swagger" as Client
+
+box "OMS Microservices" #EEF7FF
+participant "OMS1\nAuth Service" as OMS1
+participant "OMS2\nEmployee Service" as OMS2
+participant "OMS3\nReport Service" as OMS3
+participant "OMS4\nNotification Service" as OMS4
+participant "OMS5\nOperations Service" as OMS5
+end box
+
+queue "Kafka\nBroker" as Kafka
+
+database "OMS2\nPostgres" as DB2
+
+collections "OMS3\nReportTask Store" as ReportStore
+
+collections "OMS5\nOperations Store" as OpsStore
+
+== Authentication ==
+
+Client -> OMS1: POST /auth/token\nusername + password
+OMS1 -> OMS1: Validate user credentials
+OMS1 -> Kafka: publish auth.user_logged_in
+OMS1 --> Client: 200 access_token
+
+Client -> OMS1: POST /auth/service-token\nclient_id + client_secret
+OMS1 -> OMS1: Validate service client
+OMS1 -> Kafka: publish auth.service_token_issued
+OMS1 --> Client: 200 service access_token
+
+== Employee Created ==
+
+Client -> OMS2: POST /api/employees/\nAuthorization: Bearer token
+OMS2 -> OMS1: GET /auth/verify
+OMS1 --> OMS2: active token + scopes
+OMS2 -> DB2: INSERT employee/address
+DB2 --> OMS2: employee_id
+OMS2 -> Kafka: publish employee.created
+OMS2 --> Client: 201 Employee
+
+OMS5 <- Kafka: consume employee.created
+OMS5 -> OpsStore: Cache/validate employee reference
+OMS4 <- Kafka: consume employee.created
+OMS4 -> OMS4: Build welcome notification request
+OMS4 -> Kafka: publish notification.email_status
+
+== Async Report Generation ==
+
+Client -> OMS3: POST /api/v1/report-tasks\nIdempotency-Key
+OMS3 -> OMS1: GET /auth/verify
+OMS1 --> OMS3: active token + scopes
+OMS3 -> ReportStore: Create ReportTask(status=queued)
+OMS3 -> Kafka: publish report.requested
+OMS3 --> Client: 202 Accepted\nLocation: /api/v1/report-tasks/{taskId}
+
+loop Poll until terminal status
+  Client -> OMS3: GET /api/v1/report-tasks/{taskId}
+  OMS3 -> ReportStore: Read task status
+  OMS3 --> Client: 200 queued/running/completed/failed
+end
+
+OMS5 <- Kafka: consume report.requested
+OMS5 -> OpsStore: Read operations data snapshot
+OMS5 -> Kafka: publish report.data_ready
+
+OMS3 <- Kafka: consume report.data_ready
+OMS3 -> ReportStore: Update ReportTask(status=completed)
+OMS3 -> Kafka: publish report.completed
+
+OMS4 <- Kafka: consume report.completed
+OMS4 -> OMS4: Send completion notification
+OMS4 -> Kafka: publish notification.email_status
+
+Client -> OMS3: GET /api/v1/report-tasks/{taskId}/download
+OMS3 -> ReportStore: Verify completed task
+OMS3 --> Client: 200 downloadUrl + expiresAt
+
+== Report Cancellation ==
+
+Client -> OMS3: DELETE /api/v1/report-tasks/{taskId}
+OMS3 -> ReportStore: Mark task cancelled
+OMS3 -> Kafka: publish report.cancelled
+OMS3 --> Client: 204 No Content
+
+OMS4 <- Kafka: consume report.cancelled
+OMS4 -> OMS4: Send cancellation notification
+OMS4 -> Kafka: publish notification.email_status
+
+== Operations Domain Events ==
+
+Client -> OMS5: POST /clients | /shifts | /tasks | /timesheets
+OMS5 -> OMS1: GET /auth/verify
+OMS1 --> OMS5: active token + scopes
+OMS5 -> OpsStore: Persist operation entity
+OMS5 -> Kafka: publish operations.*_created
+OMS5 --> Client: 201/200 created entity
+
+OMS3 <- Kafka: consume operations.*_created
+OMS3 -> ReportStore: Mark report cache stale
+OMS4 <- Kafka: consume operations.*_created
+OMS4 -> OMS4: Optional operational notification
+
+== Notification Status ==
+
+Client -> OMS4: POST /notifications/email
+OMS4 -> OMS1: GET /auth/verify
+OMS1 --> OMS4: active token + scopes
+OMS4 -> OMS4: Try SMTP send
+OMS4 -> Kafka: publish notification.email_status
+OMS4 --> Client: 200 notification status
+
+@enduml

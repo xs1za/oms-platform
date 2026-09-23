@@ -1,0 +1,708 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OMS Microservices API",
+    "version": "0.1.0",
+    "description": "OpenAPI contract with request body JSON Schemas for OMS1-OMS5. Import this file into Postman as an API/schema source to populate the Body Schema panel."
+  },
+  "servers": [
+    { "url": "http://oms.local/oms1", "description": "OMS1 Auth Service" },
+    { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
+    { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
+    { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
+    { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "commonHealth",
+        "summary": "Health check",
+        "description": "Basic service health endpoint. Select the required service server in Swagger UI before executing.",
+        "responses": {
+          "200": { "description": "Service is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "commonLiveness",
+        "summary": "Liveness probe",
+        "description": "Checks that the application process is alive. Select the required service server in Swagger UI before executing.",
+        "responses": {
+          "200": { "description": "Application process is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LivenessResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "commonReadiness",
+        "summary": "Readiness probe",
+        "description": "Checks service dependencies such as Kafka or database. Select the required service server in Swagger UI before executing.",
+        "responses": {
+          "200": { "description": "Service is ready", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
+          "503": { "description": "Service dependency failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/health/": {
+      "get": {
+        "operationId": "commonHealthSlash",
+        "summary": "Health check with trailing slash",
+        "description": "Service health endpoint with trailing slash for services that expose slash-terminated health URLs.",
+        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "servers": [
+          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
+          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
+          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
+          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+        ],
+        "responses": {
+          "200": { "description": "Service is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/health/live/": {
+      "get": {
+        "operationId": "commonLivenessSlash",
+        "summary": "Liveness probe with trailing slash",
+        "description": "Service liveness endpoint with trailing slash for services that expose slash-terminated health URLs.",
+        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "servers": [
+          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
+          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
+          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
+          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+        ],
+        "responses": {
+          "200": { "description": "Application process is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LivenessResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/health/ready/": {
+      "get": {
+        "operationId": "commonReadinessSlash",
+        "summary": "Readiness probe with trailing slash",
+        "description": "Service readiness endpoint with trailing slash for services that expose slash-terminated health URLs.",
+        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "servers": [
+          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
+          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
+          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
+          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+        ],
+        "responses": {
+          "200": { "description": "Service is ready", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
+          "503": { "description": "Service dependency failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/auth/token": {
+      "post": {
+        "operationId": "oms1UserToken",
+        "summary": "OMS1 user token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserLogin" },
+              "example": { "username": "admin", "password": "admin" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/auth/service-token": {
+      "post": {
+        "operationId": "oms1ServiceToken",
+        "summary": "OMS1 service token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ServiceLogin" },
+              "example": { "client_id": "OMS2", "client_secret": "oms2-secret" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/auth/verify": {
+      "get": {
+        "operationId": "oms1VerifyToken",
+        "summary": "OMS1 verify JWT token",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Token is active", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenVerification" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/employees/": {
+      "get": {
+        "operationId": "oms2ListEmployees",
+        "summary": "OMS2 list employees",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Employees list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "operationId": "oms2CreateEmployee",
+        "summary": "OMS2 create employee",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmployeeCreate" },
+              "example": {
+                "surname": "Иванов",
+                "firstname": "Иван",
+                "patronymic": "Иванович",
+                "personnel_number": "EMP-0001",
+                "gender": "M"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Employee created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/employees/{employee_id}/": {
+      "get": {
+        "operationId": "oms2GetEmployeeById",
+        "summary": "OMS2 get employee by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "employee_id", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Employee", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/report-tasks": {
+      "post": {
+        "operationId": "oms3StartReportTask",
+        "summary": "OMS3 start async report generation",
+        "description": "### Асинхронная операция\n\nЗапрос запускает формирование отчета и не возвращает файл немедленно.\n\n- `202 Accepted` — задача принята в обработку.\n- `Location` — URL для проверки состояния задачи.\n- `Retry-After` — рекомендуемый интервал до следующей проверки.\n- Используйте `Get report task status`, пока статус не станет `completed`.\n- После завершения скачайте файл через `Download report`.\n- При статусах `failed`, `cancelled` или `expired` повторите операцию с учетом ошибки.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReportTaskCreate" },
+              "example": {
+                "reportType": "orders",
+                "filter": {
+                  "createdFrom": "2026-09-01",
+                  "createdTo": "2026-09-12",
+                  "status": ["completed"]
+                },
+                "format": "xlsx"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Report task accepted",
+            "headers": {
+              "Location": { "schema": { "type": "string" } },
+              "Retry-After": { "schema": { "type": "integer", "minimum": 1 } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportTaskAccepted" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/report-tasks/{taskId}": {
+      "get": {
+        "operationId": "oms3GetReportTaskStatus",
+        "summary": "OMS3 get report task status",
+        "description": "Returns the current state of an asynchronous report generation task.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Report task state", "headers": { "Retry-After": { "schema": { "type": "integer", "minimum": 1 } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportTask" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "operationId": "oms3CancelReportTask",
+        "summary": "OMS3 cancel report task",
+        "description": "Cancels a queued or running report task.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "204": { "description": "Report task cancelled" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/report-tasks/{taskId}/download": {
+      "get": {
+        "operationId": "oms3DownloadReport",
+        "summary": "OMS3 download report result",
+        "description": "Returns a temporary download URL when the report task is completed.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Report download URL", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportDownload" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "410": { "$ref": "#/components/responses/Gone" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/notifications/email": {
+      "post": {
+        "operationId": "oms4SendEmailNotification",
+        "summary": "OMS4 send email notification",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmailNotification" },
+              "example": { "to": "user@example.com", "subject": "OMS notification", "body": "Test email notification from OMS4." }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Notification processed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/clients": {
+      "post": {
+        "operationId": "oms5CreateClient",
+        "summary": "OMS5 create client",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClientCreate" }, "example": { "name": "ООО Клиент", "external_id": "CLIENT-0001" } } }
+        },
+        "responses": {
+          "200": { "description": "Client created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Client" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/shifts": {
+      "post": {
+        "operationId": "oms5CreateShift",
+        "summary": "OMS5 create shift",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ShiftCreate" },
+              "example": { "client_id": "cli_123", "starts_at": "2026-01-20T09:00:00Z", "ends_at": "2026-01-20T18:00:00Z", "location": "Москва" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Shift created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Shift" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/tasks": {
+      "post": {
+        "operationId": "oms5CreateTask",
+        "summary": "OMS5 create task",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TaskCreate" },
+              "example": { "shift_id": "shf_123", "title": "Проверить объект", "description": "Выполнить стартовую проверку объекта перед сменой", "assignee_employee_id": 1 }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Task created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/timesheets": {
+      "post": {
+        "operationId": "oms5CreateTimesheet",
+        "summary": "OMS5 create timesheet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TimesheetCreate" },
+              "example": { "employee_id": 1, "shift_id": "shf_123", "work_date": "2026-01-20", "hours": 8 }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Timesheet created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Timesheet" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/operations/summary": {
+      "get": {
+        "operationId": "oms5OperationsSummary",
+        "summary": "OMS5 operations summary",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Operations summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OperationsSummary" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserLogin": {
+        "type": "object",
+        "required": ["username", "password"],
+        "additionalProperties": false,
+        "properties": {
+          "username": { "type": "string", "minLength": 1 },
+          "password": { "type": "string", "minLength": 1 }
+        }
+      },
+      "ServiceLogin": {
+        "type": "object",
+        "required": ["client_id", "client_secret"],
+        "additionalProperties": false,
+        "properties": {
+          "client_id": { "type": "string", "minLength": 1 },
+          "client_secret": { "type": "string", "minLength": 1 }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": ["access_token", "token_type", "expires_at"],
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "type": "string", "const": "bearer" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TokenVerification": {
+        "type": "object",
+        "required": ["active", "subject", "type", "scopes"],
+        "properties": {
+          "active": { "type": "boolean" },
+          "subject": { "type": "string" },
+          "type": { "type": "string", "enum": ["user", "service"] },
+          "scopes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "service"],
+        "properties": {
+          "status": { "type": "string", "const": "ok" },
+          "service": { "type": "string" }
+        }
+      },
+      "LivenessResponse": {
+        "type": "object",
+        "required": ["status", "service", "checks"],
+        "properties": {
+          "status": { "type": "string", "const": "ok" },
+          "service": { "type": "string" },
+          "checks": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ReadinessResponse": {
+        "type": "object",
+        "required": ["status", "service", "checks"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "failed"] },
+          "service": { "type": "string" },
+          "checks": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "EmployeeCreate": {
+        "type": "object",
+        "required": ["surname", "firstname", "gender"],
+        "additionalProperties": false,
+        "properties": {
+          "surname": { "type": "string", "minLength": 1, "maxLength": 50 },
+          "firstname": { "type": "string", "minLength": 1, "maxLength": 50 },
+          "patronymic": { "type": "string", "maxLength": 50 },
+          "personnel_number": { "type": "string", "maxLength": 250 },
+          "gender": { "type": "string", "minLength": 1, "maxLength": 6 }
+        }
+      },
+      "Employee": {
+        "allOf": [
+          { "$ref": "#/components/schemas/EmployeeCreate" },
+          {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "integer" },
+              "address": { "type": ["object", "null"] },
+              "created_at": { "type": "string", "format": "date-time" },
+              "updated_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        ]
+      },
+      "EmployeeList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Employee" } }
+        }
+      },
+      "ReportTaskCreate": {
+        "type": "object",
+        "required": ["reportType", "format"],
+        "additionalProperties": false,
+        "properties": {
+          "reportType": { "type": "string", "minLength": 1 },
+          "filter": { "type": "object" },
+          "format": { "type": "string", "enum": ["xlsx", "csv", "pdf"] }
+        }
+      },
+      "ReportTaskAccepted": {
+        "type": "object",
+        "required": ["taskId", "status", "statusUrl", "createdAt"],
+        "properties": {
+          "taskId": { "type": "string" },
+          "status": { "type": "string", "const": "queued" },
+          "statusUrl": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ReportTask": {
+        "type": "object",
+        "required": ["taskId", "status", "progress", "createdAt", "updatedAt"],
+        "properties": {
+          "taskId": { "type": "string" },
+          "status": { "type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled", "expired"] },
+          "progress": { "type": "number", "minimum": 0, "maximum": 100 },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "result": { "$ref": "#/components/schemas/ReportResult" },
+          "error": { "$ref": "#/components/schemas/ReportError" }
+        }
+      },
+      "ReportResult": {
+        "type": ["object", "null"],
+        "properties": {
+          "fileName": { "type": "string" },
+          "downloadUrl": { "type": "string" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ReportError": {
+        "type": ["object", "null"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "ReportDownload": {
+        "type": "object",
+        "required": ["downloadUrl", "expiresAt"],
+        "properties": {
+          "downloadUrl": { "type": "string", "format": "uri" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EmailNotification": {
+        "type": "object",
+        "required": ["to", "subject", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "to": { "type": "string", "format": "email" },
+          "subject": { "type": "string", "minLength": 1 },
+          "body": { "type": "string", "minLength": 1 }
+        }
+      },
+      "NotificationResult": {
+        "type": "object",
+        "required": ["notification_id", "channel", "to", "status", "created_at"],
+        "properties": {
+          "notification_id": { "type": "string" },
+          "channel": { "type": "string", "const": "email" },
+          "to": { "type": "string", "format": "email" },
+          "status": { "type": "string", "enum": ["sent", "failed"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ClientCreate": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "external_id": { "type": ["string", "null"] }
+        }
+      },
+      "Client": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ClientCreate" },
+          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "ShiftCreate": {
+        "type": "object",
+        "required": ["client_id", "starts_at", "ends_at"],
+        "additionalProperties": false,
+        "properties": {
+          "client_id": { "type": "string", "minLength": 1 },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "ends_at": { "type": "string", "format": "date-time" },
+          "location": { "type": ["string", "null"] }
+        }
+      },
+      "Shift": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ShiftCreate" },
+          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "TaskCreate": {
+        "type": "object",
+        "required": ["shift_id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "shift_id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "assignee_employee_id": { "type": ["integer", "null"] }
+        }
+      },
+      "Task": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TaskCreate" },
+          { "type": "object", "required": ["id", "status", "created_at"], "properties": { "id": { "type": "string" }, "status": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "TimesheetCreate": {
+        "type": "object",
+        "required": ["employee_id", "shift_id", "work_date", "hours"],
+        "additionalProperties": false,
+        "properties": {
+          "employee_id": { "type": "integer", "minimum": 1 },
+          "shift_id": { "type": "string", "minLength": 1 },
+          "work_date": { "type": "string", "format": "date" },
+          "hours": { "type": "number", "exclusiveMinimum": 0, "maximum": 24 }
+        }
+      },
+      "Timesheet": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TimesheetCreate" },
+          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "OperationsSummary": {
+        "type": "object",
+        "required": ["clients", "shifts", "tasks", "timesheets"],
+        "properties": {
+          "clients": { "type": "integer", "minimum": 0 },
+          "shifts": { "type": "integer", "minimum": 0 },
+          "tasks": { "type": "integer", "minimum": 0 },
+          "timesheets": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["detail"],
+        "properties": { "detail": {} }
+      }
+    },
+    "responses": {
+      "BadRequest": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Conflict": { "description": "Conflict", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Gone": { "description": "Gone", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "ValidationError": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "InternalServerError": { "description": "Internal server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

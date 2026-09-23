@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oms-ingress
+  namespace: oms
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:8088, http://127.0.0.1:8088"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, Idempotency-Key, Accept"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: oms.local
+      http:
+        paths:
+          - path: /oms1(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oms1
+                port:
+                  number: 80
+          - path: /oms2(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oms2
+                port:
+                  number: 80
+          - path: /oms3(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oms3
+                port:
+                  number: 80
+          - path: /oms4(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oms4
+                port:
+                  number: 80
+          - path: /oms5(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oms5
+                port:
+                  number: 80

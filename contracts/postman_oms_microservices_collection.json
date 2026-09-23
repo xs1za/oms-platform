@@ -1,0 +1,2662 @@
+{
+  "info": {
+    "name": "OMS Microservices Contracts",
+    "description": "Generated from platform/contracts/openapi_oms_microservices.json with examples/scripts preserved from the Postman collection overlay. OpenAPI is the source of truth for request body schemas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "oms1_base_url",
+      "value": "http://oms.local/oms1"
+    },
+    {
+      "key": "oms2_base_url",
+      "value": "http://oms.local/oms2"
+    },
+    {
+      "key": "oms3_base_url",
+      "value": "http://oms.local/oms3"
+    },
+    {
+      "key": "oms4_base_url",
+      "value": "http://oms.local/oms4"
+    },
+    {
+      "key": "oms5_base_url",
+      "value": "http://oms.local/oms5"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "employee_id",
+      "value": "1"
+    },
+    {
+      "key": "reportTaskId",
+      "value": "tsk_123"
+    },
+    {
+      "key": "reportDownloadUrl",
+      "value": "/api/v1/report-tasks/tsk_123/download"
+    },
+    {
+      "key": "client_id",
+      "value": "replace-with-client-id"
+    },
+    {
+      "key": "shift_id",
+      "value": "replace-with-shift-id"
+    }
+  ],
+  "item": [
+    {
+      "name": "OMS1 Auth Service",
+      "item": [
+        {
+          "name": "healthcheck",
+          "item": [
+            {
+              "name": "Health",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Health schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms1_base_url}}/health",
+                "description": "### Health check\n\nBasic service health endpoint. Select the required service server in Swagger UI before executing."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS1\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Liveness",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Liveness schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service','checks']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms1_base_url}}/health/live",
+                "description": "### Liveness probe\n\nChecks that the application process is alive. Select the required service server in Swagger UI before executing."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS1\",\n  \"checks\": {\n    \"app\": {\n      \"status\": \"ok\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200 or 503', () => pm.expect([200,503]).to.include(pm.response.code));",
+                      "pm.test('Readiness schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service','checks']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms1_base_url}}/health/ready",
+                "description": "### Readiness probe\n\nChecks service dependencies such as Kafka or database. Select the required service server in Swagger UI before executing."
+              },
+              "response": [
+                {
+                  "name": "200 OK - ready",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS1\",\n  \"checks\": {\n    \"jwt\": {\n      \"status\": \"ok\"\n    },\n    \"kafka\": {\n      \"status\": \"ok\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "503 Service Unavailable - dependency failed",
+                  "status": "Service Unavailable",
+                  "code": 503,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"failed\",\n  \"service\": \"OMS1\",\n  \"checks\": {\n    \"jwt\": {\n      \"status\": \"failed\"\n    },\n    \"kafka\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "User Token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['username','password'],additionalProperties:false,properties:{username:{type:'string',minLength:1},password:{type:'string',minLength:1}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token response schema', () => pm.response.to.have.jsonSchema({type:'object',required:['access_token','token_type','expires_at'],properties:{access_token:{type:'string'},token_type:{const:'bearer'},expires_at:{type:'string'}}}));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('access_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "username",
+                      "password"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "username": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "password": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms1_base_url}}/auth/token",
+            "description": "### OMS1 user token\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"username\",\n    \"password\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"username\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"password\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"access_token\": \"mock-user-jwt-token\",\n  \"token_type\": \"bearer\",\n  \"expires_at\": \"2026-09-20T15:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid credentials\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"username\"],\n    \"msg\": \"Field required\",\n    \"type\": \"missing\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Service Token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['client_id','client_secret'],additionalProperties:false,properties:{client_id:{type:'string',minLength:1},client_secret:{type:'string',minLength:1}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token schema', () => pm.response.to.have.jsonSchema({type:'object',required:['access_token','token_type','expires_at']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"OMS2\",\n  \"client_secret\": \"oms2-secret\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "client_id",
+                      "client_secret"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "client_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "client_secret": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms1_base_url}}/auth/service-token",
+            "description": "### OMS1 service token\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"client_id\",\n    \"client_secret\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"client_id\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"client_secret\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"access_token\": \"mock-service-jwt-token\",\n  \"token_type\": \"bearer\",\n  \"expires_at\": \"2026-09-20T15:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid service credentials\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"client_id\"],\n    \"msg\": \"Field required\",\n    \"type\": \"missing\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Verify schema', () => pm.response.to.have.jsonSchema({type:'object',required:['active','subject','type','scopes'],properties:{active:{type:'boolean'},subject:{type:'string'},type:{type:'string'},scopes:{type:'array'}}}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/auth/verify",
+            "description": "### OMS1 verify JWT token"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"active\": true,\n  \"subject\": \"admin\",\n  \"type\": \"user\",\n  \"scopes\": [\"employees\", \"reports\"]\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Insufficient permissions\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OMS2 Employee Service",
+      "item": [
+        {
+          "name": "healthcheck",
+          "item": [
+            {
+              "name": "Health",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Health schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms2_base_url}}/health/",
+                "description": "### Health check with trailing slash\n\nService health endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS2\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Liveness",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Liveness schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service','checks']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms2_base_url}}/health/live/",
+                "description": "### Liveness probe with trailing slash\n\nService liveness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS2\",\n  \"checks\": {\n    \"app\": {\n      \"status\": \"ok\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200 or 503', () => pm.expect([200,503]).to.include(pm.response.code));",
+                      "pm.test('Readiness schema', () => pm.response.to.have.jsonSchema({type:'object',required:['status','service','checks']}));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms2_base_url}}/health/ready/",
+                "description": "### Readiness probe with trailing slash\n\nService readiness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 OK - ready",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS2\",\n  \"checks\": {\n    \"database\": {\n      \"status\": \"ok\"\n    },\n    \"kafka\": {\n      \"status\": \"ok\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "503 Service Unavailable - database failed",
+                  "status": "Service Unavailable",
+                  "code": 503,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"failed\",\n  \"service\": \"OMS2\",\n  \"checks\": {\n    \"database\": {\n      \"status\": \"failed\"\n    },\n    \"kafka\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Index Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is HTML', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html')); "
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{oms2_base_url}}/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!DOCTYPE html>\n<html lang=\"ru\">\n<head><meta charset=\"UTF-8\"><title>OMS2 Employee Service</title></head>\n<body><h4>OMS2 Employee Service</h4></body>\n</html>"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<html><body><h1>500 Internal Server Error</h1></body></html>"
+            }
+          ]
+        },
+        {
+          "name": "About Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is HTML', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html')); "
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{oms2_base_url}}/about/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!DOCTYPE html>\n<html lang=\"ru\">\n<head><meta charset=\"UTF-8\"><title>About OMS2</title></head>\n<body><h4>OMS2</h4><p>Микросервис Employee.</p></body>\n</html>"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<html><body><h1>500 Internal Server Error</h1></body></html>"
+            }
+          ]
+        },
+        {
+          "name": "Employees HTML Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is HTML', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html')); "
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{oms2_base_url}}/employees/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!DOCTYPE html>\n<html lang=\"ru\">\n<head><meta charset=\"UTF-8\"><title>Employees</title></head>\n<body><h4>Список сотрудников</h4><div><h5>Иван Иванов</h5><p>Перс. номер: EMP-0001</p></div></body>\n</html>"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<html><body><h1>401 Unauthorized</h1></body></html>"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<html><body><h1>500 Internal Server Error</h1></body></html>"
+            }
+          ]
+        },
+        {
+          "name": "List Employees",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Employees list schema', () => pm.response.to.have.jsonSchema({type:'object',required:['items'],properties:{items:{type:'array'}}}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/employees/",
+            "description": "### OMS2 list employees"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"items\": [{\n    \"id\": 1,\n    \"surname\": \"Иванов\",\n    \"firstname\": \"Иван\",\n    \"patronymic\": \"Иванович\",\n    \"personnel_number\": \"EMP-0001\",\n    \"gender\": \"M\",\n    \"address\": null,\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\"\n  }]\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Authentication credentials were not provided\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Insufficient permissions\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Database unavailable\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Employee",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['surname','firstname','gender'],additionalProperties:false,properties:{surname:{type:'string',minLength:1,maxLength:50},firstname:{type:'string',minLength:1,maxLength:50},patronymic:{type:'string',maxLength:50},personnel_number:{type:'string',maxLength:250},gender:{type:'string',minLength:1,maxLength:6}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Employee schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','surname','firstname','gender'],properties:{id:{type:'number'},surname:{type:'string'},firstname:{type:'string'},gender:{type:'string'}}}));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('employee_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"surname\": \"Иванов\",\n  \"firstname\": \"Иван\",\n  \"patronymic\": \"Иванович\",\n  \"personnel_number\": \"EMP-0001\",\n  \"gender\": \"M\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "surname",
+                      "firstname",
+                      "gender"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "surname": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "firstname": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "patronymic": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "personnel_number": {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      "gender": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 6
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms2_base_url}}/api/employees/",
+            "description": "### OMS2 create employee\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"surname\",\n    \"firstname\",\n    \"gender\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"surname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"firstname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"patronymic\": {\n      \"type\": \"string\",\n      \"maxLength\": 50\n    },\n    \"personnel_number\": {\n      \"type\": \"string\",\n      \"maxLength\": 250\n    },\n    \"gender\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 6\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"surname\": \"Иванов\",\n  \"firstname\": \"Иван\",\n  \"patronymic\": \"Иванович\",\n  \"personnel_number\": \"EMP-0001\",\n  \"gender\": \"M\",\n  \"address\": null,\n  \"created_at\": \"2026-09-20T12:00:00Z\",\n  \"updated_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Authentication credentials were not provided\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"field\": \"firstname\",\n    \"message\": \"This field is required\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Database unavailable\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Employee By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Employee schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','surname','firstname','gender']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/employees/{{employee_id}}/",
+            "description": "### OMS2 get employee by ID"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"surname\": \"Иванов\",\n  \"firstname\": \"Иван\",\n  \"patronymic\": \"Иванович\",\n  \"personnel_number\": \"EMP-0001\",\n  \"gender\": \"M\",\n  \"address\": null,\n  \"created_at\": \"2026-09-20T12:00:00Z\",\n  \"updated_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Authentication credentials were not provided\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Employee not found\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Database unavailable\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OMS3 Report Service",
+      "description": "ReportTask — ресурс, представляющий одну задачу асинхронного формирования отчета и ее жизненный цикл. POST создает задачу и возвращает 202 Accepted, GET читает состояние, GET /download возвращает результат, DELETE отменяет задачу.",
+      "item": [
+        {
+          "name": "healthcheck",
+          "item": [
+            {
+              "name": "Health check with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms3_base_url}}/health/",
+                "description": "### Health check with trailing slash\n\nService health endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is alive",
+                  "status": "Service is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS3\"\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Liveness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms3_base_url}}/health/live/",
+                "description": "### Liveness probe with trailing slash\n\nService liveness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Application process is alive",
+                  "status": "Application process is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS3\",\n  \"checks\": {\n    \"app\": {\n      \"status\": \"ok\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms3_base_url}}/health/ready/",
+                "description": "### Readiness probe with trailing slash\n\nService readiness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is ready",
+                  "status": "Service is ready",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS3\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"ok\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "503 Service dependency failed",
+                  "status": "Service dependency failed",
+                  "code": 503,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"failed\",\n  \"service\": \"OMS3\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Async export / 1. Start report generation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['reportType','format'],additionalProperties:false,properties:{reportType:{type:'string',minLength:1},filter:{type:'object'},format:{type:'string',enum:['xlsx','csv','pdf']}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Response status is 202 Accepted', () => pm.response.to.have.status(202));",
+                  "pm.test('Report task start schema', () => pm.response.to.have.jsonSchema({type:'object',required:['taskId','status','statusUrl','createdAt'],properties:{taskId:{type:'string'},status:{enum:['queued']},statusUrl:{type:'string'},createdAt:{type:'string'}}}));",
+                  "pm.test('Task identifier is returned', () => pm.expect(body.taskId).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('reportTaskId', body.taskId);",
+                  "pm.collectionVariables.set('reportStatusUrl', body.statusUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"orders\",\n  \"filter\": {\n    \"createdFrom\": \"2026-09-01\",\n    \"createdTo\": \"2026-09-12\",\n    \"status\": [\n      \"completed\"\n    ]\n  },\n  \"format\": \"xlsx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "reportType",
+                      "format"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "reportType": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "filter": {
+                        "type": "object"
+                      },
+                      "format": {
+                        "type": "string",
+                        "enum": [
+                          "xlsx",
+                          "csv",
+                          "pdf"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms3_base_url}}/api/v1/report-tasks",
+            "description": "### OMS3 start async report generation\n\n### Асинхронная операция\n\nЗапрос запускает формирование отчета и не возвращает файл немедленно.\n\n- `202 Accepted` — задача принята в обработку.\n- `Location` — URL для проверки состояния задачи.\n- `Retry-After` — рекомендуемый интервал до следующей проверки.\n- Используйте `Get report task status`, пока статус не станет `completed`.\n- После завершения скачайте файл через `Download report`.\n- При статусах `failed`, `cancelled` или `expired` повторите операцию с учетом ошибки.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"reportType\",\n    \"format\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"reportType\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"filter\": {\n      \"type\": \"object\"\n    },\n    \"format\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"xlsx\",\n        \"csv\",\n        \"pdf\"\n      ]\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "202 Accepted - queued",
+              "status": "Accepted",
+              "code": 202,
+              "header": [
+                {
+                  "key": "Location",
+                  "value": "/api/v1/report-tasks/tsk_123"
+                },
+                {
+                  "key": "Retry-After",
+                  "value": "5"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"taskId\": \"tsk_123\",\n  \"status\": \"queued\",\n  \"statusUrl\": \"/api/v1/report-tasks/tsk_123\",\n  \"createdAt\": \"2026-09-12T03:50:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"format\"],\n    \"msg\": \"format must be one of: csv, pdf, xlsx\",\n    \"type\": \"value_error\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report queue unavailable\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Async export / 2. Get report task status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('Status endpoint returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Report task status schema', () => pm.response.to.have.jsonSchema({type:'object',required:['taskId','status','progress','createdAt','updatedAt'],properties:{taskId:{type:'string'},status:{enum:['queued','running','completed','failed','cancelled','expired']},progress:{type:'number'}}}));",
+                  "if (body.status === 'completed' && body.result?.downloadUrl) pm.collectionVariables.set('reportDownloadUrl', body.result.downloadUrl);",
+                  "if (body.status === 'completed') pm.execution.setNextRequest('Async export / 3. Download report');",
+                  "else if (['failed','cancelled','expired'].includes(body.status)) pm.execution.setNextRequest(null);",
+                  "else pm.execution.setNextRequest('Async export / 2. Get report task status');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms3_base_url}}/api/v1/report-tasks/{{reportTaskId}}",
+            "description": "### OMS3 get report task status\n\nReturns the current state of an asynchronous report generation task."
+          },
+          "response": [
+            {
+              "name": "200 OK - running",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Retry-After",
+                  "value": "5"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"taskId\": \"tsk_123\",\n  \"status\": \"running\",\n  \"progress\": 65,\n  \"createdAt\": \"2026-09-12T03:50:00Z\",\n  \"updatedAt\": \"2026-09-12T03:53:12Z\"\n}"
+            },
+            {
+              "name": "200 OK - completed",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"taskId\": \"tsk_123\",\n  \"status\": \"completed\",\n  \"progress\": 100,\n  \"createdAt\": \"2026-09-12T03:50:00Z\",\n  \"updatedAt\": \"2026-09-12T03:55:00Z\",\n  \"result\": {\n    \"fileName\": \"orders-2026-09-12.xlsx\",\n    \"downloadUrl\": \"/api/v1/report-tasks/tsk_123/download\",\n    \"expiresAt\": \"2026-09-12T04:50:00Z\"\n  }\n}"
+            },
+            {
+              "name": "200 OK - failed",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"taskId\": \"tsk_123\",\n  \"status\": \"failed\",\n  \"progress\": 70,\n  \"createdAt\": \"2026-09-12T03:50:00Z\",\n  \"updatedAt\": \"2026-09-12T03:54:00Z\",\n  \"error\": {\n    \"code\": \"REPORT_DATA_SOURCE_UNAVAILABLE\",\n    \"message\": \"The report could not be generated\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report task not found\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Async export / 3. Download report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Download endpoint returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Download schema', () => pm.response.to.have.jsonSchema({type:'object',required:['downloadUrl','expiresAt']}));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('reportDownloadUrl', pm.response.json().downloadUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms3_base_url}}/api/v1/report-tasks/{{reportTaskId}}/download",
+            "description": "### OMS3 download report result\n\nReturns a temporary download URL when the report task is completed."
+          },
+          "response": [
+            {
+              "name": "200 OK - temporary link",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"downloadUrl\": \"https://storage.example.com/temporary-link/orders-2026-09-12.xlsx\",\n  \"expiresAt\": \"2026-09-12T04:50:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report task not found\"\n}"
+            },
+            {
+              "name": "409 Conflict - not ready",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report is not ready\"\n}"
+            },
+            {
+              "name": "410 Gone - expired",
+              "status": "Gone",
+              "code": 410,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report result expired\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Storage unavailable\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Async export / 4. Cancel report task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cancel returns 204 or documented error', () => pm.expect([204,401,404,409,500]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms3_base_url}}/api/v1/report-tasks/{{reportTaskId}}",
+            "description": "### OMS3 cancel report task\n\nCancels a queued or running report task."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Report task not found\"\n}"
+            },
+            {
+              "name": "409 Conflict - already completed",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Completed report task cannot be cancelled\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OMS4 Notification Service",
+      "item": [
+        {
+          "name": "healthcheck",
+          "item": [
+            {
+              "name": "Health check with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms4_base_url}}/health/",
+                "description": "### Health check with trailing slash\n\nService health endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is alive",
+                  "status": "Service is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS4\"\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Liveness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms4_base_url}}/health/live/",
+                "description": "### Liveness probe with trailing slash\n\nService liveness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Application process is alive",
+                  "status": "Application process is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS4\",\n  \"checks\": {\n    \"app\": {\n      \"status\": \"ok\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms4_base_url}}/health/ready/",
+                "description": "### Readiness probe with trailing slash\n\nService readiness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is ready",
+                  "status": "Service is ready",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS4\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"ok\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    },\n    \"smtp\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"mailhog:1025\",\n      \"required\": false\n    }\n  }\n}"
+                },
+                {
+                  "name": "503 Service dependency failed",
+                  "status": "Service dependency failed",
+                  "code": 503,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"failed\",\n  \"service\": \"OMS4\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    },\n    \"smtp\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"mailhog:1025\",\n      \"required\": false\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Send Email Notification",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['to','subject','body'],additionalProperties:false,properties:{to:{type:'string',format:'email'},subject:{type:'string',minLength:1},body:{type:'string',minLength:1}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Notification schema', () => pm.response.to.have.jsonSchema({type:'object',required:['notification_id','channel','to','status','created_at']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"user@example.com\",\n  \"subject\": \"OMS notification\",\n  \"body\": \"Test email notification from OMS4.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "to",
+                      "subject",
+                      "body"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "to": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "subject": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "body": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms4_base_url}}/notifications/email",
+            "description": "### OMS4 send email notification\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"to\",\n    \"subject\",\n    \"body\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"to\": {\n      \"type\": \"string\",\n      \"format\": \"email\"\n    },\n    \"subject\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"body\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK - sent",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"notification_id\": \"ntf_123\",\n  \"channel\": \"email\",\n  \"to\": \"user@example.com\",\n  \"status\": \"sent\",\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "200 OK - failed",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"notification_id\": \"ntf_124\",\n  \"channel\": \"email\",\n  \"to\": \"user@example.com\",\n  \"status\": \"failed\",\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"to\"],\n    \"msg\": \"value is not a valid email address\",\n    \"type\": \"value_error\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"SMTP unavailable\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OMS5 Operations Service",
+      "item": [
+        {
+          "name": "healthcheck",
+          "item": [
+            {
+              "name": "Health check with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms5_base_url}}/health/",
+                "description": "### Health check with trailing slash\n\nService health endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is alive",
+                  "status": "Service is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS5\"\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Liveness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms5_base_url}}/health/live/",
+                "description": "### Liveness probe with trailing slash\n\nService liveness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Application process is alive",
+                  "status": "Application process is alive",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS5\",\n  \"checks\": {\n    \"app\": {\n      \"status\": \"ok\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness probe with trailing slash",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{oms5_base_url}}/health/ready/",
+                "description": "### Readiness probe with trailing slash\n\nService readiness endpoint with trailing slash for services that expose slash-terminated health URLs."
+              },
+              "response": [
+                {
+                  "name": "200 Service is ready",
+                  "status": "Service is ready",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"ok\",\n  \"service\": \"OMS5\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"ok\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "503 Service dependency failed",
+                  "status": "Service dependency failed",
+                  "code": 503,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"status\": \"failed\",\n  \"service\": \"OMS5\",\n  \"checks\": {\n    \"kafka\": {\n      \"status\": \"failed\",\n      \"endpoint\": \"kafka.oms.svc.cluster.local:9092\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "500 Internal server error",
+                  "status": "Internal server error",
+                  "code": 500,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"detail\": \"string\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Create Client",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['name'],additionalProperties:false,properties:{name:{type:'string',minLength:1},external_id:{type:['string','null']}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Client schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','name','created_at']}));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('client_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ООО Клиент\",\n  \"external_id\": \"CLIENT-0001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "name"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "external_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms5_base_url}}/clients",
+            "description": "### OMS5 create client\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"name\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"name\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"external_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"cli_123\",\n  \"name\": \"ООО Клиент\",\n  \"external_id\": \"CLIENT-0001\",\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid JSON\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"name\"],\n    \"msg\": \"Field required\",\n    \"type\": \"missing\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Shift",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['client_id','starts_at','ends_at'],additionalProperties:false,properties:{client_id:{type:'string',minLength:1},starts_at:{type:'string',format:'date-time'},ends_at:{type:'string',format:'date-time'},location:{type:['string','null']}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Shift schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','client_id','starts_at','ends_at','created_at']}));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('shift_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"cli_123\",\n  \"starts_at\": \"2026-01-20T09:00:00Z\",\n  \"ends_at\": \"2026-01-20T18:00:00Z\",\n  \"location\": \"Москва\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "client_id",
+                      "starts_at",
+                      "ends_at"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "client_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "location": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms5_base_url}}/shifts",
+            "description": "### OMS5 create shift\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"client_id\",\n    \"starts_at\",\n    \"ends_at\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"client_id\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"starts_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"ends_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"location\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"shf_123\",\n  \"client_id\": \"cli_123\",\n  \"starts_at\": \"2026-01-20T09:00:00Z\",\n  \"ends_at\": \"2026-01-20T18:00:00Z\",\n  \"location\": \"Москва\",\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Client Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Client not found\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"starts_at\"],\n    \"msg\": \"Input should be a valid datetime\",\n    \"type\": \"datetime_parsing\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['shift_id','title'],additionalProperties:false,properties:{shift_id:{type:'string',minLength:1},title:{type:'string',minLength:1},description:{type:'string'},assignee_employee_id:{type:['integer','null']}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Task schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','status','shift_id','title','created_at']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shift_id\": \"shf_123\",\n  \"title\": \"Проверить объект\",\n  \"description\": \"Выполнить стартовую проверку объекта перед сменой\",\n  \"assignee_employee_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "shift_id",
+                      "title"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "shift_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "assignee_employee_id": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms5_base_url}}/tasks",
+            "description": "### OMS5 create task\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"shift_id\",\n    \"title\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"shift_id\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"title\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"description\": {\n      \"type\": \"string\"\n    },\n    \"assignee_employee_id\": {\n      \"type\": [\n        \"integer\",\n        \"null\"\n      ]\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"tsk_456\",\n  \"status\": \"new\",\n  \"shift_id\": \"shf_123\",\n  \"title\": \"Проверить объект\",\n  \"description\": \"Выполнить стартовую проверку объекта перед сменой\",\n  \"assignee_employee_id\": 1,\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Shift Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Shift not found\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"title\"],\n    \"msg\": \"Field required\",\n    \"type\": \"missing\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Timesheet",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const schema = {type:'object',required:['employee_id','shift_id','work_date','hours'],additionalProperties:false,properties:{employee_id:{type:'integer',minimum:1},shift_id:{type:'string',minLength:1},work_date:{type:'string',format:'date'},hours:{type:'number',exclusiveMinimum:0,maximum:24}}};",
+                  "const body = JSON.parse(pm.request.body.raw || '{}');",
+                  "pm.test('Request body matches schema', () => pm.expect(body).to.have.jsonSchema(schema));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Timesheet schema', () => pm.response.to.have.jsonSchema({type:'object',required:['id','employee_id','shift_id','work_date','hours','created_at']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1,\n  \"shift_id\": \"shf_123\",\n  \"work_date\": \"2026-01-20\",\n  \"hours\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "employee_id",
+                      "shift_id",
+                      "work_date",
+                      "hours"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "employee_id": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "shift_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "work_date": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "hours": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 24
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "url": "{{oms5_base_url}}/timesheets",
+            "description": "### OMS5 create timesheet\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"employee_id\",\n    \"shift_id\",\n    \"work_date\",\n    \"hours\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"employee_id\": {\n      \"type\": \"integer\",\n      \"minimum\": 1\n    },\n    \"shift_id\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"work_date\": {\n      \"type\": \"string\",\n      \"format\": \"date\"\n    },\n    \"hours\": {\n      \"type\": \"number\",\n      \"exclusiveMinimum\": 0,\n      \"maximum\": 24\n    }\n  }\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"tms_123\",\n  \"employee_id\": 1,\n  \"shift_id\": \"shf_123\",\n  \"work_date\": \"2026-01-20\",\n  \"hours\": 8,\n  \"created_at\": \"2026-09-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "404 Shift Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Shift not found\"\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": [{\n    \"loc\": [\"body\", \"hours\"],\n    \"msg\": \"Input should be less than or equal to 24\",\n    \"type\": \"less_than_equal\"\n  }]\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Operations Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Summary schema', () => pm.response.to.have.jsonSchema({type:'object',required:['clients','shifts','tasks','timesheets']}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": true
+              }
+            ],
+            "url": "{{oms5_base_url}}/operations/summary",
+            "description": "### OMS5 operations summary"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"clients\": 1,\n  \"shifts\": 1,\n  \"tasks\": 1,\n  \"timesheets\": 1\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Invalid token\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Insufficient permissions\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"Internal server error\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
