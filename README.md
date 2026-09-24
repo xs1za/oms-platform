@@ -1,15 +1,15 @@
 # OMS Platform
 
-`oms-platform` содержит общую инфраструктуру и документацию для локального запуска OMS1-OMS5 в Kubernetes/kind.
+`platform` содержит общую инфраструктуру и документацию для локального запуска OMS1-OMS5 в Kubernetes/kind.
 
 Сервисный код хранится в отдельных репозиториях:
 
 ```text
-oms1-auth-service
-oms2-employee-service
-oms3-report-service
-oms4-notification-service
-oms5-operations-service
+oms1
+oms2
+oms3
+oms4
+oms5
 ```
 
 ## Структура
@@ -23,7 +23,7 @@ scripts/     генерация Postman collection из OpenAPI
 
 ## Что Коммитить
 
-В первый коммит `oms-platform` должны входить только файлы из этого каталога:
+В первый коммит `platform` должны входить только файлы из этого каталога:
 
 ```text
 .gitignore
@@ -165,7 +165,7 @@ Initial platform infrastructure
 8. Создайте remote repository на GitHub, например:
 
 ```text
-oms-platform
+platform
 ```
 
 9. Добавьте remote через PyCharm:
@@ -177,7 +177,7 @@ Git -> Manage Remotes... -> +
 URL:
 
 ```text
-https://github.com/<your-user>/oms-platform.git
+https://github.com/xs1za/platform.git
 ```
 
 10. Выполните push:

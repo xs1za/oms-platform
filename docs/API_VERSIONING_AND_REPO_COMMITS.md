@@ -6,20 +6,20 @@
 
 Рекомендуемые GitHub repositories:
 
-- `oms-platform` - общие Kubernetes манифесты, OpenAPI, Postman collection, генераторы и документация.
-- `oms1-auth-service` - OMS1 Auth Service.
-- `oms2-employee-service` - OMS2 Employee Service.
-- `oms3-report-service` - OMS3 Report Service.
-- `oms4-notification-service` - OMS4 Notification Service.
-- `oms5-operations-service` - OMS5 Operations Service.
+- `platform` - общие Kubernetes манифесты, OpenAPI, Postman collection, генераторы и документация.
+- `oms1` - OMS1 Auth Service.
+- `oms2` - OMS2 Employee Service.
+- `oms3` - OMS3 Report Service.
+- `oms4` - OMS4 Notification Service.
+- `oms5` - OMS5 Operations Service.
 
 Старый Django-монолит не переносится в новые repositories. Связь с ним разорвана; при необходимости он восстанавливается из старого GitHub repository отдельно.
 
 ## Ownership
 
 - Команда сервиса меняет только свой service repo.
-- Команда platform меняет `oms-platform`.
-- API-контракт меняется сначала в `oms-platform`, затем реализуется в service repo.
+- Команда platform меняет `platform`.
+- API-контракт меняется сначала в `platform`, затем реализуется в service repo.
 - Изменение public API без обновления `platform/contracts/openapi_oms_microservices.json` запрещено.
 
 ## Версионирование API
@@ -90,7 +90,7 @@ MAJOR повышается при breaking changes:
 
 ## Contract-First Workflow
 
-1. Создать branch в `oms-platform`.
+1. Создать branch в `platform`.
 2. Изменить `platform/contracts/openapi_oms_microservices.json`.
 3. Обновить generated Postman collection:
 
@@ -105,7 +105,7 @@ python -m json.tool platform/contracts/openapi_oms_microservices.json > $null
 python -m json.tool platform/contracts/postman_oms_microservices_collection.json > $null
 ```
 
-5. Открыть PR в `oms-platform` с описанием затронутых сервисов.
+5. Открыть PR в `platform` с описанием затронутых сервисов.
 6. После принятия contract PR команда сервиса реализует изменение в своем repo.
 7. Platform repo обновляет deployment manifests или docs, если изменились ports, env vars, probes или ingress routes.
 
@@ -121,6 +121,29 @@ Kafka events в `platform/contracts` и service docs трактуются как
 - fan-out между сервисами.
 
 Не используйте Kafka как универсальную замену task queue. Для командных jobs с retry, delayed retry, DLQ и обработкой одним worker используйте RabbitMQ/Celery или отдельный worker mechanism.
+
+Для текущего MVP отдельную очередь команд не добавляем заранее. Kafka остается обязательной инфраструктурой для событий, а RabbitMQ/Celery добавляются только при появлении production-like background jobs: отправка email с retry, построение тяжелых отчетов, импорт/экспорт файлов, webhook processing или другие задачи, где потеря команды влияет на бизнес-сценарий.
+
+Рекомендуемая эволюция после подтверждения бизнес-гипотезы:
+
+| Этап | Решение | Обоснование |
+| --- | --- | --- |
+| Учебный прототип | Kafka only | Меньше инфраструктуры, достаточно для domain events |
+| MVP в production-like окружении | Kafka + явные границы command tasks в коде | Не усложняем систему до появления реальной нагрузки, но не смешиваем events и commands |
+| Первые критичные background jobs | RabbitMQ + Celery workers | Получаем retry, delayed retry, DLQ и one-worker processing |
+| Рост нагрузки | Раздельное масштабирование API, workers, Kafka consumers | API остается быстрым, фоновые задачи масштабируются отдельно |
+| Зрелый продукт | Observability, DLQ tooling, idempotency keys, worker autoscaling | Снижаем операционные риски и стоимость сопровождения |
+
+Сравнение вариантов:
+
+| Вариант | Плюсы | Минусы |
+| --- | --- | --- |
+| Kafka для всего | Простая инфраструктура на старте; replay/audit; fan-out | Неестественная модель для commands; retry/DLQ придется строить самостоятельно |
+| RabbitMQ | Хорошая command queue; acknowledgements; routing; DLQ | Еще один broker в эксплуатации |
+| Celery + RabbitMQ | Быстро внедряется в Python-сервисы; готовые retry/backoff patterns | Требует worker deployments и дисциплины идемпотентности задач |
+| Celery + Redis | Просто для локального прототипа | Не основной выбор для надежной production queue |
+
+Правило для PR: если изменение добавляет командную background task, PR должен явно указать, остается ли задача синхронной на MVP-этапе или требует добавления RabbitMQ/Celery в platform.
 
 ## Branch Naming
 
@@ -160,7 +183,7 @@ chore/k8s-probes
 
 ## Рекомендуемые Коммиты По Репозиториям
 
-### oms-platform
+### platform
 
 ```text
 chore(platform): add multi-repo workspace structure
@@ -174,7 +197,7 @@ docs(api): document API versioning and repo commit workflow
 docs(swagger): document Swagger UI publication flow
 ```
 
-### oms1-auth-service
+### oms1
 
 ```text
 feat(auth): add JWT user and service token endpoints
@@ -185,7 +208,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms1): document local, Docker and Kubernetes usage
 ```
 
-### oms2-employee-service
+### oms2
 
 ```text
 feat(employee): add Django employee API
@@ -196,7 +219,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms2): document Django and Kubernetes usage
 ```
 
-### oms3-report-service
+### oms3
 
 ```text
 feat(report): add asynchronous report task API
@@ -207,7 +230,7 @@ chore(k8s): add deployment, service and configmap manifests
 docs(oms3): document async report workflow
 ```
 
-### oms4-notification-service
+### oms4
 
 ```text
 feat(notification): add email notification endpoint
@@ -218,7 +241,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms4): document SMTP and MailHog usage
 ```
 
-### oms5-operations-service
+### oms5
 
 ```text
 feat(operations): add clients, shifts, tasks and timesheets APIs
@@ -233,21 +256,21 @@ docs(oms5): document operations API usage
 
 Если добавляется новый endpoint в OMS3:
 
-1. `oms-platform`:
+1. `platform`:
 
 ```text
 contract(oms3): add report retry endpoint
 chore(postman): regenerate collection from OpenAPI
 ```
 
-2. `oms3-report-service`:
+2. `oms3`:
 
 ```text
 feat(report): implement report retry endpoint
 test(report): cover retry endpoint validation
 ```
 
-3. `oms-platform`, если нужны deployment changes:
+3. `platform`, если нужны deployment changes:
 
 ```text
 chore(k8s): update OMS3 environment for retry endpoint

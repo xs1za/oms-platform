@@ -231,6 +231,8 @@ kubectl -n oms rollout status deployment/oms3
 
 ### Port Forward
 
+Основной локальный доступ идет через Ingress `http://oms.local/oms1` - `http://oms.local/oms5`. Port-forward нужен только как fallback/debug, если Ingress недоступен или нужно проверить service напрямую.
+
 В UI можно открыть port-forward у service/pod, если build поддерживает эту функцию.
 
 CLI-аналог:
@@ -239,7 +241,7 @@ CLI-аналог:
 kubectl -n oms port-forward service/oms1 8001:80
 ```
 
-После этого встроенный Swagger OMS1 доступен по адресу:
+После этого встроенный Swagger OMS1 доступен по адресу без Ingress:
 
 ```text
 http://localhost:8001/docs
