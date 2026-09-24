@@ -6,20 +6,20 @@
 
 Рекомендуемые GitHub repositories:
 
-- `platform` - общие Kubernetes манифесты, OpenAPI, Postman collection, генераторы и документация.
-- `oms1` - OMS1 Auth Service.
-- `oms2` - OMS2 Employee Service.
-- `oms3` - OMS3 Report Service.
-- `oms4` - OMS4 Notification Service.
-- `oms5` - OMS5 Operations Service.
+- `oms-platform` - общие Kubernetes манифесты, OpenAPI, Postman collection, генераторы и документация.
+- `oms1-auth-service` - OMS1 Auth Service.
+- `oms2-employee-service` - OMS2 Employee Service.
+- `oms3-report-service` - OMS3 Report Service.
+- `oms4-notification-service` - OMS4 Notification Service.
+- `oms5-operations-service` - OMS5 Operations Service.
 
 Старый Django-монолит не переносится в новые repositories. Связь с ним разорвана; при необходимости он восстанавливается из старого GitHub repository отдельно.
 
 ## Ownership
 
 - Команда сервиса меняет только свой service repo.
-- Команда platform меняет `platform`.
-- API-контракт меняется сначала в `platform`, затем реализуется в service repo.
+- Команда platform меняет `oms-platform`.
+- API-контракт меняется сначала в `oms-platform`, затем реализуется в service repo.
 - Изменение public API без обновления `platform/contracts/openapi_oms_microservices.json` запрещено.
 
 ## Версионирование API
@@ -90,7 +90,7 @@ MAJOR повышается при breaking changes:
 
 ## Contract-First Workflow
 
-1. Создать branch в `platform`.
+1. Создать branch в `oms-platform`.
 2. Изменить `platform/contracts/openapi_oms_microservices.json`.
 3. Обновить generated Postman collection:
 
@@ -105,7 +105,7 @@ python -m json.tool platform/contracts/openapi_oms_microservices.json > $null
 python -m json.tool platform/contracts/postman_oms_microservices_collection.json > $null
 ```
 
-5. Открыть PR в `platform` с описанием затронутых сервисов.
+5. Открыть PR в `oms-platform` с описанием затронутых сервисов.
 6. После принятия contract PR команда сервиса реализует изменение в своем repo.
 7. Platform repo обновляет deployment manifests или docs, если изменились ports, env vars, probes или ingress routes.
 
@@ -183,7 +183,7 @@ chore/k8s-probes
 
 ## Рекомендуемые Коммиты По Репозиториям
 
-### platform
+### oms-platform
 
 ```text
 chore(platform): add multi-repo workspace structure
@@ -197,7 +197,7 @@ docs(api): document API versioning and repo commit workflow
 docs(swagger): document Swagger UI publication flow
 ```
 
-### oms1
+### oms1-auth-service
 
 ```text
 feat(auth): add JWT user and service token endpoints
@@ -208,7 +208,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms1): document local, Docker and Kubernetes usage
 ```
 
-### oms2
+### oms2-employee-service
 
 ```text
 feat(employee): add Django employee API
@@ -219,7 +219,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms2): document Django and Kubernetes usage
 ```
 
-### oms3
+### oms3-report-service
 
 ```text
 feat(report): add asynchronous report task API
@@ -230,7 +230,7 @@ chore(k8s): add deployment, service and configmap manifests
 docs(oms3): document async report workflow
 ```
 
-### oms4
+### oms4-notification-service
 
 ```text
 feat(notification): add email notification endpoint
@@ -241,7 +241,7 @@ chore(k8s): add deployment, service, configmap and secret manifests
 docs(oms4): document SMTP and MailHog usage
 ```
 
-### oms5
+### oms5-operations-service
 
 ```text
 feat(operations): add clients, shifts, tasks and timesheets APIs
@@ -256,21 +256,21 @@ docs(oms5): document operations API usage
 
 Если добавляется новый endpoint в OMS3:
 
-1. `platform`:
+1. `oms-platform`:
 
 ```text
 contract(oms3): add report retry endpoint
 chore(postman): regenerate collection from OpenAPI
 ```
 
-2. `oms3`:
+2. `oms3-report-service`:
 
 ```text
 feat(report): implement report retry endpoint
 test(report): cover retry endpoint validation
 ```
 
-3. `platform`, если нужны deployment changes:
+3. `oms-platform`, если нужны deployment changes:
 
 ```text
 chore(k8s): update OMS3 environment for retry endpoint

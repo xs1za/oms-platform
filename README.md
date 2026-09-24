@@ -1,15 +1,46 @@
 # OMS Platform
 
-`platform` содержит общую инфраструктуру и документацию для локального запуска OMS1-OMS5 в Kubernetes/kind.
+`oms-platform` содержит общую инфраструктуру и документацию для локального запуска OMS1-OMS5 в Kubernetes/kind.
+
+Этот репозиторий является главным входом в portfolio-проект `extrawork`: здесь описана архитектура, Kubernetes-инфраструктура, API-контракты, workflow запуска и правила развития multi-repo системы.
+
+## Project Overview
+
+`extrawork` - учебный OMS/MVP-проект, который моделирует микросервисную систему для проверки бизнес-гипотезы и дальнейшего развития до production-ready решения.
+
+Система состоит из пяти сервисов и общей platform-зоны:
+
+```text
+OMS1  Auth Service
+OMS2  Employee Service
+OMS3  Report Service
+OMS4  Notification Service
+OMS5  Operations Service
+```
+
+Ключевые технологии:
+
+```text
+Python 3.11, FastAPI, Django, PostgreSQL/PostGIS, Kafka, Docker, Kubernetes/kind, ingress-nginx, OpenAPI, Postman, Swagger UI
+```
+
+## GitHub Repositories
+
+- `oms-platform`: https://github.com/xs1za/oms-platform
+- `oms1-auth-service`: https://github.com/xs1za/oms1-auth-service
+- `oms2-employee-service`: https://github.com/xs1za/oms2-employee-service
+- `oms3-report-service`: https://github.com/xs1za/oms3-report-service
+- `oms4-notification-service`: https://github.com/xs1za/oms4-notification-service
+- `oms5-operations-service`: https://github.com/xs1za/oms5-operations-service
 
 Сервисный код хранится в отдельных репозиториях:
 
 ```text
-oms1
-oms2
-oms3
-oms4
-oms5
+oms1-auth-service
+oms2-employee-service
+oms3-report-service
+oms4-notification-service
+oms5-operations-service
 ```
 
 ## Структура
@@ -23,7 +54,7 @@ scripts/     генерация Postman collection из OpenAPI
 
 ## Что Коммитить
 
-В первый коммит `platform` должны входить только файлы из этого каталога:
+В первый коммит `oms-platform` должны входить только файлы из этого каталога:
 
 ```text
 .gitignore
@@ -165,7 +196,7 @@ Initial platform infrastructure
 8. Создайте remote repository на GitHub, например:
 
 ```text
-platform
+oms-platform
 ```
 
 9. Добавьте remote через PyCharm:
@@ -177,7 +208,7 @@ Git -> Manage Remotes... -> +
 URL:
 
 ```text
-https://github.com/xs1za/platform.git
+https://github.com/xs1za/oms-platform.git
 ```
 
 10. Выполните push:
