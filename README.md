@@ -52,32 +52,6 @@ k8s/         namespace, Kafka, Ingress и kind cluster config
 scripts/     генерация Postman collection из OpenAPI
 ```
 
-## Что Коммитить
-
-В первый коммит `oms-platform` должны входить только файлы из этого каталога:
-
-```text
-.gitignore
-README.md
-contracts/
-docs/
-k8s/
-scripts/
-```
-
-Не коммитить:
-
-```text
-.idea/
-__pycache__/
-*.pyc
-.env
-*.env
-.runtime/
-```
-
-Сервисные каталоги `OMS1`-`OMS5` не относятся к этому репозиторию.
-
 ## Быстрый Запуск Существующего Кластера
 
 Если kind-кластер `oms-cluster` уже создан, запустить Docker Desktop и поднять kind node:
@@ -100,6 +74,43 @@ kubectl -n oms get pods -w
 ```
 
 Создание кластера с нуля описано в `docs/K8S_FULL_SETUP.md`.
+
+Ожидаемый вывод команды запуска kind node зависит от состояния контейнера:
+
+```text
+# Если Docker Desktop уже запустил oms-cluster-control-plane автоматически:
+# команда ничего не выводит
+
+# Если oms-cluster-control-plane был остановлен:
+oms-cluster-control-plane
+```
+
+Если перед этим кластер был корректно остановлен, `kubectl -n oms get pods` сначала может показать `No resources found in oms namespace.` Это нормально: deployments были scaled to 0. Команды `kubectl -n oms scale ... --replicas=1` поднимут pods обратно.
+
+Если контейнера `oms-cluster-control-plane` нет, кластер нужно создать заново: см. `docs/K8S_FULL_SETUP.md`, пункты 4-11.
+
+Если после запуска нужно пересобрать images или применить изменения кода, см. `docs/K8S_FULL_SETUP.md`, пункт 16.
+
+## Корректное Завершение Работы
+
+Перед `Quit` Docker Desktop или перезагрузкой Windows сначала остановите kind-кластер, иначе Docker Desktop может зависнуть при остановке WSL/backend, kind node, mounts и контейнеров. Подробный порядок: `docs/K8S_FULL_SETUP.md`, пункт 16.1.
+
+Короткий вариант с сохранением kind-кластера:
+
+```powershell
+kubectl config use-context kind-oms-cluster
+kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=0
+kubectl -n oms scale deployment/kafka deployment/oms2-postgres --replicas=0
+docker stop oms-cluster-control-plane
+```
+
+Полное удаление кластера перед перезагрузкой, если кластер не нужно сохранять:
+
+```powershell
+kind delete cluster --name oms-cluster
+```
+
+Данные OMS2 Postgres сохраняются в `../.runtime/oms2-postgres-data`, если эту папку не удалять. Восстановление после перезагрузки описано в `docs/K8S_FULL_SETUP.md`, пункт 17.
 
 ## Проверка Ingress
 
@@ -134,6 +145,20 @@ OMS2 Django admin:
 http://oms.local/oms2/admin/
 ```
 
+Браузер открывает URL методом `GET`. Endpoints создания ресурсов нужно вызывать из Swagger UI, Postman или `curl`, потому что они используют `POST`.
+
+GET endpoints, которые можно открыть в браузере:
+
+```text
+http://oms.local/oms1/health
+http://oms.local/oms2/health/
+http://oms.local/oms2/employees/
+http://oms.local/oms3/health
+http://oms.local/oms4/health
+http://oms.local/oms5/health
+http://oms.local/oms5/operations/summary
+```
+
 ## OpenAPI И Postman
 
 Source of truth:
@@ -154,68 +179,35 @@ contracts/postman_oms_microservices_collection.json
 python scripts/generate_postman_collection.py
 ```
 
-## Git Init Через PyCharm
+## Kafka Event Model
 
-1. Откройте в PyCharm каталог:
+Kafka используется как durable publish/subscribe event log для domain/integration events, а не как классическая очередь задач.
 
-```text
-D:\ProjectsDocker\extrawork\platform
-```
+Примеры Kafka events:
 
-2. Убедитесь, что в окне Project видны только папки этого репозитория:
+- `employee.created`
+- `report.requested`
+- `report.completed`
+- `notification.email_status`
+- `operations.*_created`
 
-```text
-contracts
-docs
-k8s
-scripts
-```
+Для командных задач с retry, delayed retry, DLQ и обработкой одним worker лучше использовать RabbitMQ/Celery или отдельный worker mechanism. Подробное обоснование: `docs/проектирование.md`.
 
-3. Откройте меню:
+## Persistent Data
 
-```text
-VCS -> Enable Version Control Integration...
-```
-
-4. Выберите:
+OMS2 Postgres в Kubernetes использует PVC:
 
 ```text
-Git
+oms2-postgres-data
 ```
 
-5. После этого PyCharm создаст `.git` внутри `platform/`.
-
-6. Откройте вкладку Commit и проверьте список файлов. В initial commit не должно быть `apps`, `root`, `manage.py`, `OMS1`-`OMS5`, `.idea`, `__pycache__`.
-
-7. Отметьте файлы для коммита и используйте сообщение:
+Физически данные лежат на host в папке:
 
 ```text
-Initial platform infrastructure
+../.runtime/oms2-postgres-data
 ```
 
-8. Создайте remote repository на GitHub, например:
-
-```text
-oms-platform
-```
-
-9. Добавьте remote через PyCharm:
-
-```text
-Git -> Manage Remotes... -> +
-```
-
-URL:
-
-```text
-https://github.com/xs1za/oms-platform.git
-```
-
-10. Выполните push:
-
-```text
-Git -> Push...
-```
+Эта папка монтируется в kind node через `k8s/kind-cluster.yaml`, поэтому данные переживают пересоздание pod и пересоздание kind-кластера, если папку `../.runtime/oms2-postgres-data` не удалять. Runtime data не хранится в Git.
 
 ## Основные Документы
 
