@@ -120,9 +120,9 @@ Kafka events в `platform/contracts` и service docs трактуются как
 - replay/audit;
 - fan-out между сервисами.
 
-Не используйте Kafka как универсальную замену task queue. Для командных jobs с retry, delayed retry, DLQ и обработкой одним worker используйте RabbitMQ/Celery или отдельный worker mechanism.
+Не используйте Kafka как универсальную замену task queue. Для командных jobs с retry, delayed retry, DLQ и обработкой одним worker используйте RabbitMQ как shared command queue и lightweight Python workers без Celery.
 
-Для текущего MVP отдельную очередь команд не добавляем заранее. Kafka остается обязательной инфраструктурой для событий, а RabbitMQ/Celery добавляются только при появлении production-like background jobs: отправка email с retry, построение тяжелых отчетов, импорт/экспорт файлов, webhook processing или другие задачи, где потеря команды влияет на бизнес-сценарий.
+Для текущего MVP RabbitMQ добавляется как shared platform component для production-like background jobs: отправка email с retry, построение тяжелых отчетов, импорт/экспорт файлов, webhook processing или другие задачи, где потеря команды влияет на бизнес-сценарий.
 
 Рекомендуемая эволюция после подтверждения бизнес-гипотезы:
 
@@ -130,7 +130,7 @@ Kafka events в `platform/contracts` и service docs трактуются как
 | --- | --- | --- |
 | Учебный прототип | Kafka only | Меньше инфраструктуры, достаточно для domain events |
 | MVP в production-like окружении | Kafka + явные границы command tasks в коде | Не усложняем систему до появления реальной нагрузки, но не смешиваем events и commands |
-| Первые критичные background jobs | RabbitMQ + Celery workers | Получаем retry, delayed retry, DLQ и one-worker processing |
+| Первые критичные background jobs | RabbitMQ + lightweight workers | Получаем retry, delayed retry, DLQ и one-worker processing без Celery runtime |
 | Рост нагрузки | Раздельное масштабирование API, workers, Kafka consumers | API остается быстрым, фоновые задачи масштабируются отдельно |
 | Зрелый продукт | Observability, DLQ tooling, idempotency keys, worker autoscaling | Снижаем операционные риски и стоимость сопровождения |
 
@@ -140,10 +140,10 @@ Kafka events в `platform/contracts` и service docs трактуются как
 | --- | --- | --- |
 | Kafka для всего | Простая инфраструктура на старте; replay/audit; fan-out | Неестественная модель для commands; retry/DLQ придется строить самостоятельно |
 | RabbitMQ | Хорошая command queue; acknowledgements; routing; DLQ | Еще один broker в эксплуатации |
-| Celery + RabbitMQ | Быстро внедряется в Python-сервисы; готовые retry/backoff patterns | Требует worker deployments и дисциплины идемпотентности задач |
-| Celery + Redis | Просто для локального прототипа | Не основной выбор для надежной production queue |
+| Lightweight workers + RabbitMQ | Прозрачная реализация без Celery; явный контроль retry/DLQ; меньше runtime-магии | Retry/backoff/DLQ нужно реализовать дисциплинированно в worker code и RabbitMQ topology |
+| Celery + RabbitMQ | Готовые retry/backoff patterns | Не выбран для MVP, добавляет Celery runtime и task-signature discipline |
 
-Правило для PR: если изменение добавляет командную background task, PR должен явно указать, остается ли задача синхронной на MVP-этапе или требует добавления RabbitMQ/Celery в platform.
+Правило для PR: если изменение добавляет командную background task, PR должен явно указать RabbitMQ queue, retry/DLQ поведение и worker ownership.
 
 ## Branch Naming
 
