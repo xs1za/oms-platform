@@ -11,8 +11,10 @@
 - `OMS2 Postgres` - локальная PostGIS БД для `OMS2`.
 - `OMS3` - сервис отчетов.
 - `OMS4` - сервис уведомлений email.
-- `OMS5` - сервис операционных сущностей: клиент, смена, задание, табель.
+- `OMS5` - сервис операционных сущностей: клиент, смена, исполнитель, табель.
 - `Kafka` - локальный single-node Kafka для межсервисных событий.
+- `RabbitMQ` - локальная очередь команд для lightweight workers, retry и DLQ.
+- `Prometheus` и `kube-state-metrics` - сбор метрик кластера для Freelens/OpenLens.
 - `ingress-nginx` - единая точка входа вместо `kubectl port-forward`.
 
 ## 2. Предварительные требования
@@ -223,10 +225,12 @@ kubectl label node oms-cluster-control-plane ingress-ready=true
 kubectl apply -f platform/k8s/namespace.yaml
 ```
 
-Развернуть Kafka:
+Развернуть Kafka, RabbitMQ и Prometheus:
 
 ```powershell
 kubectl apply -f platform/k8s/kafka-dev.yaml
+kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/prometheus.yaml
 ```
 
 Развернуть микросервисы:
@@ -249,11 +253,15 @@ kubectl -n oms get pods -w
 
 ```text
 kafka           1/1   Running
+rabbitmq        1/1   Running
+prometheus      1/1   Running
+kube-state-metrics 1/1 Running
 oms1            1/1   Running
 oms2            1/1   Running
 oms2-postgres   1/1   Running
 oms3            1/1   Running
 oms4            1/1   Running
+oms4-email-worker 1/1 Running
 oms5            1/1   Running
 ```
 
@@ -527,6 +535,8 @@ kubectl config use-context kind-oms-cluster
 ```powershell
 kubectl apply -f platform/k8s/namespace.yaml
 kubectl apply -f platform/k8s/kafka-dev.yaml
+kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS2/k8s/postgres.yaml
 kubectl apply -f OMS2/k8s/
 ```
@@ -610,6 +620,9 @@ kubectl -n oms scale deployment/oms5 --replicas=0
 
 ```powershell
 kubectl -n oms scale deployment/kafka --replicas=0
+kubectl -n oms scale deployment/rabbitmq --replicas=0
+kubectl -n oms scale deployment/prometheus --replicas=0
+kubectl -n oms scale deployment/kube-state-metrics --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
 ```
 
@@ -763,7 +776,7 @@ kubectl -n oms get pods
 Если namespace и deployments существуют, поднять replicas обратно до `1`. Это обязательно после корректного завершения из пункта 16.1, потому что там deployments были остановлены через `scale --replicas=0`.
 
 ```powershell
-kubectl -n oms scale deployment/kafka deployment/oms2-postgres --replicas=1
+kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
 kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
 ```
 
@@ -785,6 +798,9 @@ kubectl -n oms get pods -w
 
 ```text
 kafka-...           1/1   Running
+rabbitmq-...        1/1   Running
+prometheus-...      1/1   Running
+kube-state-metrics-... 1/1 Running
 oms1-...            1/1   Running
 oms2-...            1/1   Running
 oms2-postgres-...   1/1   Running
@@ -798,6 +814,8 @@ oms5-...            1/1   Running
 ```powershell
 kubectl apply -f platform/k8s/namespace.yaml
 kubectl apply -f platform/k8s/kafka-dev.yaml
+kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
 kubectl apply -f OMS3/k8s/
@@ -895,6 +913,9 @@ kubectl -n oms scale deployment --all --replicas=0
 
 ```powershell
 kubectl -n oms scale deployment/kafka --replicas=1
+kubectl -n oms scale deployment/rabbitmq --replicas=1
+kubectl -n oms scale deployment/prometheus --replicas=1
+kubectl -n oms scale deployment/kube-state-metrics --replicas=1
 kubectl -n oms scale deployment/oms2-postgres --replicas=1
 kubectl -n oms scale deployment/oms1 --replicas=1
 kubectl -n oms scale deployment/oms2 --replicas=1
@@ -906,7 +927,7 @@ kubectl -n oms scale deployment/oms5 --replicas=1
 Перезапустить все deployments:
 
 ```powershell
-kubectl -n oms rollout restart deployment/kafka deployment/oms2-postgres deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5
+kubectl -n oms rollout restart deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5
 ```
 
 ### 18.4. Kafka
@@ -943,6 +964,67 @@ kubectl -n oms rollout status deployment/kafka
 kubectl -n oms get pods -l app=kafka
 kubectl -n oms get svc kafka
 kubectl -n oms logs deployment/kafka --tail=100
+```
+
+### 18.4.1. Prometheus И Метрики Для Freelens
+
+Применить Prometheus manifest:
+
+```powershell
+kubectl apply -f platform/k8s/prometheus.yaml
+```
+
+Проверить deployments и service:
+
+```powershell
+kubectl -n oms get deployment prometheus kube-state-metrics
+kubectl -n oms rollout status deployment/prometheus
+kubectl -n oms rollout status deployment/kube-state-metrics
+kubectl -n oms get svc prometheus prometheus-server kube-state-metrics prometheus-node-exporter
+```
+
+Проверить targets Prometheus через port-forward:
+
+```powershell
+kubectl -n oms port-forward service/prometheus 9090:9090
+```
+
+Открыть в браузере:
+
+```text
+http://localhost:9090/targets
+```
+
+Проверить наличие метрик состояния workloads:
+
+```text
+kube_pod_status_phase
+kube_deployment_status_replicas_available
+```
+
+Проверить доступность Prometheus для Freelens через Kubernetes API proxy:
+
+```powershell
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/-/ready"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=up"
+```
+
+Проверить наличие CPU/RAM метрик и совместимых Lens labels:
+
+```powershell
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=node_cpu_seconds_total"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=container_cpu_usage_seconds_total%7Bpod_name%21%3D%22%22%2Ccontainer_name%21%3D%22%22%7D"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=container_memory_working_set_bytes%7Bpod_name%21%3D%22%22%2Ccontainer_name%21%3D%22%22%7D"
+```
+
+Freelens settings:
+
+```text
+PROMETHEUS: Helm
+PROMETHEUS SERVICE ADDRESS: oms/prometheus-server:80
+CUSTOM PATH PREFIX: пусто
+PROMETHEUS HTTPS REQUESTS: выключено
+PROMETHEUS REQUEST METHOD: GET
 ```
 
 ### 18.5. Ingress NGINX
@@ -1371,6 +1453,8 @@ kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.
 
 kubectl apply -f platform/k8s/namespace.yaml
 kubectl apply -f platform/k8s/kafka-dev.yaml
+kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
 kubectl apply -f OMS3/k8s/
@@ -1379,6 +1463,7 @@ kubectl apply -f OMS5/k8s/
 kubectl apply -f platform/k8s/ingress.yaml
 
 kubectl -n oms get pods
+kubectl -n oms get svc prometheus kube-state-metrics
 kubectl -n oms get ingress
 ```
 

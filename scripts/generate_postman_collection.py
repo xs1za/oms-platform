@@ -26,6 +26,7 @@ from urllib.parse import urlparse
 PLATFORM_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OPENAPI = PLATFORM_ROOT / "contracts" / "openapi_oms_microservices.json"
 DEFAULT_COLLECTION = PLATFORM_ROOT / "contracts" / "postman_oms_microservices_collection.json"
+POSTMAN_COLLECTION_NAME = "OMS Microservices API collection"
 SERVICE_BASE_URL_VARIABLES = {
     "OMS1 Auth Service": "{{oms1_base_url}}",
     "OMS2 Employee Service": "{{oms2_base_url}}",
@@ -36,10 +37,9 @@ SERVICE_BASE_URL_VARIABLES = {
 
 
 def empty_collection(openapi: dict[str, Any]) -> dict[str, Any]:
-    title = openapi.get("info", {}).get("title", "OMS Microservices Contracts")
     return {
         "info": {
-            "name": title,
+            "name": POSTMAN_COLLECTION_NAME,
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         },
         "item": [],
@@ -676,6 +676,7 @@ def generate_collection(openapi: dict[str, Any], overlay: dict[str, Any], *, fro
         "Generated from platform/contracts/openapi_oms_microservices.json "
         f"{overlay_note}OpenAPI is the source of truth for request body schemas."
     )
+    collection.setdefault("info", {})["name"] = POSTMAN_COLLECTION_NAME
     return collection
 
 

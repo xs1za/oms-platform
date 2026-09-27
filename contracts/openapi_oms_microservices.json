@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OMS Microservices API",
+    "title": "OMS Microservices OpenAPI",
     "version": "0.1.0",
     "description": "OpenAPI contract with request body JSON Schemas for OMS1-OMS5. Import this file into Postman as an API/schema source to populate the Body Schema panel."
   },
@@ -313,7 +313,8 @@
     "/notifications/email": {
       "post": {
         "operationId": "oms4SendEmailNotification",
-        "summary": "OMS4 send email notification",
+        "summary": "OMS4 queue email notification",
+        "description": "Enqueues an email.send command in RabbitMQ. The OMS4 email worker performs SMTP delivery asynchronously with retry and DLQ handling, then publishes notification.email_status events to Kafka.",
         "requestBody": {
           "required": true,
           "content": {
@@ -324,9 +325,10 @@
           }
         },
         "responses": {
-          "200": { "description": "Notification processed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationResult" } } } },
+          "200": { "description": "Email command queued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "description": "Email command queue is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
           "422": { "$ref": "#/components/responses/ValidationError" },
           "500": { "$ref": "#/components/responses/InternalServerError" }
         }
@@ -371,24 +373,138 @@
         }
       }
     },
-    "/tasks": {
+    "/performers/sync": {
       "post": {
-        "operationId": "oms5CreateTask",
-        "summary": "OMS5 create task",
+        "operationId": "oms5SyncPerformer",
+        "summary": "OMS5 sync performer projection from OMS2 Employee",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/TaskCreate" },
-              "example": { "shift_id": "shf_123", "title": "Проверить объект", "description": "Выполнить стартовую проверку объекта перед сменой", "assignee_employee_id": 1 }
+              "schema": { "$ref": "#/components/schemas/PerformerSync" },
+              "example": { "employee_id": 1, "display_name": "Иванов Иван", "email": "performer@example.com", "phone": "+79990000000", "status": "active", "source_version": 1 }
             }
           }
         },
         "responses": {
-          "200": { "description": "Task created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "200": { "description": "Performer projection created or updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Performer" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
           "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/shifts/{shiftId}/transition": {
+      "post": {
+        "operationId": "oms5TransitionShift",
+        "summary": "OMS5 transition shift status",
+        "parameters": [
+          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftTransition" }, "example": { "new_status": "A10_CONFIRM", "reason": "confirmed by manager", "actor_user_id": "usr_123" } } } },
+        "responses": {
+          "200": { "description": "Shift transitioned", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftTransitionResult" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/shifts/{shiftId}/history": {
+      "get": {
+        "operationId": "oms5GetShiftHistory",
+        "summary": "OMS5 get shift status history",
+        "parameters": [
+          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Shift status history", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ShiftStatusHistory" } } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/shifts/{shiftId}/offer-campaigns": {
+      "post": {
+        "operationId": "oms5CreateOfferCampaign",
+        "summary": "OMS5 create shift offer campaign",
+        "parameters": [
+          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferCampaignCreate" }, "example": { "performer_ids": ["perf_1", "perf_2"], "created_by_user_id": "usr_123" } } } },
+        "responses": {
+          "200": { "description": "Offer campaign created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferCampaignResult" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/public/shift-offers/{token}": {
+      "get": {
+        "operationId": "oms5GetPublicShiftOffer",
+        "summary": "OMS5 get public shift offer",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Public offer details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicOffer" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/public/shift-offers/{token}/viewed": {
+      "post": {
+        "operationId": "oms5MarkShiftOfferViewed",
+        "summary": "OMS5 mark public shift offer viewed",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Offer view logged", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferAvailability" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/public/shift-offers/{token}/accept": {
+      "post": {
+        "operationId": "oms5AcceptShiftOffer",
+        "summary": "OMS5 accept public shift offer",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Offer accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferAcceptResult" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/public/shift-offers/{token}/decline": {
+      "post": {
+        "operationId": "oms5DeclineShiftOffer",
+        "summary": "OMS5 decline public shift offer",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Offer declined", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicOffer" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/internal/shifts/auto-close-unfilled": {
+      "post": {
+        "operationId": "oms5AutoCloseUnfilledShifts",
+        "summary": "OMS5 auto close unfilled shifts after reporting period",
+        "responses": {
+          "200": { "description": "Auto close result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AutoCloseResult" } } } },
           "500": { "$ref": "#/components/responses/InternalServerError" }
         }
       }
@@ -402,7 +518,7 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/TimesheetCreate" },
-              "example": { "employee_id": 1, "shift_id": "shf_123", "work_date": "2026-01-20", "hours": 8 }
+              "example": { "performer_id": "perf_123", "shift_id": "shf_123", "work_date": "2026-01-20", "hours": 8 }
             }
           }
         },
@@ -601,7 +717,7 @@
           "notification_id": { "type": "string" },
           "channel": { "type": "string", "const": "email" },
           "to": { "type": "string", "format": "email" },
-          "status": { "type": "string", "enum": ["sent", "failed"] },
+          "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
           "created_at": { "type": "string", "format": "date-time" }
         }
       },
@@ -628,38 +744,181 @@
           "client_id": { "type": "string", "minLength": 1 },
           "starts_at": { "type": "string", "format": "date-time" },
           "ends_at": { "type": "string", "format": "date-time" },
-          "location": { "type": ["string", "null"] }
+          "location": { "type": ["string", "null"] },
+          "required_performers_count": { "type": "integer", "minimum": 1, "maximum": 1, "default": 1 },
+          "created_by_user_id": { "type": ["string", "null"] }
         }
       },
       "Shift": {
         "allOf": [
           { "$ref": "#/components/schemas/ShiftCreate" },
-          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+          {
+            "type": "object",
+            "required": ["id", "status", "created_at", "updated_at"],
+            "properties": {
+              "id": { "type": "string" },
+              "status": { "$ref": "#/components/schemas/ShiftStatus" },
+              "assigned_performer_id": { "type": ["string", "null"] },
+              "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
+              "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] },
+              "auto_closed": { "type": "boolean" },
+              "auto_close_reason": { "type": ["string", "null"] },
+              "created_at": { "type": "string", "format": "date-time" },
+              "updated_at": { "type": "string", "format": "date-time" }
+            }
+          }
         ]
       },
-      "TaskCreate": {
-        "type": "object",
-        "required": ["shift_id", "title"],
-        "additionalProperties": false,
-        "properties": {
-          "shift_id": { "type": "string", "minLength": 1 },
-          "title": { "type": "string", "minLength": 1 },
-          "description": { "type": "string" },
-          "assignee_employee_id": { "type": ["integer", "null"] }
-        }
+      "ShiftStatus": {
+        "type": "string",
+        "enum": ["A00_DRAFT", "A10_CONFIRM", "A20_SOURCING", "A30_CHOICE", "A40_EXECUTION", "A50_VERIFY", "A60_SETTLE", "A70_CONFIRM", "A80_CLOSED", "A90_ARCHIVE"]
       },
-      "Task": {
-        "allOf": [
-          { "$ref": "#/components/schemas/TaskCreate" },
-          { "type": "object", "required": ["id", "status", "created_at"], "properties": { "id": { "type": "string" }, "status": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
-        ]
-      },
-      "TimesheetCreate": {
+      "PerformerSync": {
         "type": "object",
-        "required": ["employee_id", "shift_id", "work_date", "hours"],
+        "required": ["employee_id", "display_name"],
         "additionalProperties": false,
         "properties": {
           "employee_id": { "type": "integer", "minimum": 1 },
+          "display_name": { "type": "string", "minLength": 1 },
+          "email": { "type": ["string", "null"], "format": "email" },
+          "phone": { "type": ["string", "null"] },
+          "status": { "type": "string", "default": "active" },
+          "source_version": { "type": ["integer", "null"] }
+        }
+      },
+      "Performer": {
+        "allOf": [
+          { "$ref": "#/components/schemas/PerformerSync" },
+          { "type": "object", "required": ["id", "synced_at"], "properties": { "id": { "type": "string" }, "synced_at": { "type": "string", "format": "date-time" } } }
+        ]
+      },
+      "ShiftTransition": {
+        "type": "object",
+        "required": ["new_status"],
+        "additionalProperties": false,
+        "properties": {
+          "new_status": { "$ref": "#/components/schemas/ShiftStatus" },
+          "reason": { "type": ["string", "null"] },
+          "actor_user_id": { "type": ["string", "null"] },
+          "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
+          "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] }
+        }
+      },
+      "ShiftStatusHistory": {
+        "type": "object",
+        "required": ["id", "shift_id", "from_status", "to_status", "transition_code", "occurred_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "shift_id": { "type": "string" },
+          "from_status": { "$ref": "#/components/schemas/ShiftStatus" },
+          "to_status": { "$ref": "#/components/schemas/ShiftStatus" },
+          "transition_code": { "type": "string" },
+          "reason": { "type": ["string", "null"] },
+          "actor_user_id": { "type": ["string", "null"] },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "correlation_id": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ShiftTransitionResult": {
+        "type": "object",
+        "required": ["shift", "history"],
+        "properties": {
+          "shift": { "$ref": "#/components/schemas/Shift" },
+          "history": { "$ref": "#/components/schemas/ShiftStatusHistory" }
+        }
+      },
+      "OfferCampaignCreate": {
+        "type": "object",
+        "required": ["performer_ids"],
+        "additionalProperties": false,
+        "properties": {
+          "performer_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "created_by_user_id": { "type": ["string", "null"] }
+        }
+      },
+      "ShiftOfferCampaign": {
+        "type": "object",
+        "required": ["id", "shift_id", "status", "created_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "shift_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["draft", "sent", "closed", "cancelled"] },
+          "created_by_user_id": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ShiftOffer": {
+        "type": "object",
+        "required": ["id", "campaign_id", "shift_id", "performer_id", "status", "expires_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "campaign_id": { "type": "string" },
+          "shift_id": { "type": "string" },
+          "performer_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["draft", "sent", "viewed", "accepted", "declined", "won", "lost", "expired", "cancelled"] },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "sent_at": { "type": "string", "format": "date-time" },
+          "responded_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "OfferCampaignResult": {
+        "type": "object",
+        "required": ["campaign", "offers"],
+        "properties": {
+          "campaign": { "$ref": "#/components/schemas/ShiftOfferCampaign" },
+          "offers": { "type": "array", "items": { "allOf": [{ "$ref": "#/components/schemas/ShiftOffer" }, { "type": "object", "properties": { "token": { "type": "string" }, "public_url": { "type": "string" } } }] } }
+        }
+      },
+      "OfferAvailability": {
+        "type": "object",
+        "required": ["status", "offerStatus", "shiftStatus", "available"],
+        "properties": {
+          "status": { "type": "string" },
+          "offerStatus": { "type": "string" },
+          "shiftStatus": { "$ref": "#/components/schemas/ShiftStatus" },
+          "available": { "type": "boolean" },
+          "reason": { "type": ["string", "null"] }
+        }
+      },
+      "PublicOffer": {
+        "type": "object",
+        "required": ["offer", "shift", "performer", "available"],
+        "properties": {
+          "offer": { "$ref": "#/components/schemas/ShiftOffer" },
+          "shift": { "$ref": "#/components/schemas/Shift" },
+          "performer": { "$ref": "#/components/schemas/Performer" },
+          "available": { "type": "boolean" },
+          "reason": { "type": ["string", "null"] }
+        }
+      },
+      "ShiftAssignment": {
+        "type": "object",
+        "required": ["id", "shift_id", "performer_id", "offer_id", "status", "assigned_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "shift_id": { "type": "string" },
+          "performer_id": { "type": "string" },
+          "offer_id": { "type": "string" },
+          "status": { "type": "string" },
+          "assigned_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OfferAcceptResult": {
+        "type": "object",
+        "required": ["offer", "assignment", "shift"],
+        "properties": {
+          "offer": { "$ref": "#/components/schemas/ShiftOffer" },
+          "assignment": { "$ref": "#/components/schemas/ShiftAssignment" },
+          "shift": { "$ref": "#/components/schemas/Shift" }
+        }
+      },
+      "TimesheetCreate": {
+        "type": "object",
+        "required": ["performer_id", "shift_id", "work_date", "hours"],
+        "additionalProperties": false,
+        "properties": {
+          "performer_id": { "type": "string", "minLength": 1 },
           "shift_id": { "type": "string", "minLength": 1 },
           "work_date": { "type": "string", "format": "date" },
           "hours": { "type": "number", "exclusiveMinimum": 0, "maximum": 24 }
@@ -673,12 +932,23 @@
       },
       "OperationsSummary": {
         "type": "object",
-        "required": ["clients", "shifts", "tasks", "timesheets"],
+        "required": ["clients", "performers", "shifts", "offerCampaigns", "offers", "assignments", "timesheets"],
         "properties": {
           "clients": { "type": "integer", "minimum": 0 },
+          "performers": { "type": "integer", "minimum": 0 },
           "shifts": { "type": "integer", "minimum": 0 },
-          "tasks": { "type": "integer", "minimum": 0 },
+          "offerCampaigns": { "type": "integer", "minimum": 0 },
+          "offers": { "type": "integer", "minimum": 0 },
+          "assignments": { "type": "integer", "minimum": 0 },
           "timesheets": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "AutoCloseResult": {
+        "type": "object",
+        "required": ["closed", "count"],
+        "properties": {
+          "closed": { "type": "array", "items": { "type": "string" } },
+          "count": { "type": "integer", "minimum": 0 }
         }
       },
       "Error": {

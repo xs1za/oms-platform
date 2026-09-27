@@ -103,6 +103,69 @@ kind-oms-cluster
 
 6. Откройте cluster dashboard.
 
+## Подключение Метрик Prometheus
+
+Метрики кластера для OpenLens/Freelens собирает Prometheus из manifest `platform/k8s/prometheus.yaml`. В том же manifest разворачивается `kube-state-metrics`, который отдает состояние pod-ов, deployments и namespace-ов.
+
+Применить manifest:
+
+```powershell
+kubectl apply -f platform/k8s/prometheus.yaml
+```
+
+Проверить готовность:
+
+```powershell
+kubectl -n oms rollout status deployment/prometheus
+kubectl -n oms rollout status deployment/kube-state-metrics
+kubectl -n oms get svc prometheus prometheus-server kube-state-metrics prometheus-node-exporter
+```
+
+Проверить targets Prometheus:
+
+```powershell
+kubectl -n oms port-forward service/prometheus 9090:9090
+```
+
+Открыть:
+
+```text
+http://localhost:9090/targets
+```
+
+В настройках кластера OpenLens/Freelens для Prometheus укажите:
+
+```text
+PROMETHEUS: Helm
+PROMETHEUS SERVICE ADDRESS: oms/prometheus-server:80
+CUSTOM PATH PREFIX: пусто
+PROMETHEUS HTTPS REQUESTS: выключено
+PROMETHEUS REQUEST METHOD: GET
+```
+
+Если UI запрашивает URL, используйте service DNS внутри кластера:
+
+```text
+http://prometheus-server.oms.svc.cluster.local:80
+```
+
+Проверить доступность Prometheus через Kubernetes API proxy:
+
+```powershell
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/-/ready"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=up"
+```
+
+Проверить наличие метрик, которые использует Freelens:
+
+```powershell
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=node_cpu_seconds_total"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=container_cpu_usage_seconds_total%7Bpod_name%21%3D%22%22%2Ccontainer_name%21%3D%22%22%7D"
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/api/v1/query?query=container_memory_working_set_bytes%7Bpod_name%21%3D%22%22%2Ccontainer_name%21%3D%22%22%7D"
+```
+
+После сохранения настроек в dashboard кластера должны отображаться метрики CPU, memory и состояние workloads. Если метрики не появились сразу, обновите cluster dashboard или перезапустите OpenLens/Freelens.
+
 ## Что Смотреть В UI
 
 ### Nodes
@@ -156,6 +219,17 @@ Node должен быть `Ready`.
 - `oms3`
 - `oms4`
 - `oms5`
+- `prometheus`
+- `kube-state-metrics`
+
+### Metrics
+
+Проверьте, что в dashboard кластера отображаются:
+
+- CPU usage;
+- memory usage;
+- pod status;
+- deployment availability.
 
 ### Ingress
 

@@ -16,8 +16,8 @@ oms5-operations-service
 
 ```text
 contracts/   OpenAPI source of truth и Postman collection
-docs/        инструкции по Kubernetes, Swagger, Postman, OpenLens и versioning
-k8s/         namespace, Kafka, Ingress и kind cluster config
+docs/        инструкции по Kubernetes, Swagger, Postman, OpenLens/Freelens и versioning
+k8s/         namespace, Kafka, RabbitMQ, Prometheus, Ingress и kind cluster config
 scripts/     генерация Postman collection из OpenAPI
 ```
 
@@ -63,7 +63,7 @@ kubectl get nodes
 Поднять workloads:
 
 ```powershell
-kubectl -n oms scale deployment/kafka deployment/oms2-postgres --replicas=1
+kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
 kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
 kubectl -n oms get pods -w
 ```
@@ -102,6 +102,25 @@ OMS2 Django admin:
 ```text
 http://oms.local/oms2/admin/
 ```
+
+## Проверка Prometheus Для Freelens
+
+Prometheus разворачивается из Kubernetes manifest `k8s/prometheus.yaml`.
+
+```powershell
+kubectl apply -f k8s/prometheus.yaml
+kubectl -n oms rollout status deployment/prometheus
+kubectl -n oms rollout status deployment/kube-state-metrics
+kubectl -n oms port-forward service/prometheus 9090:9090
+```
+
+После port-forward Prometheus доступен для проверки по адресу:
+
+```text
+http://localhost:9090/targets
+```
+
+В Freelens/OpenLens источник метрик указывать на service `prometheus` в namespace `oms`, port `9090`.
 
 ## OpenAPI И Postman
 
