@@ -243,6 +243,7 @@ Host:
 
 ```text
 oms.local
+prometheus.oms.local
 ```
 
 Routes:
@@ -327,6 +328,7 @@ curl http://oms.local/oms2/health/
 curl http://oms.local/oms3/health/ready
 curl http://oms.local/oms4/health/ready
 curl http://oms.local/oms5/health/ready
+curl http://prometheus.oms.local/-/ready
 ```
 
 ## Важное Ограничение

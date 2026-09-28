@@ -311,12 +311,14 @@ C:\Windows\System32\drivers\etc\hosts
 
 ```text
 127.0.0.1 oms.local
+127.0.0.1 prometheus.oms.local
 ```
 
 Проверить:
 
 ```powershell
 ping oms.local
+ping prometheus.oms.local
 ```
 
 Должно резолвиться в `127.0.0.1`.
@@ -331,7 +333,8 @@ kubectl -n oms get ingress
 Ожидаемо:
 
 ```text
-oms-ingress   nginx   oms.local
+oms-ingress          nginx   oms.local
+prometheus-ingress   nginx   prometheus.oms.local
 ```
 
 ## 12. Проверить доступ без port-forward
@@ -349,6 +352,7 @@ curl http://oms.local/oms4/health
 curl http://oms.local/oms4/health/
 curl http://oms.local/oms5/health
 curl http://oms.local/oms5/health/
+curl http://prometheus.oms.local/-/ready
 ```
 
 Проверить liveness endpoints:
@@ -1332,6 +1336,7 @@ kubectl -n oms describe pod -l app=kafka
 ```powershell
 kubectl -n oms get ingress
 kubectl -n oms describe ingress oms-ingress
+kubectl -n oms describe ingress prometheus-ingress
 kubectl -n ingress-nginx logs deployment/ingress-nginx-controller --tail=100
 ```
 
@@ -1383,6 +1388,7 @@ kubectl label node oms-cluster-control-plane ingress-ready=true
 
 ```text
 127.0.0.1 oms.local
+127.0.0.1 prometheus.oms.local
 ```
 
 Проверить DNS:
