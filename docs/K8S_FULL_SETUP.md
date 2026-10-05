@@ -14,6 +14,8 @@
 - `OMS5` - сервис операционных сущностей: клиент, смена, исполнитель, табель.
 - `Kafka` - локальный single-node Kafka для межсервисных событий.
 - `RabbitMQ` - локальная очередь команд для lightweight workers, retry и DLQ.
+- `AKHQ` - web UI для просмотра Kafka topics, messages и consumer groups.
+- `RabbitMQ Management UI` - встроенный web UI RabbitMQ.
 - `Prometheus` и `kube-state-metrics` - сбор метрик кластера для Freelens/OpenLens.
 - `ingress-nginx` - единая точка входа вместо `kubectl port-forward`.
 
@@ -225,11 +227,12 @@ kubectl label node oms-cluster-control-plane ingress-ready=true
 kubectl apply -f platform/k8s/namespace.yaml
 ```
 
-Развернуть Kafka, RabbitMQ и Prometheus:
+Развернуть Kafka, RabbitMQ, Kafka UI и Prometheus:
 
 ```powershell
 kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
 ```
 
@@ -254,6 +257,7 @@ kubectl -n oms get pods -w
 ```text
 kafka           1/1   Running
 rabbitmq        1/1   Running
+akhq            1/1   Running
 prometheus      1/1   Running
 kube-state-metrics 1/1 Running
 oms1            1/1   Running
@@ -311,12 +315,18 @@ C:\Windows\System32\drivers\etc\hosts
 
 ```text
 127.0.0.1 oms.local
+127.0.0.1 prometheus.oms.local
+127.0.0.1 kafka.oms.local
+127.0.0.1 rabbitmq.oms.local
 ```
 
 Проверить:
 
 ```powershell
 ping oms.local
+ping prometheus.oms.local
+ping kafka.oms.local
+ping rabbitmq.oms.local
 ```
 
 Должно резолвиться в `127.0.0.1`.
@@ -331,7 +341,10 @@ kubectl -n oms get ingress
 Ожидаемо:
 
 ```text
-oms-ingress   nginx   oms.local
+oms-ingress          nginx   oms.local
+prometheus-ingress   nginx   prometheus.oms.local
+kafka-ui-ingress     nginx   kafka.oms.local
+rabbitmq-ingress     nginx   rabbitmq.oms.local
 ```
 
 ## 12. Проверить доступ без port-forward
@@ -349,6 +362,9 @@ curl http://oms.local/oms4/health
 curl http://oms.local/oms4/health/
 curl http://oms.local/oms5/health
 curl http://oms.local/oms5/health/
+curl http://prometheus.oms.local/-/ready
+curl http://kafka.oms.local
+curl http://rabbitmq.oms.local
 ```
 
 Проверить liveness endpoints:
@@ -776,7 +792,7 @@ kubectl -n oms get pods
 Если namespace и deployments существуют, поднять replicas обратно до `1`. Это обязательно после корректного завершения из пункта 16.1, потому что там deployments были остановлены через `scale --replicas=0`.
 
 ```powershell
-kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
+kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
 kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
 ```
 
@@ -799,6 +815,7 @@ kubectl -n oms get pods -w
 ```text
 kafka-...           1/1   Running
 rabbitmq-...        1/1   Running
+akhq-...            1/1   Running
 prometheus-...      1/1   Running
 kube-state-metrics-... 1/1 Running
 oms1-...            1/1   Running
@@ -815,6 +832,7 @@ oms5-...            1/1   Running
 kubectl apply -f platform/k8s/namespace.yaml
 kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
@@ -914,6 +932,7 @@ kubectl -n oms scale deployment --all --replicas=0
 ```powershell
 kubectl -n oms scale deployment/kafka --replicas=1
 kubectl -n oms scale deployment/rabbitmq --replicas=1
+kubectl -n oms scale deployment/akhq --replicas=1
 kubectl -n oms scale deployment/prometheus --replicas=1
 kubectl -n oms scale deployment/kube-state-metrics --replicas=1
 kubectl -n oms scale deployment/oms2-postgres --replicas=1
@@ -927,7 +946,7 @@ kubectl -n oms scale deployment/oms5 --replicas=1
 Перезапустить все deployments:
 
 ```powershell
-kubectl -n oms rollout restart deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5
+kubectl -n oms rollout restart deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5
 ```
 
 ### 18.4. Kafka
@@ -966,7 +985,52 @@ kubectl -n oms get svc kafka
 kubectl -n oms logs deployment/kafka --tail=100
 ```
 
-### 18.4.1. Prometheus И Метрики Для Freelens
+### 18.4.1. Kafka UI Через AKHQ
+
+Применить AKHQ manifest:
+
+```powershell
+kubectl apply -f platform/k8s/kafka-ui.yaml
+```
+
+Проверить deployment и service:
+
+```powershell
+kubectl -n oms rollout status deployment/akhq
+kubectl -n oms get pods -l app=akhq
+kubectl -n oms get svc akhq
+```
+
+AKHQ подключается к Kafka service `kafka:9092`. Через Ingress UI доступен по адресу:
+
+```text
+http://kafka.oms.local
+```
+
+### 18.4.2. RabbitMQ Management UI
+
+RabbitMQ использует image `rabbitmq:3.13-management`, поэтому management UI уже встроен в pod и открыт service port `15672`.
+
+Проверить service:
+
+```powershell
+kubectl -n oms get svc rabbitmq
+```
+
+Через Ingress UI доступен по адресу:
+
+```text
+http://rabbitmq.oms.local
+```
+
+Локальные credentials по умолчанию:
+
+```text
+user: oms
+password: oms
+```
+
+### 18.4.3. Prometheus И Метрики Для Freelens
 
 Применить Prometheus manifest:
 
@@ -983,16 +1047,16 @@ kubectl -n oms rollout status deployment/kube-state-metrics
 kubectl -n oms get svc prometheus prometheus-server kube-state-metrics prometheus-node-exporter
 ```
 
-Проверить targets Prometheus через port-forward:
-
-```powershell
-kubectl -n oms port-forward service/prometheus 9090:9090
-```
-
-Открыть в браузере:
+Проверить targets Prometheus через Ingress:
 
 ```text
-http://localhost:9090/targets
+http://prometheus.oms.local/targets
+```
+
+Проверить readiness:
+
+```powershell
+curl http://prometheus.oms.local/-/ready
 ```
 
 Проверить наличие метрик состояния workloads:
@@ -1068,7 +1132,13 @@ kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller
 kubectl -n ingress-nginx get pods
 kubectl -n oms get ingress
 kubectl -n oms describe ingress oms-ingress
+kubectl -n oms describe ingress prometheus-ingress
+kubectl -n oms describe ingress kafka-ui-ingress
+kubectl -n oms describe ingress rabbitmq-ingress
 curl http://oms.local/oms1/health
+curl http://prometheus.oms.local/-/ready
+curl http://kafka.oms.local
+curl http://rabbitmq.oms.local
 ```
 
 ### 18.6. Отдельные OMS-Сервисы
@@ -1278,6 +1348,8 @@ kubectl -n oms port-forward service/oms3 8003:80
 kubectl -n oms port-forward service/oms4 8004:80
 kubectl -n oms port-forward service/oms5 8005:80
 kubectl -n oms port-forward service/kafka 9092:9092
+kubectl -n oms port-forward service/akhq 8080:80
+kubectl -n oms port-forward service/rabbitmq 15672:15672
 kubectl -n oms port-forward service/oms2-postgres 5432:5432
 ```
 
@@ -1332,6 +1404,9 @@ kubectl -n oms describe pod -l app=kafka
 ```powershell
 kubectl -n oms get ingress
 kubectl -n oms describe ingress oms-ingress
+kubectl -n oms describe ingress prometheus-ingress
+kubectl -n oms describe ingress kafka-ui-ingress
+kubectl -n oms describe ingress rabbitmq-ingress
 kubectl -n ingress-nginx logs deployment/ingress-nginx-controller --tail=100
 ```
 
@@ -1383,6 +1458,9 @@ kubectl label node oms-cluster-control-plane ingress-ready=true
 
 ```text
 127.0.0.1 oms.local
+127.0.0.1 prometheus.oms.local
+127.0.0.1 kafka.oms.local
+127.0.0.1 rabbitmq.oms.local
 ```
 
 Проверить DNS:
@@ -1454,6 +1532,7 @@ kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.
 kubectl apply -f platform/k8s/namespace.yaml
 kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
+kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
@@ -1486,4 +1565,7 @@ curl http://oms.local/oms4/health/ready
 curl http://oms.local/oms4/health/ready/
 curl http://oms.local/oms5/health/ready
 curl http://oms.local/oms5/health/ready/
+curl http://prometheus.oms.local/-/ready
+curl http://kafka.oms.local
+curl http://rabbitmq.oms.local
 ```

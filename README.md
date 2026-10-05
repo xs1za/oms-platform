@@ -63,7 +63,7 @@ kubectl get nodes
 Поднять workloads:
 
 ```powershell
-kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
+kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
 kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
 kubectl -n oms get pods -w
 ```
@@ -72,10 +72,13 @@ kubectl -n oms get pods -w
 
 ## Проверка Ingress
 
-В `C:\Windows\System32\drivers\etc\hosts` должна быть запись:
+В `C:\Windows\System32\drivers\etc\hosts` должны быть записи:
 
 ```text
 127.0.0.1 oms.local
+127.0.0.1 prometheus.oms.local
+127.0.0.1 kafka.oms.local
+127.0.0.1 rabbitmq.oms.local
 ```
 
 Проверить сервисы:
@@ -86,6 +89,7 @@ curl http://oms.local/oms2/health/
 curl http://oms.local/oms3/health
 curl http://oms.local/oms4/health
 curl http://oms.local/oms5/health
+curl http://prometheus.oms.local/-/ready
 ```
 
 Swagger UI FastAPI-сервисов:
@@ -103,6 +107,14 @@ OMS2 Django admin:
 http://oms.local/oms2/admin/
 ```
 
+Инфраструктурные UI:
+
+```text
+http://prometheus.oms.local
+http://kafka.oms.local
+http://rabbitmq.oms.local
+```
+
 ## Проверка Prometheus Для Freelens
 
 Prometheus разворачивается из Kubernetes manifest `k8s/prometheus.yaml`.
@@ -111,16 +123,15 @@ Prometheus разворачивается из Kubernetes manifest `k8s/promethe
 kubectl apply -f k8s/prometheus.yaml
 kubectl -n oms rollout status deployment/prometheus
 kubectl -n oms rollout status deployment/kube-state-metrics
-kubectl -n oms port-forward service/prometheus 9090:9090
 ```
 
-После port-forward Prometheus доступен для проверки по адресу:
+Через Ingress Prometheus доступен для проверки по адресу:
 
 ```text
-http://localhost:9090/targets
+http://prometheus.oms.local/targets
 ```
 
-В Freelens/OpenLens источник метрик указывать на service `prometheus` в namespace `oms`, port `9090`.
+В Freelens/OpenLens источник метрик указывать как `Helm`, service address `oms/prometheus-server:80`.
 
 ## OpenAPI И Postman
 
