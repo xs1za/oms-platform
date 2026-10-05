@@ -211,6 +211,6 @@ Git -> Push...
 - `docs/POSTMAN_OPENAPI_WORKFLOW.md` - OpenAPI и Postman workflow.
 - `docs/SWAGGER_UPDATE_GUIDE.md` - публикация OpenAPI в Swagger UI.
 - `docs/API_VERSIONING_AND_REPO_COMMITS.md` - API versioning и multi-repo workflow.
-- `docs/OMS5_SHIFT_DESIGN.md` - проектирование смен, FSM, offers, RabbitMQ workers и UI boundaries.
+- `docs/OMS5_SHIFT_DESIGN.md` - legacy OMS5 Shift Domain Design.
 - `docs/OPENLENS_GUIDE.md` - OpenLens/Freelens для kind-кластера.
 - `docs/kafka_interservice_sequence.puml` - Kafka sequence diagram.
