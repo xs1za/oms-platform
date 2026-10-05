@@ -121,16 +121,10 @@ kubectl -n oms rollout status deployment/kube-state-metrics
 kubectl -n oms get svc prometheus prometheus-server kube-state-metrics prometheus-node-exporter
 ```
 
-Проверить targets Prometheus:
-
-```powershell
-kubectl -n oms port-forward service/prometheus 9090:9090
-```
-
-Открыть:
+Проверить targets Prometheus через Ingress:
 
 ```text
-http://localhost:9090/targets
+http://prometheus.oms.local/targets
 ```
 
 В настройках кластера OpenLens/Freelens для Prometheus укажите:
@@ -191,6 +185,8 @@ Node должен быть `Ready`.
 В namespace `oms` проверьте deployments:
 
 - `kafka`
+- `akhq`
+- `rabbitmq`
 - `oms1`
 - `oms2`
 - `oms2-postgres`
@@ -213,6 +209,7 @@ Node должен быть `Ready`.
 Проверьте services:
 
 - `kafka`
+- `akhq`
 - `oms1`
 - `oms2`
 - `oms2-postgres`
@@ -237,6 +234,9 @@ Node должен быть `Ready`.
 
 ```text
 oms-ingress
+prometheus-ingress
+kafka-ui-ingress
+rabbitmq-ingress
 ```
 
 Host:
@@ -244,6 +244,8 @@ Host:
 ```text
 oms.local
 prometheus.oms.local
+kafka.oms.local
+rabbitmq.oms.local
 ```
 
 Routes:
@@ -253,6 +255,9 @@ Routes:
 - `/oms3`
 - `/oms4`
 - `/oms5`
+- `http://prometheus.oms.local` - Prometheus UI
+- `http://kafka.oms.local` - AKHQ для Kafka
+- `http://rabbitmq.oms.local` - RabbitMQ Management UI
 
 ### Persistent Volumes
 
@@ -329,6 +334,8 @@ curl http://oms.local/oms3/health/ready
 curl http://oms.local/oms4/health/ready
 curl http://oms.local/oms5/health/ready
 curl http://prometheus.oms.local/-/ready
+curl http://kafka.oms.local
+curl http://rabbitmq.oms.local
 ```
 
 ## Важное Ограничение
