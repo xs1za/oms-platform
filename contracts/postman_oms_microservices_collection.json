@@ -2,7 +2,7 @@
   "info": {
     "name": "OMS Microservices API collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Generated from platform/contracts/openapi_oms_microservices.json without overlay. OpenAPI is the source of truth for request body schemas."
+    "description": "Generated from platform/contracts/openapi_oms_microservices.json with examples/scripts preserved from the Postman collection overlay. OpenAPI is the source of truth for request body schemas."
   },
   "item": [
     {
@@ -2104,6 +2104,520 @@
               "body": "{\n  \"detail\": \"string\"\n}"
             }
           ]
+        },
+        {
+          "name": "List problem Kafka events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events",
+            "description": "### List problem Kafka events\n\nReturns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
+          },
+          "response": [
+            {
+              "name": "200 Problem events list",
+              "status": "Problem events list",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"string\",\n    \"event_id\": \"string\",\n    \"event_type\": \"string\",\n    \"schema_version\": 1,\n    \"correlation_id\": \"string\",\n    \"producer\": \"string\",\n    \"source_topic\": \"string\",\n    \"source_partition\": 1,\n    \"source_offset\": 1,\n    \"kafka_key\": \"string\",\n    \"shift_id\": \"string\",\n    \"external_store_id\": \"string\",\n    \"external_client_id\": \"string\",\n    \"payload\": {},\n    \"error_type\": \"technical\",\n    \"error_code\": \"string\",\n    \"error_message\": \"string\",\n    \"status\": \"pending\",\n    \"attempt_count\": 1,\n    \"max_attempts\": 1,\n    \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n    \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n    \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n    \"last_retry_interval\": \"5m\",\n    \"consumer_service\": \"string\",\n    \"resolved_at\": \"2026-09-20T12:00:00Z\",\n    \"resolved_by\": \"string\",\n    \"last_manual_action_by\": \"string\",\n    \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n    \"last_manual_comment\": \"string\"\n  }\n]"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get problem Kafka event",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events/{{param}}",
+            "description": "### Get problem Kafka event\n\nReturns a problem event card with original payload, Kafka metadata, error details and manual action audit. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
+          },
+          "response": [
+            {
+              "name": "200 Problem event",
+              "status": "Problem event",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reprocess problem Kafka event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events/{{param}}/reprocess",
+            "description": "### Reprocess problem Kafka event\n\nQueues a problem event for manual reprocessing through RabbitMQ. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Первопричина устранена, запустить повторную обработку.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event queued for reprocessing",
+              "status": "Problem event queued for reprocessing",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ignore problem Kafka event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events/{{param}}/ignore",
+            "description": "### Ignore problem Kafka event\n\nMarks a problem event as ignored with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Событие неактуально после ручного разбора.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event ignored",
+              "status": "Problem event ignored",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Send problem Kafka event to manual review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events/{{param}}/manual-review",
+            "description": "### Send problem Kafka event to manual review\n\nMarks a problem event as requiring manual review with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Требуется ручной разбор операционного отдела.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event moved to manual review",
+              "status": "Problem event moved to manual review",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Move problem Kafka event to DLQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms3_base_url}}/admin/problem-events/{{param}}/dlq",
+            "description": "### Move problem Kafka event to DLQ\n\nMarks a problem event as DLQ with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Событие признано некорректным после анализа.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event moved to DLQ",
+              "status": "Problem event moved to DLQ",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -2313,6 +2827,520 @@
               "name": "503 Email command queue is unavailable",
               "status": "Email command queue is unavailable",
               "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List problem Kafka events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events",
+            "description": "### List problem Kafka events\n\nReturns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
+          },
+          "response": [
+            {
+              "name": "200 Problem events list",
+              "status": "Problem events list",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"string\",\n    \"event_id\": \"string\",\n    \"event_type\": \"string\",\n    \"schema_version\": 1,\n    \"correlation_id\": \"string\",\n    \"producer\": \"string\",\n    \"source_topic\": \"string\",\n    \"source_partition\": 1,\n    \"source_offset\": 1,\n    \"kafka_key\": \"string\",\n    \"shift_id\": \"string\",\n    \"external_store_id\": \"string\",\n    \"external_client_id\": \"string\",\n    \"payload\": {},\n    \"error_type\": \"technical\",\n    \"error_code\": \"string\",\n    \"error_message\": \"string\",\n    \"status\": \"pending\",\n    \"attempt_count\": 1,\n    \"max_attempts\": 1,\n    \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n    \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n    \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n    \"last_retry_interval\": \"5m\",\n    \"consumer_service\": \"string\",\n    \"resolved_at\": \"2026-09-20T12:00:00Z\",\n    \"resolved_by\": \"string\",\n    \"last_manual_action_by\": \"string\",\n    \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n    \"last_manual_comment\": \"string\"\n  }\n]"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get problem Kafka event",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events/{{param}}",
+            "description": "### Get problem Kafka event\n\nReturns a problem event card with original payload, Kafka metadata, error details and manual action audit. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
+          },
+          "response": [
+            {
+              "name": "200 Problem event",
+              "status": "Problem event",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reprocess problem Kafka event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events/{{param}}/reprocess",
+            "description": "### Reprocess problem Kafka event\n\nQueues a problem event for manual reprocessing through RabbitMQ. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Первопричина устранена, запустить повторную обработку.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event queued for reprocessing",
+              "status": "Problem event queued for reprocessing",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ignore problem Kafka event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events/{{param}}/ignore",
+            "description": "### Ignore problem Kafka event\n\nMarks a problem event as ignored with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Событие неактуально после ручного разбора.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event ignored",
+              "status": "Problem event ignored",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Send problem Kafka event to manual review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events/{{param}}/manual-review",
+            "description": "### Send problem Kafka event to manual review\n\nMarks a problem event as requiring manual review with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Требуется ручной разбор операционного отдела.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event moved to manual review",
+              "status": "Problem event moved to manual review",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Move problem Kafka event to DLQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Operational-Role",
+                "value": "operations",
+                "description": "Operational access marker."
+              }
+            ],
+            "url": "{{oms4_base_url}}/admin/problem-events/{{param}}/dlq",
+            "description": "### Move problem Kafka event to DLQ\n\nMarks a problem event as DLQ with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"comment\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Событие признано некорректным после анализа.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "comment"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "comment": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Problem event moved to DLQ",
+              "status": "Problem event moved to DLQ",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"event_id\": \"string\",\n  \"event_type\": \"string\",\n  \"schema_version\": 1,\n  \"correlation_id\": \"string\",\n  \"producer\": \"string\",\n  \"source_topic\": \"string\",\n  \"source_partition\": 1,\n  \"source_offset\": 1,\n  \"kafka_key\": \"string\",\n  \"shift_id\": \"string\",\n  \"external_store_id\": \"string\",\n  \"external_client_id\": \"string\",\n  \"payload\": {},\n  \"error_type\": \"technical\",\n  \"error_code\": \"string\",\n  \"error_message\": \"string\",\n  \"status\": \"pending\",\n  \"attempt_count\": 1,\n  \"max_attempts\": 1,\n  \"first_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"last_failed_at\": \"2026-09-20T12:00:00Z\",\n  \"next_retry_at\": \"2026-09-20T12:00:00Z\",\n  \"last_retry_interval\": \"5m\",\n  \"consumer_service\": \"string\",\n  \"resolved_at\": \"2026-09-20T12:00:00Z\",\n  \"resolved_by\": \"string\",\n  \"last_manual_action_by\": \"string\",\n  \"last_manual_action_at\": \"2026-09-20T12:00:00Z\",\n  \"last_manual_comment\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not found",
+              "code": 404,
               "header": [
                 {
                   "key": "Content-Type",

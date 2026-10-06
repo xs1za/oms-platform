@@ -334,6 +334,125 @@
         }
       }
     },
+    "/admin/problem-events": {
+      "get": {
+        "operationId": "adminListProblemEvents",
+        "summary": "List problem Kafka events",
+        "description": "Returns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "status", "in": "query", "required": false, "schema": { "$ref": "#/components/schemas/ProblemEventStatus" } },
+          { "name": "error_code", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "error_type", "in": "query", "required": false, "schema": { "$ref": "#/components/schemas/ProblemEventErrorType" } },
+          { "name": "shift_id", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "event_type", "in": "query", "required": false, "schema": { "type": "string", "example": "operations.shift.status_changed" } }
+        ],
+        "responses": {
+          "200": { "description": "Problem events list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProblemEvent" } } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/admin/problem-events/{problemEventId}": {
+      "get": {
+        "operationId": "adminGetProblemEvent",
+        "summary": "Get problem Kafka event",
+        "description": "Returns a problem event card with original payload, Kafka metadata, error details and manual action audit. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Problem event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/admin/problem-events/{problemEventId}/reprocess": {
+      "post": {
+        "operationId": "adminReprocessProblemEvent",
+        "summary": "Reprocess problem Kafka event",
+        "description": "Queues a problem event for manual reprocessing through RabbitMQ. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Первопричина устранена, запустить повторную обработку." } } } },
+        "responses": {
+          "200": { "description": "Problem event queued for reprocessing", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/admin/problem-events/{problemEventId}/ignore": {
+      "post": {
+        "operationId": "adminIgnoreProblemEvent",
+        "summary": "Ignore problem Kafka event",
+        "description": "Marks a problem event as ignored with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Событие неактуально после ручного разбора." } } } },
+        "responses": {
+          "200": { "description": "Problem event ignored", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/admin/problem-events/{problemEventId}/manual-review": {
+      "post": {
+        "operationId": "adminManualReviewProblemEvent",
+        "summary": "Send problem Kafka event to manual review",
+        "description": "Marks a problem event as requiring manual review with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Требуется ручной разбор операционного отдела." } } } },
+        "responses": {
+          "200": { "description": "Problem event moved to manual review", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/admin/problem-events/{problemEventId}/dlq": {
+      "post": {
+        "operationId": "adminDlqProblemEvent",
+        "summary": "Move problem Kafka event to DLQ",
+        "description": "Marks a problem event as DLQ with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
+        "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
+        "parameters": [
+          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
+          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Событие признано некорректным после анализа." } } } },
+        "responses": {
+          "200": { "description": "Problem event moved to DLQ", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
     "/clients": {
       "post": {
         "operationId": "oms5CreateClient",
@@ -719,6 +838,58 @@
           "to": { "type": "string", "format": "email" },
           "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
           "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProblemEventStatus": {
+        "type": "string",
+        "enum": ["pending", "retry_scheduled", "retrying", "resolved", "dlq", "ignored", "manual_review"]
+      },
+      "ProblemEventErrorType": {
+        "type": "string",
+        "enum": ["technical", "business", "contract"]
+      },
+      "ProblemEvent": {
+        "type": "object",
+        "required": ["id", "event_id", "event_type", "payload", "error_type", "error_code", "error_message", "status", "attempt_count", "max_attempts", "first_failed_at", "last_failed_at", "consumer_service"],
+        "properties": {
+          "id": { "type": "string" },
+          "event_id": { "type": "string" },
+          "event_type": { "type": ["string", "null"], "example": "operations.shift.status_changed" },
+          "schema_version": { "type": ["integer", "null"] },
+          "correlation_id": { "type": ["string", "null"] },
+          "producer": { "type": ["string", "null"], "example": "OMS5" },
+          "source_topic": { "type": ["string", "null"], "example": "operations.shift.status_changed" },
+          "source_partition": { "type": ["integer", "null"] },
+          "source_offset": { "type": ["integer", "null"] },
+          "kafka_key": { "type": ["string", "null"] },
+          "shift_id": { "type": ["string", "null"] },
+          "external_store_id": { "type": ["string", "null"] },
+          "external_client_id": { "type": ["string", "null"] },
+          "payload": { "type": "object", "additionalProperties": true },
+          "error_type": { "$ref": "#/components/schemas/ProblemEventErrorType" },
+          "error_code": { "type": "string", "example": "store_not_found" },
+          "error_message": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/ProblemEventStatus" },
+          "attempt_count": { "type": "integer", "minimum": 0 },
+          "max_attempts": { "type": "integer", "minimum": 0 },
+          "first_failed_at": { "type": "string", "format": "date-time" },
+          "last_failed_at": { "type": "string", "format": "date-time" },
+          "next_retry_at": { "type": ["string", "null"], "format": "date-time" },
+          "last_retry_interval": { "type": ["string", "null"], "enum": ["5m", "15m", "1h", null] },
+          "consumer_service": { "type": "string", "example": "OMS3" },
+          "resolved_at": { "type": ["string", "null"], "format": "date-time" },
+          "resolved_by": { "type": ["string", "null"] },
+          "last_manual_action_by": { "type": ["string", "null"] },
+          "last_manual_action_at": { "type": ["string", "null"], "format": "date-time" },
+          "last_manual_comment": { "type": ["string", "null"] }
+        }
+      },
+      "ManualProblemEventAction": {
+        "type": "object",
+        "required": ["comment"],
+        "additionalProperties": false,
+        "properties": {
+          "comment": { "type": "string", "minLength": 1 }
         }
       },
       "ClientCreate": {
