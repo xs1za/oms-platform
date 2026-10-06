@@ -21,32 +21,6 @@ k8s/         namespace, Kafka, RabbitMQ, Prometheus, Ingress и kind cluster con
 scripts/     генерация Postman collection из OpenAPI
 ```
 
-## Что Коммитить
-
-В первый коммит `oms-platform` должны входить только файлы из этого каталога:
-
-```text
-.gitignore
-README.md
-contracts/
-docs/
-k8s/
-scripts/
-```
-
-Не коммитить:
-
-```text
-.idea/
-__pycache__/
-*.pyc
-.env
-*.env
-.runtime/
-```
-
-Сервисные каталоги `OMS1`-`OMS5` не относятся к этому репозиторию.
-
 ## Быстрый Запуск Существующего Кластера
 
 Если kind-кластер `oms-cluster` уже создан, запустить Docker Desktop и поднять kind node:
