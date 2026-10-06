@@ -127,67 +127,6 @@ contracts/postman_oms_microservices_collection.json
 python scripts/generate_postman_collection.py
 ```
 
-## Git Init Через PyCharm
-
-1. Откройте в PyCharm каталог:
-
-```text
-D:\ProjectsDocker\extrawork\platform
-```
-
-2. Убедитесь, что в окне Project видны только папки этого репозитория:
-
-```text
-contracts
-docs
-k8s
-scripts
-```
-
-3. Откройте меню:
-
-```text
-VCS -> Enable Version Control Integration...
-```
-
-4. Выберите:
-
-```text
-Git
-```
-
-5. После этого PyCharm создаст `.git` внутри `platform/`.
-
-6. Откройте вкладку Commit и проверьте список файлов. В initial commit не должно быть `apps`, `root`, `manage.py`, `OMS1`-`OMS5`, `.idea`, `__pycache__`.
-
-7. Отметьте файлы для коммита и используйте сообщение:
-
-```text
-Initial platform infrastructure
-```
-
-8. Создайте remote repository на GitHub, например:
-
-```text
-oms-platform
-```
-
-9. Добавьте remote через PyCharm:
-
-```text
-Git -> Manage Remotes... -> +
-```
-
-URL:
-
-```text
-https://github.com/<your-user>/oms-platform.git
-```
-
-10. Выполните push:
-
-```text
-Git -> Push...
 ```
 
 ## Основные Документы
