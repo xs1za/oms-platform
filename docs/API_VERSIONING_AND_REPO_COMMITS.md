@@ -13,8 +13,6 @@
 - `oms4-notification-service` - OMS4 Notification Service.
 - `oms5-operations-service` - OMS5 Operations Service.
 
-Старый Django-монолит не переносится в новые repositories. Связь с ним разорвана; при необходимости он восстанавливается из старого GitHub repository отдельно.
-
 ## Ownership
 
 - Команда сервиса меняет только свой service repo.
@@ -122,6 +120,43 @@ Kafka events в `platform/contracts` и service docs трактуются как
 
 Не используйте Kafka как универсальную замену task queue. Для командных jobs с retry, delayed retry, DLQ и обработкой одним worker используйте RabbitMQ как shared command queue и lightweight Python workers без Celery.
 
+Для Kafka consumer-ов, которые обрабатывают domain events, действуют отдельные правила:
+
+- consumer должен быть идемпотентным по `event_id`;
+- основной Kafka topic не используется как бесконечное хранилище долгоживущих бизнес-ошибок;
+- при временной технической ошибке событие должно быть сохранено в `problem_events`, а повторная обработка должна планироваться через RabbitMQ DLX/TTL retry queues;
+- при бизнес-ошибке, требующей действий операционного отдела, событие должно быть сохранено в `problem_events` со статусом `pending`;
+- при ошибке контракта событие должно быть сохранено в `problem_events` со статусом `dlq`;
+- Kafka offset основного topic можно коммитить только после безопасного сохранения проблемного события в `problem_events`;
+- RabbitMQ-сообщение retry/reprocess должно содержать только `problem_event_id`, а полный payload хранится в `problem_events`.
+
+Реализованный пример для смен:
+
+- `OMS5` публикует Kafka event `operations.shift.status_changed` после успешного валидного перехода статуса смены;
+- Kafka key события: `shift_id`, чтобы сохранить порядок событий по одной смене внутри partition;
+- `OMS3` слушает событие и помечает report cache по `shift_id` как stale;
+- `OMS4` слушает событие и принимает решение о необходимости уведомления;
+- `OMS3` и `OMS4` используют `problem_events` для ошибок обработки Kafka-событий;
+- автоматический retry для технических ошибок выполняется через RabbitMQ DLX/TTL queues: `5m -> 15m -> 1h`;
+- после неуспешной попытки через `1h` событие переводится в `manual_review`;
+- бизнес-ошибки, например `store_not_found`, переводятся в `pending`;
+- ошибки контракта, например неподдерживаемый `schema_version`, переводятся в `dlq`;
+- операционный доступ к problem events предоставляется через admin endpoints с заголовком `X-Operational-Role: operations`.
+
+RabbitMQ topology для problem events:
+
+| Exchange / Queue | Назначение |
+| --- | --- |
+| `problem-events.retry.exchange` | Direct exchange для публикации retry-сообщений |
+| `problem-events.reprocess.exchange` | Direct exchange для сообщений повторной обработки |
+| `problem-events.retry.5m` | TTL queue на 5 минут с DLX в `problem-events.reprocess.exchange` |
+| `problem-events.retry.15m` | TTL queue на 15 минут с DLX в `problem-events.reprocess.exchange` |
+| `problem-events.retry.1h` | TTL queue на 1 час с DLX в `problem-events.reprocess.exchange` |
+| `problem-events.reprocess` | Очередь автоматической повторной обработки после TTL |
+| `problem-events.reprocess.manual` | Очередь ручной повторной обработки после действия операционного пользователя |
+
+RabbitMQ delayed message exchange plugin не используется. Задержка retry реализуется только через dead-letter exchange + TTL queues.
+
 Для текущего MVP RabbitMQ добавляется как shared platform component для production-like background jobs: отправка email с retry, построение тяжелых отчетов, импорт/экспорт файлов, webhook processing или другие задачи, где потеря команды влияет на бизнес-сценарий.
 
 Рекомендуемая эволюция после подтверждения бизнес-гипотезы:
@@ -144,6 +179,94 @@ Kafka events в `platform/contracts` и service docs трактуются как
 | Celery + RabbitMQ | Готовые retry/backoff patterns | Не выбран для MVP, добавляет Celery runtime и task-signature discipline |
 
 Правило для PR: если изменение добавляет командную background task, PR должен явно указать RabbitMQ queue, retry/DLQ поведение и worker ownership.
+
+Правило для PR: если изменение добавляет Kafka consumer, PR должен явно указать идемпотентность, обработку ошибок, `problem_events` поведение и влияние на commit Kafka offset.
+
+## Task Codes
+
+Для задач, инструкций, тест-кейсов, pull requests и коммитов используется единый формат кода:
+
+```text
+{PROJECT}-{AREA}-{NNNN}
+```
+
+Где:
+
+- `PROJECT` - сервис или область владения;
+- `AREA` - тип задачи;
+- `NNNN` - номер внутри пары `PROJECT + AREA`.
+
+Коды проектов:
+
+| Код | Назначение |
+| --- | --- |
+| `OMS1` | OMS1 Auth Service |
+| `OMS2` | OMS2 Employee Service |
+| `OMS3` | OMS3 Report Service |
+| `OMS4` | OMS4 Notification Service |
+| `OMS5` | OMS5 Operations Service |
+| `OMS` | Общие кросс-сервисные задачи и epics |
+| `INFRA` | Инфраструктура: Kafka, RabbitMQ, Kubernetes, ingress, brokers |
+| `QA` | Тест-планы и тест-кейсы |
+| `DOC` | Документация, инструкции, OpenAPI/Postman |
+
+Коды областей:
+
+| Код | Назначение |
+| --- | --- |
+| `INT` | Интеграции, Kafka events, producer/consumer, межсервисные контракты |
+| `BACK` | Backend business logic |
+| `ADMIN` | Admin endpoints и операционные функции |
+| `OPS` | Эксплуатация, стенды, deployment, topology |
+| `API` | OpenAPI, Postman, API contracts |
+| `QA` | Тестирование |
+| `FIX` | Исправление дефектов |
+| `SEC` | Безопасность и доступы |
+
+Примеры кодов для текущей инициативы:
+
+| Код | Название |
+| --- | --- |
+| `OMS-INT-0001` | Epic: интеграция событий изменения статуса смены |
+| `OMS5-INT-0001` | Kafka-событие изменения статуса смены в OMS5 |
+| `OMS3-INT-0001` | Consumer `operations.shift.status_changed` в OMS3 и stale report cache |
+| `OMS4-INT-0001` | Consumer `operations.shift.status_changed` в OMS4 и решение по уведомлениям |
+| `OMS3-ADMIN-0001` | `problem_events` и admin endpoints в OMS3 |
+| `OMS4-ADMIN-0001` | `problem_events` и admin endpoints в OMS4 |
+| `OMS3-INT-0002` | Retry/reprocess Kafka-событий через RabbitMQ в OMS3 |
+| `OMS4-INT-0002` | Retry/reprocess Kafka-событий через RabbitMQ в OMS4 |
+| `INFRA-OPS-0001` | RabbitMQ DLX/TTL topology для `problem_events` |
+| `DOC-API-0001` | OpenAPI/Postman для `problem_events` |
+| `QA-INT-0001` | Тест-план Kafka-события изменения статуса смены |
+| `QA-INT-0002` | Тест-план retry/pending/DLQ для problem events |
+| `QA-OPS-0001` | Тест-кейсы RabbitMQ DLX/TTL topology |
+| `QA-ADMIN-0001` | Тест-кейсы admin endpoints `problem_events` |
+
+Если GitHub Issue затрагивает несколько сервисов, предпочтительно разбить ее на сервисные задачи и инфраструктурную задачу. Если дробление временно нецелесообразно, используйте общий код `OMS-*` и перечислите сервисные коды в разделе связей.
+
+Формат заголовка GitHub Issue:
+
+```text
+[OMS5-INT-0001][back/integration] Kafka-событие изменения статуса смены в OMS5
+```
+
+Формат блока связей:
+
+```markdown
+### Связанные задачи
+
+- Epic: `OMS-INT-0001`
+- Service tasks: `OMS3-INT-0001`, `OMS4-INT-0001`
+- Infra: `INFRA-OPS-0001`
+- Contract: `DOC-API-0001`
+- QA: `QA-INT-0002`, `QA-OPS-0001`, `QA-ADMIN-0001`
+```
+
+Формат ссылки в коммите:
+
+```text
+Refs: OMS5-INT-0001
+```
 
 ## Branch Naming
 
@@ -181,100 +304,6 @@ chore/k8s-probes
 - `refactor` - изменение кода без изменения поведения.
 - `contract` - изменение API-контракта в platform repo.
 
-## Рекомендуемые Коммиты По Репозиториям
-
-### oms-platform
-
-```text
-chore(platform): add multi-repo workspace structure
-contract(api): add OMS microservices OpenAPI contract
-contract(api): add service-specific health endpoints
-chore(postman): add OpenAPI-based Postman generator
-chore(k8s): add kind, Kafka and ingress manifests
-chore(k8s): add persistent volume claim for OMS2 Postgres
-docs(k8s): document local Kubernetes operations
-docs(api): document API versioning and repo commit workflow
-docs(swagger): document Swagger UI publication flow
-```
-
-### oms1-auth-service
-
-```text
-feat(auth): add JWT user and service token endpoints
-feat(auth): add token verification endpoint
-feat(health): add liveness and readiness probes
-chore(docker): add service Dockerfile
-chore(k8s): add deployment, service, configmap and secret manifests
-docs(oms1): document local, Docker and Kubernetes usage
-```
-
-### oms2-employee-service
-
-```text
-feat(employee): add Django employee API
-feat(employee): add employee and address models
-feat(health): add database and Kafka readiness checks
-chore(db): add PostGIS deployment with persistent volume claim
-chore(k8s): add deployment, service, configmap and secret manifests
-docs(oms2): document Django and Kubernetes usage
-```
-
-### oms3-report-service
-
-```text
-feat(report): add asynchronous report task API
-feat(report): add task status, download and cancel endpoints
-feat(events): publish report lifecycle events to Kafka
-feat(health): add slash and non-slash health endpoints
-chore(k8s): add deployment, service and configmap manifests
-docs(oms3): document async report workflow
-```
-
-### oms4-notification-service
-
-```text
-feat(notification): add email notification endpoint
-feat(events): publish notification status events to Kafka
-feat(health): add Kafka and SMTP readiness checks
-feat(health): add slash and non-slash health endpoints
-chore(k8s): add deployment, service, configmap and secret manifests
-docs(oms4): document SMTP and MailHog usage
-```
-
-### oms5-operations-service
-
-```text
-feat(operations): add clients, shifts, tasks and timesheets APIs
-feat(operations): add operations summary endpoint
-feat(events): publish operations domain events to Kafka
-feat(health): add slash and non-slash health endpoints
-chore(k8s): add deployment, service and configmap manifests
-docs(oms5): document operations API usage
-```
-
-## Cross-Repo Change Example
-
-Если добавляется новый endpoint в OMS3:
-
-1. `oms-platform`:
-
-```text
-contract(oms3): add report retry endpoint
-chore(postman): regenerate collection from OpenAPI
-```
-
-2. `oms3-report-service`:
-
-```text
-feat(report): implement report retry endpoint
-test(report): cover retry endpoint validation
-```
-
-3. `oms-platform`, если нужны deployment changes:
-
-```text
-chore(k8s): update OMS3 environment for retry endpoint
-```
 
 ## Pull Request Checklist
 
