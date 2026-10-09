@@ -13,7 +13,7 @@
 - Payload соответствует контракту.
 - Событие публикуется только при валидном переходе статуса.
 - Событие не публикуется при невалидном переходе.
-- `OMS3` получает событие и помечает report cache как stale.
+- `OMS3` получает событие и помечает internal report cache marker как stale.
 - `OMS4` получает событие и принимает решение о необходимости уведомления.
 - Повторная доставка события с тем же `event_id` не создает повторный бизнес-эффект.
 
@@ -28,6 +28,7 @@
 - `OMS4`.
 - Kafka consumer `OMS3` для `operations.shift.status_changed`.
 - Kafka consumer `OMS4` для `operations.shift.status_changed`.
+- Admin problem events endpoints `OMS3` и `OMS4` для проверки ошибок контракта.
 - Postman collection, сгенерированная из актуального `openapi_oms_microservices.json`.
 
 Проверить переменные окружения:
@@ -255,7 +256,9 @@ Content-Type: application/json
 - События одной смены попали в одну Kafka partition.
 - Порядок событий: `A10_CONFIRM -> A20_SOURCING`, затем `A20_SOURCING -> A30_CHOICE`.
 
-### TC-05. OMS3 обрабатывает событие и помечает report cache как stale
+### TC-05. OMS3 обрабатывает событие и помечает internal report cache marker как stale
+
+Пояснение: этот тест проверяет Kafka consumer `OMS3` для `operations.shift.status_changed`. XLSX-отчет по сменам в актуальной реализации получает данные напрямую из `OMS5` через `GET /internal/shifts`; stale marker не является источником данных для XLSX-отчета.
 
 Шаги:
 
@@ -266,7 +269,8 @@ Content-Type: application/json
 
 - `OMS3` получил событие.
 - В логах есть `event_id`, `correlation_id`, `shift_id`.
-- Report cache по `shift_id` помечен как stale.
+- В логах есть сообщение `Marked report cache as stale`.
+- Internal stale marker по `shift_id` обновлен без повторного бизнес-эффекта для уже обработанного `event_id`.
 
 ### TC-06. OMS4 обрабатывает событие и принимает решение по уведомлению
 
@@ -329,11 +333,23 @@ Content-Type: application/json
 }
 ```
 
+2. Проверить problem events в `OMS3` и `OMS4`:
+
+```http
+GET {{oms3_base_url}}/admin/problem-events?event_type=operations.shift.status_changed
+X-Operational-Role: operations
+```
+
+```http
+GET {{oms4_base_url}}/admin/problem-events?event_type=operations.shift.status_changed
+X-Operational-Role: operations
+```
+
 Ожидаемый результат:
 
-- Consumer не применяет штатный бизнес-эффект.
-- Ошибка обработки зафиксирована согласно текущему механизму обработки ошибок.
-- Если задача `[OMS5-INT-0002]` установлена на стенде, событие попадает в `problem_events` со статусом `dlq`.
+- Consumers не применяют штатный бизнес-эффект.
+- Ошибка обработки зафиксирована в `problem_events`.
+- Событие попадает в `problem_events` со статусом `dlq` и `error_code = unsupported_schema_version`.
 
 ## Production Smoke Checklist
 

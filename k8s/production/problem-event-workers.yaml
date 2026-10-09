@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oms3-problem-events-pvc
+  namespace: oms
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oms4-problem-events-pvc
+  namespace: oms
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oms3-problem-event-worker
+  namespace: oms
+  labels:
+    app: oms3-problem-event-worker
+    component: problem-event-worker
+    service: oms3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oms3-problem-event-worker
+  template:
+    metadata:
+      labels:
+        app: oms3-problem-event-worker
+        component: problem-event-worker
+        service: oms3
+    spec:
+      containers:
+        - name: oms3-problem-event-worker
+          image: oms3:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.problem_event_worker"]
+          envFrom:
+            - configMapRef:
+                name: oms3-config
+            - secretRef:
+                name: oms3-secret
+                optional: true
+          volumeMounts:
+            - name: problem-events-store
+              mountPath: /data/problem-events
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: problem-events-store
+          persistentVolumeClaim:
+            claimName: oms3-problem-events-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oms4-problem-event-worker
+  namespace: oms
+  labels:
+    app: oms4-problem-event-worker
+    component: problem-event-worker
+    service: oms4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oms4-problem-event-worker
+  template:
+    metadata:
+      labels:
+        app: oms4-problem-event-worker
+        component: problem-event-worker
+        service: oms4
+    spec:
+      containers:
+        - name: oms4-problem-event-worker
+          image: oms4:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.problem_event_worker"]
+          envFrom:
+            - configMapRef:
+                name: oms4-config
+            - secretRef:
+                name: oms4-secret
+          volumeMounts:
+            - name: problem-events-store
+              mountPath: /data/problem-events
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: problem-events-store
+          persistentVolumeClaim:
+            claimName: oms4-problem-events-pvc

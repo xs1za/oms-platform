@@ -231,11 +231,10 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ReportTaskCreate" },
               "example": {
-                "reportType": "orders",
+                "reportType": "shifts",
                 "filter": {
-                  "createdFrom": "2026-09-01",
-                  "createdTo": "2026-09-12",
-                  "status": ["completed"]
+                  "startsAtFrom": "2026-10-01T00:00:00Z",
+                  "startsAtTo": "2026-10-31T23:59:59Z"
                 },
                 "format": "xlsx"
               }
@@ -295,13 +294,19 @@
       "get": {
         "operationId": "oms3DownloadReport",
         "summary": "OMS3 download report result",
-        "description": "Returns a temporary download URL when the report task is completed.",
+        "description": "Returns a temporary download URL for generic reports or the XLSX file for `reportType=shifts` when the report task is completed.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
         ],
         "responses": {
-          "200": { "description": "Report download URL", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportDownload" } } } },
+          "200": {
+            "description": "Report download result",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ReportDownload" } },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" },
@@ -628,6 +633,21 @@
         }
       }
     },
+    "/internal/shifts": {
+      "get": {
+        "operationId": "oms5ListInternalShifts",
+        "summary": "OMS5 list shifts by starts_at for internal reports",
+        "parameters": [
+          { "name": "startsAtFrom", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" }, "description": "Inclusive starts_at lower bound" },
+          { "name": "startsAtTo", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" }, "description": "Inclusive starts_at upper bound" }
+        ],
+        "responses": {
+          "200": { "description": "Internal shifts list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InternalShift" } } } } },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
     "/timesheets": {
       "post": {
         "operationId": "oms5CreateTimesheet",
@@ -801,7 +821,8 @@
         "properties": {
           "fileName": { "type": "string" },
           "downloadUrl": { "type": "string" },
-          "expiresAt": { "type": "string", "format": "date-time" }
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "sizeBytes": { "type": "integer", "minimum": 0 }
         }
       },
       "ReportError": {
@@ -939,6 +960,24 @@
             }
           }
         ]
+      },
+      "InternalShift": {
+        "type": "object",
+        "required": ["id", "client_id", "starts_at", "ends_at", "status", "created_at", "updated_at"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "client_id": { "type": "string" },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "ends_at": { "type": "string", "format": "date-time" },
+          "status": { "$ref": "#/components/schemas/ShiftStatus" },
+          "location": { "type": ["string", "null"] },
+          "assigned_performer_id": { "type": ["string", "null"] },
+          "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
+          "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
       },
       "ShiftStatus": {
         "type": "string",
