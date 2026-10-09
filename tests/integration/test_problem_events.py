@@ -1,5 +1,8 @@
 import importlib
+import io
+import logging
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -37,8 +40,10 @@ def base_event(event_id: str = "event-1", **extra):
 
 class ProblemEventsTest(unittest.TestCase):
     def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
         self.problem_events = import_service_module("OMS3", "app.problem_events")
         self.main = import_service_module("OMS3", "app.main")
+        self.problem_events.settings.problem_events_store_path = str(Path(self.temp_dir.name) / "oms3-problem-events.json")
         self.problem_events.problem_events.clear()
         self.problem_events.problem_events_by_event_id.clear()
         self.main.processed_shift_status_events.clear()
@@ -48,6 +53,9 @@ class ProblemEventsTest(unittest.TestCase):
         self.problem_events.publish_retry = lambda item: self.published_retry.append((item["id"], item["last_retry_interval"]))
         self.problem_events.publish_manual_reprocess = lambda problem_event_id: self.published_manual.append(problem_event_id)
         self.main.register_problem_event = self.problem_events.register_problem_event
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
 
     def test_technical_error_uses_three_retry_intervals_then_manual_review(self):
         event = base_event(reason="force_technical_error")
@@ -119,10 +127,68 @@ class ProblemEventsTest(unittest.TestCase):
         self.assertEqual(second_item["error_code"], "earlier_shift_event_unresolved")
 
 
+class Oms3LoggingConfigTest(unittest.TestCase):
+    def test_configure_logging_is_idempotent_and_formats_extra_fields(self):
+        logging_config = import_service_module("OMS3", "app.logging_config")
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+        try:
+            root_logger.handlers = []
+            logging_config.configure_logging()
+            logging_config.configure_logging()
+            import_service_module("OMS3", "app.main")
+            import_service_module("OMS3", "app.main")
+            oms_handlers = [handler for handler in root_logger.handlers if getattr(handler, "_oms3_configured", False)]
+            self.assertEqual(len(oms_handlers), 1)
+
+            stream = io.StringIO()
+            oms_handlers[0].stream = stream
+            logger = logging.getLogger("app.test")
+            logger.info("Marked report cache as stale", extra={"event_id": "event-1", "shift_id": "shift-1"})
+
+            output = stream.getvalue()
+            self.assertIn("Marked report cache as stale", output)
+            self.assertIn("event_id=event-1", output)
+            self.assertIn("shift_id=shift-1", output)
+        finally:
+            root_logger.handlers = original_handlers
+
+
 class Oms4ProblemEventsSmokeTest(unittest.TestCase):
+    def test_oms4_configure_logging_is_idempotent_and_formats_extra_fields(self):
+        logging_config = import_service_module("OMS4", "app.logging_config")
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+        try:
+            root_logger.handlers = []
+            logging_config.configure_logging()
+            logging_config.configure_logging()
+            import_service_module("OMS4", "app.main")
+            import_service_module("OMS4", "app.main")
+            oms_handlers = [handler for handler in root_logger.handlers if getattr(handler, "_oms4_configured", False)]
+            self.assertEqual(len(oms_handlers), 1)
+
+            stream = io.StringIO()
+            oms_handlers[0].stream = stream
+            logger = logging.getLogger("app.test")
+            logger.info(
+                "Processed shift status notification decision",
+                extra={"event_id": "event-1", "shift_id": "shift-1", "notification_required": True},
+            )
+
+            output = stream.getvalue()
+            self.assertIn("Processed shift status notification decision", output)
+            self.assertIn("event_id=event-1", output)
+            self.assertIn("shift_id=shift-1", output)
+            self.assertIn("notification_required=True", output)
+        finally:
+            root_logger.handlers = original_handlers
+
     def test_oms4_business_error_registers_pending(self):
+        temp_dir = tempfile.TemporaryDirectory()
         problem_events = import_service_module("OMS4", "app.problem_events")
         main = import_service_module("OMS4", "app.main")
+        problem_events.settings.problem_events_store_path = str(Path(temp_dir.name) / "oms4-problem-events.json")
         problem_events.problem_events.clear()
         problem_events.problem_events_by_event_id.clear()
         problem_events.publish_retry = lambda item: None
@@ -133,6 +199,7 @@ class Oms4ProblemEventsSmokeTest(unittest.TestCase):
         item = next(iter(problem_events.problem_events.values()))
         self.assertEqual(item["status"], "pending")
         self.assertEqual(item["consumer_service"], "OMS4")
+        temp_dir.cleanup()
 
 
 if __name__ == "__main__":

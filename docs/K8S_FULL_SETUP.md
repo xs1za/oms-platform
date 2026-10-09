@@ -264,9 +264,17 @@ oms1            1/1   Running
 oms2            1/1   Running
 oms2-postgres   1/1   Running
 oms3            1/1   Running
+oms3-problem-event-worker 1/1 Running
 oms4            1/1   Running
 oms4-email-worker 1/1 Running
+oms4-problem-event-worker 1/1 Running
 oms5            1/1   Running
+```
+
+`oms3-problem-event-worker` и `oms4-problem-event-worker` читают RabbitMQ queues `problem-events.reprocess` / `problem-events.reprocess.manual` и выполняют повторную обработку Kafka problem events. Production rollout этих workers описан отдельно:
+
+```text
+platform/docs/PROBLEM_EVENT_WORKERS_PRODUCTION_RUNBOOK.md
 ```
 
 Проверить services:

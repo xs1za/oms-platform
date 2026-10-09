@@ -1275,6 +1275,53 @@
               "body": "{\n  \"detail\": \"string\"\n}"
             }
           ]
+        },
+        {
+          "name": "OMS5 list shifts by starts_at for internal reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{oms5_base_url}}/internal/shifts?startsAtFrom=2026-09-20T12:00:00Z&startsAtTo=2026-09-20T12:00:00Z",
+            "description": "### OMS5 list shifts by starts_at for internal reports"
+          },
+          "response": [
+            {
+              "name": "200 Internal shifts list",
+              "status": "Internal shifts list",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"string\",\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"status\": \"A00_DRAFT\",\n    \"location\": \"string\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\"\n  }\n]"
+            },
+            {
+              "name": "422 Validation error",
+              "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -1786,7 +1833,7 @@
             "description": "### OMS3 start async report generation\n\n### Асинхронная операция\n\nЗапрос запускает формирование отчета и не возвращает файл немедленно.\n\n- `202 Accepted` — задача принята в обработку.\n- `Location` — URL для проверки состояния задачи.\n- `Retry-After` — рекомендуемый интервал до следующей проверки.\n- Используйте `Get report task status`, пока статус не станет `completed`.\n- После завершения скачайте файл через `Download report`.\n- При статусах `failed`, `cancelled` или `expired` повторите операцию с учетом ошибки.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"reportType\",\n    \"format\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"reportType\": {\n      \"type\": \"string\",\n      \"minLength\": 1\n    },\n    \"filter\": {\n      \"type\": \"object\"\n    },\n    \"format\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"xlsx\",\n        \"csv\",\n        \"pdf\"\n      ]\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reportType\": \"orders\",\n  \"filter\": {\n    \"createdFrom\": \"2026-09-01\",\n    \"createdTo\": \"2026-09-12\",\n    \"status\": [\n      \"completed\"\n    ]\n  },\n  \"format\": \"xlsx\"\n}",
+              "raw": "{\n  \"reportType\": \"shifts\",\n  \"filter\": {\n    \"startsAtFrom\": \"2026-10-01T00:00:00Z\",\n    \"startsAtTo\": \"2026-10-31T23:59:59Z\"\n  },\n  \"format\": \"xlsx\"\n}",
               "options": {
                 "raw": {
                   "language": "json",
@@ -2028,7 +2075,7 @@
               }
             ],
             "url": "{{oms3_base_url}}/api/v1/report-tasks/{{param}}/download",
-            "description": "### OMS3 download report result\n\nReturns a temporary download URL when the report task is completed."
+            "description": "### OMS3 download report result\n\nReturns a temporary download URL for generic reports or the XLSX file for `reportType=shifts` when the report task is completed."
           },
           "response": [
             {
@@ -2116,7 +2163,7 @@
                 "description": "Operational access marker."
               }
             ],
-            "url": "{{oms3_base_url}}/admin/problem-events",
+            "url": "{{oms3_base_url}}/admin/problem-events?status=string&error_code=string&error_type=string&shift_id=string&event_type=operations.shift.status_changed",
             "description": "### List problem Kafka events\n\nReturns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
           },
           "response": [
@@ -2872,7 +2919,7 @@
                 "description": "Operational access marker."
               }
             ],
-            "url": "{{oms4_base_url}}/admin/problem-events",
+            "url": "{{oms4_base_url}}/admin/problem-events?status=string&error_code=string&error_type=string&shift_id=string&event_type=operations.shift.status_changed",
             "description": "### List problem Kafka events\n\nReturns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`."
           },
           "response": [

@@ -312,6 +312,7 @@ def create_item_from_operation(openapi: dict[str, Any], method: str, path: str, 
     schema = operation_request_schema(openapi, operation)
     example = operation_request_example(operation)
     raw_url = base_url_variable_for_service(service_name) + postman_path_from_openapi(path)
+    raw_url = append_openapi_query_parameters(raw_url, operation)
     request: dict[str, Any] = {
         "method": method,
         "header": [],
@@ -348,6 +349,47 @@ def header_parameter_value(parameter: dict[str, Any]) -> str:
     if parameter.get("name") == "Idempotency-Key":
         return "{{$guid}}"
     return ""
+
+
+def query_parameter_value(parameter: dict[str, Any]) -> str:
+    if "example" in parameter:
+        return str(parameter["example"])
+    schema = parameter.get("schema")
+    if isinstance(schema, dict):
+        if "default" in schema:
+            return str(schema["default"])
+        if "example" in schema:
+            return str(schema["example"])
+        value = example_from_schema(schema)
+        return "" if value is None else str(value)
+    return ""
+
+
+def append_openapi_query_parameters(raw_url: str, operation: dict[str, Any]) -> str:
+    parameters = operation.get("parameters", [])
+    if not isinstance(parameters, list):
+        return raw_url
+
+    query = []
+    for parameter in parameters:
+        if not isinstance(parameter, dict) or parameter.get("in") != "query":
+            continue
+        name = parameter.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        query.append(f"{name}={query_parameter_value(parameter)}")
+    if not query:
+        return raw_url
+    separator = "&" if "?" in raw_url else "?"
+    return raw_url + separator + "&".join(query)
+
+
+def merge_openapi_query_parameters(request: dict[str, Any], operation: dict[str, Any]) -> None:
+    raw_url = request_url_raw(request)
+    if not raw_url:
+        return
+    base_url = raw_url.split("?", 1)[0]
+    request["url"] = append_openapi_query_parameters(base_url, operation)
 
 
 def merge_request_header(request: dict[str, Any], key: str, value: str, description: str | None = None) -> None:
@@ -651,6 +693,7 @@ def update_item_from_openapi(item: dict[str, Any], openapi: dict[str, Any], oper
 
     merge_description(item, request, generated_description)
     ensure_raw_json_body(request, schema, example)
+    merge_openapi_query_parameters(request, operation)
     merge_openapi_header_parameters(request, operation)
     normalize_request_headers(request)
     normalize_health_response_examples(item)

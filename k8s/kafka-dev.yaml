@@ -61,3 +61,77 @@ spec:
     - name: controller
       port: 9093
       targetPort: 9093
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topics-init
+  namespace: oms
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kafka-topic-init
+          image: apache/kafka:3.7.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              bootstrap_server="kafka.oms.svc.cluster.local:9092"
+
+              until /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$bootstrap_server" --list >/dev/null 2>&1; do
+                echo "Waiting for Kafka at $bootstrap_server..."
+                sleep 5
+              done
+
+              ensure_topic() {
+                topic="$1"
+                partitions="$2"
+
+                /opt/kafka/bin/kafka-topics.sh \
+                  --bootstrap-server "$bootstrap_server" \
+                  --create \
+                  --if-not-exists \
+                  --topic "$topic" \
+                  --partitions "$partitions" \
+                  --replication-factor 1
+
+                current_partitions=$(/opt/kafka/bin/kafka-topics.sh \
+                  --bootstrap-server "$bootstrap_server" \
+                  --describe \
+                  --topic "$topic" \
+                  | awk -F'PartitionCount: ' '{print $2}' \
+                  | awk '{print $1}')
+
+                if [ "$current_partitions" -lt "$partitions" ]; then
+                  /opt/kafka/bin/kafka-topics.sh \
+                    --bootstrap-server "$bootstrap_server" \
+                    --alter \
+                    --topic "$topic" \
+                    --partitions "$partitions"
+                fi
+              }
+
+              ensure_topic auth.user_logged_in 1
+              ensure_topic auth.service_token_issued 1
+              ensure_topic employee.created 1
+              ensure_topic notification.email_status 1
+              ensure_topic report.requested 1
+              ensure_topic report.cancelled 1
+              ensure_topic operations.client_created 1
+              ensure_topic operations.performer.created 1
+              ensure_topic operations.performer.updated 1
+              ensure_topic operations.shift.created 1
+              ensure_topic operations.shift.status_changed 3
+              ensure_topic operations.shift.offer_campaign_created 1
+              ensure_topic operations.shift.offer_sent 1
+              ensure_topic operations.shift.offer_viewed 1
+              ensure_topic operations.shift.offer_declined 1
+              ensure_topic operations.shift.offer_won 1
+              ensure_topic operations.shift.offer_lost 1
+              ensure_topic operations.shift.performer_assigned 1
+              ensure_topic operations.shift.closed 1
+              ensure_topic operations.timesheet.submitted 1

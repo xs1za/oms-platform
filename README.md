@@ -21,6 +21,16 @@ k8s/         namespace, Kafka, RabbitMQ, Prometheus, Ingress и kind cluster con
 scripts/     генерация Postman collection из OpenAPI
 ```
 
+## Integration Tests
+
+Запускать integration tests нужно через workspace virtualenv, чтобы не использовать системный Python без зависимостей сервисов:
+
+```powershell
+.\platform\scripts\test_integration.ps1
+```
+
+Скрипт вызывает `.venv\Scripts\python.exe` и по умолчанию запускает `unittest discover -s platform\tests\integration`.
+
 ## Быстрый Запуск Существующего Кластера
 
 Если kind-кластер `oms-cluster` уже создан, запустить Docker Desktop и поднять kind node:
