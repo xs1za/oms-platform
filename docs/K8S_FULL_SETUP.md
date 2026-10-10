@@ -7,6 +7,7 @@
 В Kubernetes разворачиваются:
 
 - `OMS1` - сервис авторизации JWT.
+- `OMS1 Postgres` - локальная PostGress БД для `OMS1`.
 - `OMS2` - сервис сотрудников Employee на Django.
 - `OMS2 Postgres` - локальная PostGIS БД для `OMS2`.
 - `OMS3` - сервис отчетов.
@@ -66,13 +67,33 @@ dir platform\k8s
 - имя кластера `oms-cluster`;
 - проброс `80` и `443` с host в cluster node;
 - label `ingress-ready=true`, который нужен `ingress-nginx` для kind.
+- host mount для постоянных данных OMS1 Postgres: `.runtime/oms1-postgres-data` -> `/mnt/oms-data/oms1-postgres-data` внутри kind node.
 - host mount для постоянных данных OMS2 Postgres: `.runtime/oms2-postgres-data` -> `/mnt/oms-data/oms2-postgres-data` внутри kind node.
 
-Перед созданием кластера создать host-папку для постоянных данных OMS2 Postgres:
+Перед созданием кластера создать host-папки для постоянных данных OMS1 и OMS2 Postgres:
 
 ```powershell
+New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
 ```
+
+Для `OMS1` рекомендуется хранить локальные значения Kubernetes Secret в файле `.env.k8s.oms1` в корне проекта и не генерировать новые `--from-literal` значения при каждом создании кластера. Файл `.env.k8s.oms1` добавлен в `.gitignore` и не должен коммититься.
+
+Создать файл `.env.k8s.oms1`, если его еще нет:
+
+```powershell
+@'
+JWT_SECRET_KEY=change-me-in-cluster
+POSTGRES_PASSWORD=change-me-oms1-postgres-password
+ADMIN_INITIAL_PASSWORD=change-me-admin-password
+OMS2_SERVICE_SECRET=change-me-oms2-service-secret
+OMS3_SERVICE_SECRET=change-me-oms3-service-secret
+OMS4_SERVICE_SECRET=change-me-oms4-service-secret
+OMS5_SERVICE_SECRET=change-me-oms5-service-secret
+'@ | Set-Content -Encoding utf8 -Path ".env.k8s.oms1"
+```
+
+Если папка `.runtime\oms1-postgres-data` уже содержит данные и ее нужно сохранить, значения `POSTGRES_PASSWORD`, `JWT_SECRET_KEY`, `ADMIN_INITIAL_PASSWORD` и `OMS2_SERVICE_SECRET`-`OMS5_SERVICE_SECRET` должны быть теми же, что использовались при первичной инициализации. `POSTGRES_PASSWORD` обязан совпадать с паролем уже созданного пользователя PostgreSQL `oms1`; иначе `OMS1` не сможет выполнить миграции и seed.
 
 Если старый кластер уже есть и его нужно пересоздать:
 
@@ -114,9 +135,10 @@ ingress-ready=true
 kubectl label node oms-cluster-control-plane ingress-ready=true
 ```
 
-Проверить, что host mount для данных OMS2 Postgres виден внутри kind node:
+Проверить, что host mounts для данных OMS1 и OMS2 Postgres видны внутри kind node:
 
 ```powershell
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms1-postgres-data
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms2-postgres-data
 ```
 
@@ -124,15 +146,17 @@ docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms2-postgres-data
 
 ## 5. Собрать Docker-образы микросервисов
 
+Запускать сборку нужно из корневой папки проектов: `D:\ProjectsDocker\extrawork` если нужно отключить использование кэша то применяем ключ `--no-cache`
+
 ```powershell
-docker build -t oms1:latest .\OMS1
-docker build -t oms2:latest .\OMS2
-docker build -t oms3:latest .\OMS3
-docker build -t oms4:latest .\OMS4
-docker build -t oms5:latest .\OMS5
+docker build -t oms1:latest .\OMS1 --no-cache
+docker build -t oms2:latest .\OMS2 --no-cache
+docker build -t oms3:latest .\OMS3 --no-cache
+docker build -t oms4:latest .\OMS4 --no-cache
+docker build -t oms5:latest .\OMS5 --no-cache
 ```
 
-Проверить:
+Проверить хэш и время сборки образов:
 
 ```powershell
 docker images oms1
@@ -142,7 +166,7 @@ docker images oms4
 docker images oms5
 ```
 
-## 6. Загрузить образы микросервисов в kind
+## 6. Загрузить образы микросервисов и инфраструктурных компонентов в kind
 
 kind-кластер не видит локальные Docker images автоматически. Их нужно загрузить в node:
 
@@ -154,7 +178,7 @@ kind load docker-image oms4:latest --name oms-cluster
 kind load docker-image oms5:latest --name oms-cluster
 ```
 
-Проверить внутри kind node:
+????Проверить внутри kind node????:
 
 ```powershell
 docker exec oms-cluster-control-plane crictl images | findstr oms
@@ -163,11 +187,32 @@ docker exec oms-cluster-control-plane crictl images | findstr oms
 Ожидаемо должны быть:
 
 ```text
-docker.io/library/oms1
-docker.io/library/oms2
-docker.io/library/oms3
-docker.io/library/oms4
-docker.io/library/oms5
+docker.io/library/oms1 latest dc24cc1a96758 86.8MB
+docker.io/library/oms2 latest 5ad05671c8317 276MB
+docker.io/library/oms3 latest db88ba77f9685 66.3MB
+docker.io/library/oms4 latest 21483e477f359 67.2MB
+docker.io/library/oms5 latest 84c5a695a877d 65.9MB
+```
+
+Загрузить в kind инфраструктурные компоненты предварительно скачав их из сетевого docker registry в локальное хранилище образов:
+
+```
+docker pull postgres:16.4-bookworm
+docker save postgres:16.4-bookworm | docker exec --privileged -i oms-cluster-control-plane ctr --namespace=k8s.io images import --snapshotter=overlayfs -
+```
+
+загрузку в kind выполнить для всех компонентов кластера:
+
+```powershell
+docker save rabbitmq:3.13-management | docker exec --privileged -i oms-cluster-control-plane ctr --namespace=k8s.io images import --snapshotter=overlayfs -
+docker save tchiotludo/akhq:0.25.1 | docker exec --privileged -i oms-cluster-control-plane ctr --namespace=k8s.io images import --snapshotter=overlayfs -
+docker save registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.14.0 | docker exec --privileged -i oms-cluster-control-plane ctr --namespace=k8s.io images import --snapshotter=overlayfs -
+```
+
+Проверка что образы попали в kind:
+
+```powershell
+docker exec oms-cluster-control-plane crictl images | findstr /I "rabbitmq akhq kube-state"
 ```
 
 ## 7. Подготовить Kafka image
@@ -178,20 +223,39 @@ Kafka использует официальный образ:
 apache/kafka:3.7.0
 ```
 
-Обычно Kubernetes сам скачает его. Если есть проблемы с pull или сетью, загрузить образ в kind вручную:
+Скачивание из сетевого registry и загрузка образа kafka в kind:
 
 ```powershell
 docker pull apache/kafka:3.7.0
+kind load docker-image apache/kafka:3.7.0 --name oms-cluster
+```
+
+Если `kind load docker-image apache/kafka:3.7.0 --name oms-cluster` падает с ошибкой digest, используйте именно `crictl pull` внутри node, как показано ниже:
+
+```powershell
 docker exec oms-cluster-control-plane crictl pull docker.io/apache/kafka:3.7.0
 docker exec oms-cluster-control-plane crictl images | findstr kafka
 ```
-
-Если `kind load docker-image apache/kafka:3.7.0` падает с ошибкой digest, используйте именно `crictl pull` внутри node, как показано выше.
 
 ## 8. Установить ingress-nginx
 
 ```powershell
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/kind/deploy.yaml
+kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+```
+
+Если сеть до GitHub нестабильна, сохранить manifest локально и применять его из проекта.
+
+Один раз при доступной сети скачать файл:
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/kind/deploy.yaml" -OutFile "platform/k8s/ingress-nginx-kind.yaml"
+```
+
+Далее использовать локальный файл:
+
+```powershell
+kubectl apply -f platform/k8s/ingress-nginx-kind.yaml
 kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
 ```
 
@@ -239,12 +303,107 @@ kubectl apply -f platform/k8s/prometheus.yaml
 Развернуть микросервисы:
 
 ```powershell
+kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
 kubectl apply -f OMS3/k8s/
 kubectl apply -f OMS4/k8s/
 kubectl apply -f OMS5/k8s/
+kubectl apply -f platform/k8s/ingress.yaml
 ```
+
+Важно: `POSTGRES_PASSWORD` применяется PostgreSQL только при первой инициализации пустой папки `.runtime\oms1-postgres-data`. Если папка уже содержит данные, смена значения в `oms1-secret` не меняет пароль существующего пользователя БД. Для чистого старта удалите содержимое `.runtime\oms1-postgres-data` до запуска `oms1-postgres` или используйте тот же `POSTGRES_PASSWORD`, с которым БД была создана ранее.
+
+Перед удалением `OMS1` или kind-кластера при сохранении `.runtime\oms1-postgres-data` сохранить текущие значения `oms1-secret` в локальный файл `.env.k8s.oms1`:
+
+```powershell
+$secret = kubectl -n oms get secret oms1-secret -o json | ConvertFrom-Json
+$keys = @(
+  "JWT_SECRET_KEY",
+  "POSTGRES_PASSWORD",
+  "ADMIN_INITIAL_PASSWORD",
+  "OMS2_SERVICE_SECRET",
+  "OMS3_SERVICE_SECRET",
+  "OMS4_SERVICE_SECRET",
+  "OMS5_SERVICE_SECRET"
+)
+$lines = foreach ($key in $keys) {
+  $value = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($secret.data.$key))
+  "$key=$value"
+}
+$lines | Set-Content -Encoding utf8 -Path ".env.k8s.oms1"
+```
+
+После пересоздания кластера восстановить secret из этого файла:
+
+```powershell
+kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### 9.1. Сменить Начальные Пароли И Service Secrets OMS1
+
+Значения `ADMIN_INITIAL_PASSWORD` и `OMS2_SERVICE_SECRET`-`OMS5_SERVICE_SECRET` используются seed-командой только при создании отсутствующих записей в пустой БД. Если пользователь `admin` или service client уже есть в PostgreSQL, изменение `.env.k8s.oms1` не меняет hash в таблицах `users` и `service_clients`.
+
+Чтобы сменить пароль `admin` после первичной инициализации БД, выполнить management-команду внутри `OMS1`:
+
+```powershell
+kubectl -n oms exec deployment/oms1 -- python -m app.set_user_password admin "new-admin-password"
+```
+
+После успешной смены обновить локальный `.env.k8s.oms1`, чтобы значение сохранилось для следующего пересоздания кластера:
+
+```env
+ADMIN_INITIAL_PASSWORD=new-admin-password
+```
+
+Чтобы сменить service secret для сервисного клиента, выполнить management-команду:
+
+```powershell
+kubectl -n oms exec deployment/oms1 -- python -m app.set_service_secret OMS2 "new-oms2-secret"
+kubectl -n oms exec deployment/oms1 -- python -m app.set_service_secret OMS3 "new-oms3-secret"
+kubectl -n oms exec deployment/oms1 -- python -m app.set_service_secret OMS4 "new-oms4-secret"
+kubectl -n oms exec deployment/oms1 -- python -m app.set_service_secret OMS5 "new-oms5-secret"
+```
+
+После успешной смены обновить соответствующие значения в `.env.k8s.oms1`:
+
+```env
+OMS2_SERVICE_SECRET=new-oms2-secret
+OMS3_SERVICE_SECRET=new-oms3-secret
+OMS4_SERVICE_SECRET=new-oms4-secret
+OMS5_SERVICE_SECRET=new-oms5-secret
+```
+
+Также обновить Kubernetes Secrets сервисов-клиентов, чтобы сами `OMS2`-`OMS5` использовали новые plaintext secrets при обращении к `OMS1`:
+
+```powershell
+kubectl -n oms patch secret oms2-secret --type merge -p '{"stringData":{"SERVICE_CLIENT_SECRET":"new-oms2-secret"}}'
+kubectl -n oms create secret generic oms3-secret --from-literal=SERVICE_CLIENT_SECRET=new-oms3-secret --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms patch secret oms4-secret --type merge -p '{"stringData":{"SERVICE_CLIENT_SECRET":"new-oms4-secret"}}'
+kubectl -n oms create secret generic oms5-secret --from-literal=SERVICE_CLIENT_SECRET=new-oms5-secret --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Перезапустить сервисы и worker-ы, чтобы pod-ы перечитали env:
+
+```powershell
+kubectl -n oms rollout restart deployment/oms2
+kubectl -n oms rollout restart deployment/oms3
+kubectl -n oms rollout restart deployment/oms3-problem-event-worker
+kubectl -n oms rollout restart deployment/oms4
+kubectl -n oms rollout restart deployment/oms4-email-worker
+kubectl -n oms rollout restart deployment/oms4-problem-event-worker
+kubectl -n oms rollout restart deployment/oms5
+```
+
+Затем пересоздать Kubernetes Secret и перезапустить `OMS1`, чтобы runtime env соответствовал локальному файлу:
+
+```powershell
+kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms1
+kubectl -n oms rollout status deployment/oms1 --timeout=240s
+```
+
+Management-команды не выводят plaintext password/secret в logs; они пересчитывают hash и сохраняют только hash в PostgreSQL.
 
 Проверить pods:
 
@@ -261,6 +420,7 @@ akhq            1/1   Running
 prometheus      1/1   Running
 kube-state-metrics 1/1 Running
 oms1            1/1   Running
+oms1-postgres   1/1   Running
 oms2            1/1   Running
 oms2-postgres   1/1   Running
 oms3            1/1   Running
@@ -283,7 +443,7 @@ platform/docs/PROBLEM_EVENT_WORKERS_PRODUCTION_RUNBOOK.md
 kubectl -n oms get svc
 ```
 
-## 9.1. Создать Django Superuser Для OMS2 Admin
+## 9.2. Создать Django Superuser Для OMS2 Admin
 
 После первого разворачивания новой БД нужно создать пользователя для Django admin. Django-проект уже находится в `OMS2`, поэтому команду `django-admin startproject ...` выполнять не нужно.
 
@@ -485,17 +645,22 @@ oms4_base_url = http://oms.local/oms4
 oms5_base_url = http://oms.local/oms5
 ```
 
-## 15. Постоянные Данные OMS2 Postgres
+## 15. Постоянные Данные OMS1 И OMS2 Postgres
 
-OMS2 Postgres использует статический `PersistentVolume`, который хранит данные не внутри pod и не внутри временного local-path volume kind, а в host-папке проекта:
+OMS1 и OMS2 Postgres используют статические `PersistentVolume`, которые хранят данные не внутри pod и не внутри временного local-path volume kind, а в host-папках проекта:
 
 ```text
+D:\ProjectsDocker\extrawork\.runtime\oms1-postgres-data
 D:\ProjectsDocker\extrawork\.runtime\oms2-postgres-data
 ```
 
-Эта папка монтируется в kind node через `platform/k8s/kind-cluster.yaml`:
+Эти папки монтируются в kind node через `platform/k8s/kind-cluster.yaml`:
 
 ```text
+host:      D:\ProjectsDocker\extrawork\.runtime\oms1-postgres-data
+kind node: /mnt/oms-data/oms1-postgres-data
+pod:       /var/lib/postgresql/data
+
 host:      D:\ProjectsDocker\extrawork\.runtime\oms2-postgres-data
 kind node: /mnt/oms-data/oms2-postgres-data
 pod:       /var/lib/postgresql/data
@@ -506,42 +671,52 @@ pod:       /var/lib/postgresql/data
 ### Проверить PVC/PV
 
 ```powershell
+kubectl -n oms get pvc oms1-postgres-data
 kubectl -n oms get pvc oms2-postgres-data
+kubectl get pv oms1-postgres-data-pv
 kubectl get pv oms2-postgres-data-pv
+kubectl get pv oms1-postgres-data-pv -o yaml
 kubectl get pv oms2-postgres-data-pv -o yaml
 ```
 
 Ожидаемо:
 
 ```text
+oms1-postgres-data   Bound
 oms2-postgres-data   Bound
+oms1-postgres-data-pv   Bound
 oms2-postgres-data-pv   Bound
 ```
 
 ### Проверить Файлы На Host
 
 ```powershell
+Get-ChildItem -LiteralPath ".runtime\oms1-postgres-data"
 Get-ChildItem -LiteralPath ".runtime\oms2-postgres-data"
 ```
 
 ### Проверить Mount Внутри Kind Node
 
 ```powershell
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms1-postgres-data
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms2-postgres-data
 ```
 
 ### Проверить Доступность БД
 
 ```powershell
+kubectl -n oms exec deployment/oms1-postgres -- psql -U oms1 -d oms1 -c "select 1;"
+curl http://oms.local/oms1/health/ready
 kubectl -n oms exec deployment/oms2-postgres -- psql -U oms2 -d oms2 -c "select 1;"
 curl http://oms.local/oms2/health/ready/
 ```
 
-### Пересоздание Kind-Кластера Без Потери Данных OMS2
+### Пересоздание Kind-Кластера Без Потери Данных OMS1 И OMS2
 
 Данные сохранятся, если не удалять папку:
 
 ```text
+.runtime\oms1-postgres-data
 .runtime\oms2-postgres-data
 ```
 
@@ -549,6 +724,7 @@ curl http://oms.local/oms2/health/ready/
 
 ```powershell
 kind delete cluster --name oms-cluster
+New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
 kind create cluster --config platform/k8s/kind-cluster.yaml
 kubectl config use-context kind-oms-cluster
@@ -614,7 +790,7 @@ kubectl -n oms rollout restart deployment oms2
 
 ### Вариант A. Остановить Работу И Сохранить Kind-Кластер
 
-Используйте этот вариант для обычной перезагрузки ПК. Kubernetes objects сохраняются внутри kind node container, а данные OMS2 Postgres остаются на host в `.runtime\oms2-postgres-data`.
+Используйте этот вариант для обычной перезагрузки ПК. Kubernetes objects сохраняются внутри kind node container, а данные OMS1 и OMS2 Postgres остаются на host в `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`.
 
 Перейти в каталог проекта:
 
@@ -643,11 +819,17 @@ kubectl -n oms scale deployment/oms5 --replicas=0
 Остановить инфраструктурные сервисы после приложений:
 
 ```powershell
+kubectl -n oms scale deployment/oms3-problem-event-worker --replicas=0
+kubectl -n oms scale deployment/oms4-problem-event-worker --replicas=0
+kubectl -n oms scale deployment/oms4-email-worker --replicas=0
+kubectl -n oms scale deployment/akhq --replicas=0
 kubectl -n oms scale deployment/kafka --replicas=0
 kubectl -n oms scale deployment/rabbitmq --replicas=0
 kubectl -n oms scale deployment/prometheus --replicas=0
 kubectl -n oms scale deployment/kube-state-metrics --replicas=0
+kubectl -n oms scale deployment/oms1-postgres --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
+kubectl -n oms delete daemonset prometheus-node-exporter
 ```
 
 Дождаться удаления pod-ов в namespace `oms`:
@@ -672,11 +854,13 @@ docker ps -a --filter "name=oms-cluster-control-plane"
 
 ### Вариант B. Полностью Удалить Kind-Кластер
 
-Используйте этот вариант, если кластер нужно пересоздать с нуля или Docker Desktop нестабилен. Kubernetes objects будут удалены, но данные OMS2 Postgres сохранятся, если не удалять папку `.runtime\oms2-postgres-data`.
+Используйте этот вариант, если кластер нужно пересоздать с нуля или Docker Desktop нестабилен. Kubernetes objects будут удалены, но данные OMS1 и OMS2 Postgres сохранятся, если не удалять папки `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`.
 
 ```powershell
 cd D:\ProjectsDocker\extrawork
 kubectl config use-context kind-oms-cluster
+kubectl -n oms scale deployment/oms1 --replicas=0
+kubectl -n oms scale deployment/oms1-postgres --replicas=0
 kubectl -n oms scale deployment/oms2 --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
 kind delete cluster --name oms-cluster
@@ -707,7 +891,7 @@ wsl -l -v
 kind get clusters
 ```
 
-Важно: не удаляйте `.runtime\oms2-postgres-data`, если нужно сохранить данные OMS2 Postgres.
+Важно: не удаляйте `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`, если нужно сохранить данные OMS1 и OMS2 Postgres.
 
 ## 17. Запуск После Перезагрузки Компьютера Или Docker Desktop
 
@@ -842,6 +1026,7 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
+kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
 kubectl apply -f OMS3/k8s/
@@ -1523,6 +1708,7 @@ kind delete cluster --name oms-cluster
 cd D:\ProjectsDocker\extrawork
 
 kind delete cluster --name oms-cluster
+New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
 kind create cluster --config platform/k8s/kind-cluster.yaml
 kubectl config use-context kind-oms-cluster
@@ -1542,6 +1728,7 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
+kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
 kubectl apply -f OMS2/k8s/
 kubectl apply -f OMS3/k8s/

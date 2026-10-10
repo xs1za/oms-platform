@@ -13,5 +13,7 @@ nodes:
         hostPort: 443
         protocol: TCP
     extraMounts:
+      - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms1-postgres-data"
+        containerPath: /mnt/oms-data/oms1-postgres-data
       - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms2-postgres-data"
         containerPath: /mnt/oms-data/oms2-postgres-data

@@ -139,7 +139,7 @@ platform/docs/
 Назначение:
 
 - асинхронное создание отчетов;
-- хранение статусов `ReportTask` в стартовом in-memory хранилище;
+- хранение статусов `ReportTask` пока остается в стартовом in-memory хранилище;
 - публикация событий жизненного цикла отчетов в Kafka.
 
 Основные endpoints:
@@ -161,6 +161,8 @@ platform/docs/
 
 - отправка уведомлений;
 - стартовый канал email;
+- email-команды обрабатываются через RabbitMQ-backed lightweight worker;
+- templates и delivery statuses пока не имеют постоянного хранилища;
 - проверка Kafka и SMTP readiness;
 - SMTP является soft dependency.
 
@@ -184,6 +186,11 @@ platform/docs/
 - задачи;
 - табели;
 - сводка операций.
+
+Текущее ограничение:
+
+- операционное состояние пока хранится в in-memory структурах процесса;
+- правило `first accepted wins` защищено только process-local lock и должно быть перенесено на транзакции и блокировки БД.
 
 Основные endpoints:
 
@@ -254,6 +261,111 @@ Mount в Postgres pod:
 ```powershell
 kubectl -n oms get pvc oms2-postgres-data
 ```
+
+## Отказ От In-Memory Хранилищ
+
+Архитектурное решение: все бизнес-значимые состояния сервисов должны храниться в постоянном хранилище с миграциями. In-memory структуры допустимы только для локального cache/derived state, потеря которого не влияет на корректность бизнес-сценариев.
+
+Основная СУБД для сервисов OMS: PostgreSQL.
+
+Причины выбора PostgreSQL:
+
+- сервисам нужны транзакции, миграции, индексы и консистентное хранение статусов;
+- `OMS5` требует row-level locking для сценария `first accepted wins`;
+- `OMS2` уже использует PostgreSQL/PostGIS и Django migrations;
+- единая СУБД снижает эксплуатационную сложность MVP;
+- PostgreSQL закрывает текущие потребности без преждевременного внедрения разных storage engines.
+
+Специфичные хранилища можно добавлять только под отдельную подтвержденную нагрузку:
+
+- object storage для файлов отчетов `OMS3`, но не вместо БД для `ReportTask` metadata;
+- Redis для cache/rate limit/коротких distributed locks, но не как source of truth;
+- OpenSearch для поиска и логов, но не для операционного состояния;
+- ClickHouse для аналитики, если появится отдельная аналитическая нагрузка.
+
+Правило владения данными:
+
+- каждый сервис владеет своей БД или схемой и своими миграциями;
+- прямой доступ одного сервиса к таблицам другого сервиса запрещен;
+- межсервисная интеграция идет через HTTP API и Kafka/RabbitMQ;
+- миграции запускаются отдельно для каждого сервиса в рамках его deployment lifecycle.
+
+### Уже Реализовано
+
+- `OMS2` уже использует PostgreSQL/PostGIS и Django migrations для employee/master data.
+- `OMS4` уже использует RabbitMQ-backed lightweight email worker для команд отправки email; это не заменяет постоянное хранилище templates и delivery statuses.
+
+### Актуальные Задачи
+
+#### OMS1: Перенести Пользователей И Сервисных Клиентов В PostgreSQL
+
+Заменить словари `users` и `service_clients` в `OMS1` на постоянное хранилище. Добавить таблицы пользователей и сервисных клиентов, хранить пароли и service secrets только в виде hash, добавить миграции и seed-данные для `admin`, `OMS2`, `OMS3`, `OMS4`, `OMS5`.
+
+Затрагиваемые сервисы:
+
+- `OMS1` как владелец auth-данных;
+- `OMS2`, `OMS3`, `OMS4`, `OMS5` как service clients;
+- `platform` для env/k8s/contract/docs обновлений.
+
+#### OMS3: Перенести Статусы `ReportTask` В PostgreSQL
+
+Заменить `report_tasks: dict` на таблицу `report_tasks` с жизненным циклом задачи: `queued`, `running`, `completed`, `failed`, `cancelled`, `expired`. Сохранять параметры запроса, progress, status URL, report ID, ссылку/metadata результата, ошибку, timestamps и TTL. Обновить endpoints создания, получения статуса, отмены и скачивания отчета.
+
+Границы задачи:
+
+- БД хранит metadata и состояние `ReportTask`;
+- файлы отчетов остаются в filesystem на MVP или выносятся в object storage отдельной задачей;
+- Kafka остается для событий жизненного цикла отчета;
+- RabbitMQ-backed report worker из backlog OMS3 проектируется отдельно и должен работать с тем же persistent `ReportTask` state.
+
+#### OMS4: Добавить Persistent Templates И Delivery Statuses
+
+Добавить PostgreSQL-хранилище для notification/email templates и статусов доставки. Хранить template code, channel, subject/body, version, active flag, timestamps. Для delivery records хранить notification ID, recipient, channel, payload/template variables, статус `queued/sent/failed/retry/dlq`, retry count, error message, correlation ID и timestamps.
+
+Границы задачи:
+
+- API `POST /notifications/email` должен создавать delivery record со статусом `queued`;
+- email worker должен обновлять delivery status после отправки, retry или DLQ;
+- Kafka `notification.email_status` остается integration event, но не является source of truth;
+- текущий RabbitMQ worker не считается реализацией persistent storage и остается частью transport/processing layer.
+
+#### OMS5: Перенести Операционное Состояние В PostgreSQL
+
+Заменить in-memory структуры `clients`, `performers`, `performers_by_employee_id`, `shifts`, `shift_status_history`, `offer_campaigns`, `shift_offers`, `offer_views`, `assignments`, `timesheets` на таблицы PostgreSQL с миграциями. Сохранить текущие API-сценарии и доменные события.
+
+Ключевые таблицы:
+
+- `clients`;
+- `performers`;
+- `shifts`;
+- `shift_status_history`;
+- `offer_campaigns`;
+- `shift_offers`;
+- `offer_views`;
+- `assignments`;
+- `timesheets`.
+
+#### OMS5: Реализовать Транзакционный `first accepted wins`
+
+Перенести acceptance flow из process-local `state_lock` на транзакцию PostgreSQL. Внутри транзакции заблокировать смену или offer через row-level lock, проверить доступность смены, создать assignment, пометить winning offer, перевести остальные активные offers в `lost`, обновить статус смены и записать history item. При конкурентном принятии возвращать корректный `409 Conflict`.
+
+Критерии приемки:
+
+- два параллельных accept-запроса не могут создать два назначения на одну смену;
+- повторный accept проигравшего offer возвращает `offer_lost` или другой стабильный conflict code;
+- история статусов и события Kafka соответствуют фактически выигравшему offer;
+- поведение не зависит от количества replicas `OMS5`.
+
+#### Platform: Стандартизировать PostgreSQL И Миграции Для OMS-Сервисов
+
+Зафиксировать единый стандарт подключения к PostgreSQL для FastAPI-сервисов, миграции через Alembic, env-переменные, k8s Secret/ConfigMap, порядок запуска миграций в local/dev/prod и rollback-подход. Для `OMS2` оставить Django migrations как уже реализованный механизм.
+
+Границы задачи:
+
+- добавить/обновить local/kind manifests для БД сервисов, которым нужна persistence;
+- не объединять бизнес-данные разных сервисов в одну общую схему без явной причины;
+- описать backup/restore policy для production-like окружения;
+- обновить README и runbook после появления новых DB dependencies.
 
 ## OpenAPI И Postman
 
@@ -443,11 +555,11 @@ Kafka достаточно для MVP, если сообщения являют�
 
 ### Рекомендация Для Развития Проекта
 
-Для MVP добавить RabbitMQ как shared platform component и использовать lightweight workers там, где уже есть command/job сценарии:
+Для MVP RabbitMQ используется как shared platform component там, где уже есть command/job сценарии:
 
-- OMS3: `ReportTask` остается API-ресурсом; выполнение тяжелого отчета выносится в RabbitMQ-backed lightweight report worker без изменения endpoint `/api/v1/report-tasks`.
-- OMS4: команда `send_email` уходит в RabbitMQ-backed lightweight email worker, а результат публикуется в Kafka как `notification.email_status`.
-- Platform: добавить manifests для RabbitMQ и worker deployments.
+- OMS3: `ReportTask` остается API-ресурсом; выполнение тяжелого отчета должно быть вынесено в RabbitMQ-backed lightweight report worker без изменения endpoint `/api/v1/report-tasks`.
+- OMS4: команда `send_email` уже обрабатывается RabbitMQ-backed lightweight email worker, а результат публикуется в Kafka как `notification.email_status`.
+- Platform: RabbitMQ manifests уже присутствуют; отдельные worker deployments добавляются по мере появления соответствующих workers.
 
 Критерий внедрения отдельной очереди:
 
