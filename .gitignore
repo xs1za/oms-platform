@@ -6,4 +6,4 @@ __pycache__/
 *.env
 .runtime/
 issues_github
-docs/SMART_DEVELOPMENT_TASK_TEMPLATE.md
+SMART_DEVELOPMENT_TASK_TEMPLATE.md
