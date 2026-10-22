@@ -17,3 +17,11 @@ nodes:
         containerPath: /mnt/oms-data/oms1-postgres-data
       - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms2-postgres-data"
         containerPath: /mnt/oms-data/oms2-postgres-data
+      - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms3-postgres-data"
+        containerPath: /mnt/oms-data/oms3-postgres-data
+      - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms4-postgres-data"
+        containerPath: /mnt/oms-data/oms4-postgres-data
+      - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms5-postgres-data"
+        containerPath: /mnt/oms-data/oms5-postgres-data
+      - hostPath: "D:\\ProjectsDocker\\extrawork\\.runtime\\oms3-reports-data"
+        containerPath: /mnt/oms-data/oms3-reports-data

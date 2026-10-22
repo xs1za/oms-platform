@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 import warnings
+from datetime import datetime, timezone
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -33,10 +34,72 @@ class ImmediateThread:
         self.target(*self.args)
 
 
+class FakeReportTaskStorage:
+    def __init__(self):
+        self.tasks = {}
+
+    def migrate(self):
+        return None
+
+    def check(self):
+        return None
+
+    def create_or_get(self, task, idempotency_key):
+        for item in self.tasks.values():
+            if idempotency_key and item.get("idempotencyKey") == idempotency_key:
+                return item, False
+        task = {**task, "idempotencyKey": idempotency_key, "workerId": None, "leaseUntil": None}
+        self.tasks[task["id"]] = task
+        return task, True
+
+    def get(self, task_id):
+        return self.tasks.get(task_id)
+
+    def claim(self, task_id, worker_id, lease_until):
+        task = self.tasks.get(task_id)
+        if not task or task["status"] != "queued":
+            return None
+        now = datetime.now(timezone.utc)
+        task.update({"status": "running", "workerId": worker_id, "startedAt": now, "leaseUntil": lease_until, "updatedAt": now})
+        return task
+
+    def update_running(self, task_id, worker_id, values):
+        task = self.tasks.get(task_id)
+        if not task or task["status"] != "running" or task["workerId"] != worker_id:
+            return None
+        task.update(values)
+        task["updatedAt"] = datetime.now(timezone.utc)
+        return task
+
+    def update(self, task_id, values):
+        task = self.tasks.get(task_id)
+        if not task:
+            return None
+        task.update(values)
+        task["updatedAt"] = datetime.now(timezone.utc)
+        return task
+
+    def cancel(self, task_id):
+        task = self.tasks.get(task_id)
+        if not task or task["status"] not in {"queued", "running"}:
+            return None
+        task.update({"status": "cancelled", "updatedAt": datetime.now(timezone.utc)})
+        return task
+
+    def expired_results(self, now):
+        return [task for task in self.tasks.values() if task["status"] == "completed" and task.get("result", {}).get("expiresAt") <= now]
+
+    def expire(self, task_id, result=None):
+        task = self.tasks.get(task_id)
+        if task and task["status"] == "completed":
+            task.update({"status": "expired", "updatedAt": datetime.now(timezone.utc)})
+        return task
+
+
 class Oms3ShiftsReportTest(unittest.TestCase):
     def setUp(self):
         self.main = import_oms3_main()
-        self.main.report_tasks.clear()
+        self.main.report_task_storage = FakeReportTaskStorage()
         self.published = []
         self.main.publish_event = lambda topic, payload: self.published.append((topic, payload))
         self.main.Thread = ImmediateThread
@@ -69,7 +132,7 @@ class Oms3ShiftsReportTest(unittest.TestCase):
         )
 
         accepted = self.main.start_report_generation(payload, Response())
-        task = self.main.report_tasks[accepted["taskId"]]
+        task = self.main.report_task_storage.get(accepted["taskId"])
 
         self.assertEqual(task["status"], "completed")
         self.assertEqual(task["result"]["expiresAt"].date(), (task["completedAt"] + self.main.timedelta(days=30)).date())

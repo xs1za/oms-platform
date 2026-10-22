@@ -17,7 +17,7 @@
 - `RabbitMQ` - локальная очередь команд для lightweight workers, retry и DLQ.
 - `AKHQ` - web UI для просмотра Kafka topics, messages и consumer groups.
 - `RabbitMQ Management UI` - встроенный web UI RabbitMQ.
-- `Prometheus` и `kube-state-metrics` - сбор метрик кластера для Freelens/OpenLens.
+- `Prometheus`, `kube-state-metrics`, `prometheus-node-exporter` и `metrics-server` - сбор метрик кластера для Freelens/OpenLens и Kubernetes Metrics API.
 - `ingress-nginx` - единая точка входа вместо `kubectl port-forward`.
 
 ## 2. Предварительные требования
@@ -69,31 +69,66 @@ dir platform\k8s
 - label `ingress-ready=true`, который нужен `ingress-nginx` для kind.
 - host mount для постоянных данных OMS1 Postgres: `.runtime/oms1-postgres-data` -> `/mnt/oms-data/oms1-postgres-data` внутри kind node.
 - host mount для постоянных данных OMS2 Postgres: `.runtime/oms2-postgres-data` -> `/mnt/oms-data/oms2-postgres-data` внутри kind node.
+- host mount для постоянных данных OMS3 Postgres: `.runtime/oms3-postgres-data` -> `/mnt/oms-data/oms3-postgres-data` внутри kind node.
+- host mount для постоянных данных OMS4 Postgres: `.runtime/oms4-postgres-data` -> `/mnt/oms-data/oms4-postgres-data` внутри kind node.
+- host mount для постоянных данных OMS5 Postgres: `.runtime/oms5-postgres-data` -> `/mnt/oms-data/oms5-postgres-data` внутри kind node.
+- host mount для файлов отчетов OMS3: `.runtime/oms3-reports-data` -> `/mnt/oms-data/oms3-reports-data` внутри kind node.
 
-Перед созданием кластера создать host-папки для постоянных данных OMS1 и OMS2 Postgres:
+Перед созданием кластера создать host-папки для постоянных данных OMS1, OMS2, OMS3, OMS4 и OMS5 Postgres, а также файлов отчетов OMS3:
 
 ```powershell
 New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms4-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms5-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-reports-data" -Force
 ```
 
-Для `OMS1` рекомендуется хранить локальные значения Kubernetes Secret в файле `.env.k8s.oms1` в корне проекта и не генерировать новые `--from-literal` значения при каждом создании кластера. Файл `.env.k8s.oms1` добавлен в `.gitignore` и не должен коммититься.
+Для `OMS1`-`OMS5`, PostgreSQL и сервисных клиентов рекомендуется хранить локальные значения Kubernetes Secret в одном файле `D:\ProjectsDocker\extrawork\.env.k8s.oms1` и не генерировать новые значения при каждом создании кластера. Файл `.env.k8s.oms1` добавлен в `.gitignore` и не должен коммититься.
 
 Создать файл `.env.k8s.oms1`, если его еще нет:
 
 ```powershell
 @'
+# OMS1
 JWT_SECRET_KEY=change-me-in-cluster
 POSTGRES_PASSWORD=change-me-oms1-postgres-password
 ADMIN_INITIAL_PASSWORD=change-me-admin-password
+
+# OMS2
+OMS2_SECRET_KEY=change-me-oms2-secret-key
+OMS2_POSTGRES_PASSWORD=change-me-oms2-postgres-password
 OMS2_SERVICE_SECRET=change-me-oms2-service-secret
+
+# OMS3
+OMS3_POSTGRES_PASSWORD=change-me-oms3-postgres-password
 OMS3_SERVICE_SECRET=change-me-oms3-service-secret
+
+# OMS4
+OMS4_POSTGRES_PASSWORD=change-me-oms4-postgres-password
 OMS4_SERVICE_SECRET=change-me-oms4-service-secret
+
+# OMS5
+OMS5_POSTGRES_PASSWORD=change-me-oms5-postgres-password
 OMS5_SERVICE_SECRET=change-me-oms5-service-secret
-'@ | Set-Content -Encoding utf8 -Path ".env.k8s.oms1"
+'@ | Set-Content -Encoding utf8 -Path "D:\ProjectsDocker\extrawork\.env.k8s.oms1"
 ```
 
-Если папка `.runtime\oms1-postgres-data` уже содержит данные и ее нужно сохранить, значения `POSTGRES_PASSWORD`, `JWT_SECRET_KEY`, `ADMIN_INITIAL_PASSWORD` и `OMS2_SERVICE_SECRET`-`OMS5_SERVICE_SECRET` должны быть теми же, что использовались при первичной инициализации. `POSTGRES_PASSWORD` обязан совпадать с паролем уже созданного пользователя PostgreSQL `oms1`; иначе `OMS1` не сможет выполнить миграции и seed.
+Проверить, что файл содержит все обязательные ключи PostgreSQL до создания Kubernetes Secret:
+
+```powershell
+$envFile = "D:\ProjectsDocker\extrawork\.env.k8s.oms1"
+$requiredKeys = @("POSTGRES_PASSWORD", "OMS2_POSTGRES_PASSWORD", "OMS3_POSTGRES_PASSWORD", "OMS4_POSTGRES_PASSWORD", "OMS5_POSTGRES_PASSWORD")
+$envValues = @{}
+Get-Content $envFile | Where-Object { $_ -match '^[^#]+=.*$' } | ForEach-Object { $parts = $_ -split '=', 2; $envValues[$parts[0]] = $parts[1] }
+$missingKeys = $requiredKeys | Where-Object { -not $envValues.ContainsKey($_) -or [string]::IsNullOrWhiteSpace($envValues[$_]) }
+if ($missingKeys) { throw "В $envFile отсутствуют ключи: $($missingKeys -join ', ')" }
+```
+
+Если папки `.runtime\oms1-postgres-data`, `.runtime\oms2-postgres-data`, `.runtime\oms3-postgres-data`, `.runtime\oms4-postgres-data` или `.runtime\oms5-postgres-data` уже содержат данные и их нужно сохранить, значения `POSTGRES_PASSWORD`, `OMS2_POSTGRES_PASSWORD`, `OMS3_POSTGRES_PASSWORD`, `OMS4_POSTGRES_PASSWORD`, `OMS5_POSTGRES_PASSWORD`, `JWT_SECRET_KEY`, `ADMIN_INITIAL_PASSWORD` и `OMS2_SERVICE_SECRET`-`OMS5_SERVICE_SECRET` должны быть теми же, что использовались при первичной инициализации. Пароли `POSTGRES_PASSWORD`, `OMS2_POSTGRES_PASSWORD`, `OMS3_POSTGRES_PASSWORD`, `OMS4_POSTGRES_PASSWORD` и `OMS5_POSTGRES_PASSWORD` должны совпадать с паролями пользователей PostgreSQL `oms1`, `oms2`, `oms3`, `oms4` и `oms5` соответственно; иначе соответствующий сервис не сможет подключиться к сохраненной базе данных.
+
+Если старый кластер уже есть и его нужно пересоздать, сначала убедитесь, что `OMS4_POSTGRES_PASSWORD` совпадает с паролем пользователя `oms4` в сохраненной базе. Для нового кластера используйте значение из файла без публикации его в командах и документации.
 
 Если старый кластер уже есть и его нужно пересоздать:
 
@@ -135,11 +170,15 @@ ingress-ready=true
 kubectl label node oms-cluster-control-plane ingress-ready=true
 ```
 
-Проверить, что host mounts для данных OMS1 и OMS2 Postgres видны внутри kind node:
+Проверить, что host mounts для данных OMS1, OMS2, OMS3, OMS4 и OMS5 Postgres, а также файлов отчетов OMS3 видны внутри kind node:
 
 ```powershell
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms1-postgres-data
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms2-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms3-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms4-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms5-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms3-reports-data
 ```
 
 Важно: изменение `extraMounts` в `platform/k8s/kind-cluster.yaml` не применяется к уже созданному kind-кластеру. Чтобы новый mount появился, нужно пересоздать kind-кластер командой `kind delete cluster --name oms-cluster`, затем `kind create cluster --config platform/k8s/kind-cluster.yaml`.
@@ -298,47 +337,142 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type='strategic' -p='{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,Hostname","--kubelet-use-node-status-port","--kubelet-insecure-tls","--metric-resolution=15s"]}]}}}}'
+kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
 ```
 
 Развернуть микросервисы:
 
 ```powershell
-kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+$oms3PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_POSTGRES_PASSWORD=' }) -replace '^OMS3_POSTGRES_PASSWORD=', ''
+$oms3ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_SERVICE_SECRET=' }) -replace '^OMS3_SERVICE_SECRET=', ''
+$oms3PasswordForUrl = [Uri]::EscapeDataString($oms3PostgresPassword)
+$oms2PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2SecretKey = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SECRET_KEY=' }) -replace '^OMS2_SECRET_KEY=', ''
+$oms2ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+$oms4PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_POSTGRES_PASSWORD=' }) -replace '^OMS4_POSTGRES_PASSWORD=', ''
+$oms4ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_SERVICE_SECRET=' }) -replace '^OMS4_SERVICE_SECRET=', ''
+$oms4PasswordForUrl = [Uri]::EscapeDataString($oms4PostgresPassword)
+$oms5PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_POSTGRES_PASSWORD=' }) -replace '^OMS5_POSTGRES_PASSWORD=', ''
+$oms5ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_SERVICE_SECRET=' }) -replace '^OMS5_SERVICE_SECRET=', ''
+$oms5PasswordForUrl = [Uri]::EscapeDataString($oms5PostgresPassword)
+kubectl -n oms create secret generic oms1-secret --from-env-file "D:\ProjectsDocker\extrawork\.env.k8s.oms1" --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$oms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms3-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms3ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms3PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms3:$oms3PasswordForUrl@oms3-postgres:5432/oms3" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms4-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms4ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms4PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms4:$oms4PasswordForUrl@oms4-postgres:5432/oms4" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms5-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms5ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms5PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms5:$oms5PasswordForUrl@oms5-postgres:5432/oms5" `
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
-kubectl apply -f OMS2/k8s/
+kubectl apply -f OMS2/k8s/configmap.yaml -f OMS2/k8s/postgres.yaml -f OMS2/k8s/deployment.yaml -f OMS2/k8s/service.yaml
 kubectl apply -f OMS3/k8s/
-kubectl apply -f OMS4/k8s/
+kubectl apply -f OMS4/k8s/configmap.yaml -f OMS4/k8s/postgres.yaml -f OMS4/k8s/deployment.yaml -f OMS4/k8s/service.yaml
 kubectl apply -f OMS5/k8s/
 kubectl apply -f platform/k8s/ingress.yaml
 ```
 
-Важно: `POSTGRES_PASSWORD` применяется PostgreSQL только при первой инициализации пустой папки `.runtime\oms1-postgres-data`. Если папка уже содержит данные, смена значения в `oms1-secret` не меняет пароль существующего пользователя БД. Для чистого старта удалите содержимое `.runtime\oms1-postgres-data` до запуска `oms1-postgres` или используйте тот же `POSTGRES_PASSWORD`, с которым БД была создана ранее.
+Важно: `POSTGRES_PASSWORD`, `OMS2_POSTGRES_PASSWORD`, `OMS3_POSTGRES_PASSWORD`, `OMS4_POSTGRES_PASSWORD` и `OMS5_POSTGRES_PASSWORD` применяются соответствующим PostgreSQL только при первой инициализации пустых папок `.runtime\oms1-postgres-data`, `.runtime\oms2-postgres-data`, `.runtime\oms3-postgres-data`, `.runtime\oms4-postgres-data` и `.runtime\oms5-postgres-data`. Если папка уже содержит данные, смена значения в Kubernetes Secret не меняет пароль существующего пользователя БД. Для сохранения данных используйте прежние значения паролей. Для чистого старта удалите содержимое соответствующей папки до запуска PostgreSQL.
 
-Перед удалением `OMS1` или kind-кластера при сохранении `.runtime\oms1-postgres-data` сохранить текущие значения `oms1-secret` в локальный файл `.env.k8s.oms1`:
+---
+
+Перед удалением сервисов или kind-кластера при сохранении данных сохранить текущие значения `oms1-secret`, `oms2-secret`, `oms3-secret`, `oms4-secret` и `oms5-secret` в локальный файл `.env.k8s.oms1`:
 
 ```powershell
 $secret = kubectl -n oms get secret oms1-secret -o json | ConvertFrom-Json
-$keys = @(
-  "JWT_SECRET_KEY",
-  "POSTGRES_PASSWORD",
-  "ADMIN_INITIAL_PASSWORD",
-  "OMS2_SERVICE_SECRET",
-  "OMS3_SERVICE_SECRET",
-  "OMS4_SERVICE_SECRET",
-  "OMS5_SERVICE_SECRET"
-)
-$lines = foreach ($key in $keys) {
-  $value = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($secret.data.$key))
-  "$key=$value"
+$oms2Secret = kubectl -n oms get secret oms2-secret -o json | ConvertFrom-Json
+$oms3Secret = kubectl -n oms get secret oms3-secret -o json | ConvertFrom-Json
+$oms4Secret = kubectl -n oms get secret oms4-secret -o json | ConvertFrom-Json
+$oms5Secret = kubectl -n oms get secret oms5-secret -o json | ConvertFrom-Json
+
+function Get-SecretValue($secretObject, $key, $secretName) {
+  if (-not $secretObject.data.$key) { throw "В $secretName отсутствует $key; файл .env.k8s.oms1 не изменен" }
+  return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($secretObject.data.$key))
 }
-$lines | Set-Content -Encoding utf8 -Path ".env.k8s.oms1"
+
+$lines = @(
+  "# OMS1"
+  "JWT_SECRET_KEY=$(Get-SecretValue $secret JWT_SECRET_KEY 'oms1-secret')"
+  "POSTGRES_PASSWORD=$(Get-SecretValue $secret POSTGRES_PASSWORD 'oms1-secret')"
+  "ADMIN_INITIAL_PASSWORD=$(Get-SecretValue $secret ADMIN_INITIAL_PASSWORD 'oms1-secret')"
+  ""
+  "# OMS2"
+  "OMS2_SECRET_KEY=$(Get-SecretValue $oms2Secret SECRET_KEY 'oms2-secret')"
+  "OMS2_POSTGRES_PASSWORD=$(Get-SecretValue $oms2Secret POSTGRES_PASSWORD 'oms2-secret')"
+  "OMS2_SERVICE_SECRET=$(Get-SecretValue $secret OMS2_SERVICE_SECRET 'oms1-secret')"
+  ""
+  "# OMS3"
+  "OMS3_POSTGRES_PASSWORD=$(Get-SecretValue $oms3Secret POSTGRES_PASSWORD 'oms3-secret')"
+  "OMS3_SERVICE_SECRET=$(Get-SecretValue $secret OMS3_SERVICE_SECRET 'oms1-secret')"
+  ""
+  "# OMS4"
+  "OMS4_POSTGRES_PASSWORD=$(Get-SecretValue $oms4Secret POSTGRES_PASSWORD 'oms4-secret')"
+  "OMS4_SERVICE_SECRET=$(Get-SecretValue $secret OMS4_SERVICE_SECRET 'oms1-secret')"
+  ""
+  "# OMS5"
+  "OMS5_POSTGRES_PASSWORD=$(Get-SecretValue $oms5Secret POSTGRES_PASSWORD 'oms5-secret')"
+  "OMS5_SERVICE_SECRET=$(Get-SecretValue $secret OMS5_SERVICE_SECRET 'oms1-secret')"
+)
+$lines | Set-Content -Encoding utf8 -Path "D:\ProjectsDocker\extrawork\.env.k8s.oms1"
 ```
 
 После пересоздания кластера восстановить secret из этого файла:
 
 ```powershell
-kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+$oms3PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_POSTGRES_PASSWORD=' }) -replace '^OMS3_POSTGRES_PASSWORD=', ''
+$oms3ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_SERVICE_SECRET=' }) -replace '^OMS3_SERVICE_SECRET=', ''
+$oms3PasswordForUrl = [Uri]::EscapeDataString($oms3PostgresPassword)
+$oms2PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2SecretKey = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SECRET_KEY=' }) -replace '^OMS2_SECRET_KEY=', ''
+$oms2ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+$oms4PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_POSTGRES_PASSWORD=' }) -replace '^OMS4_POSTGRES_PASSWORD=', ''
+$oms4ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_SERVICE_SECRET=' }) -replace '^OMS4_SERVICE_SECRET=', ''
+$oms4PasswordForUrl = [Uri]::EscapeDataString($oms4PostgresPassword)
+$oms5PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_POSTGRES_PASSWORD=' }) -replace '^OMS5_POSTGRES_PASSWORD=', ''
+$oms5ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_SERVICE_SECRET=' }) -replace '^OMS5_SERVICE_SECRET=', ''
+$oms5PasswordForUrl = [Uri]::EscapeDataString($oms5PostgresPassword)
+kubectl -n oms create secret generic oms1-secret --from-env-file "D:\ProjectsDocker\extrawork\.env.k8s.oms1" --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$oms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms3-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms3ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms3PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms3:$oms3PasswordForUrl@oms3-postgres:5432/oms3" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms4-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms4ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms4PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms4:$oms4PasswordForUrl@oms4-postgres:5432/oms4" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms5-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms5ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms5PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms5:$oms5PasswordForUrl@oms5-postgres:5432/oms5" `
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
+
+`oms2-secret`, `oms3-secret`, `oms4-secret` и `oms5-secret` должны быть восстановлены до запуска соответствующих `postgres.yaml` и `deployment.yaml`. Значения `OMS2_POSTGRES_PASSWORD`, `OMS3_POSTGRES_PASSWORD`, `OMS4_POSTGRES_PASSWORD` и `OMS5_POSTGRES_PASSWORD` в `.env.k8s.oms1` должны совпадать с паролями пользователей в сохраненных базах.
 
 ### 9.1. Сменить Начальные Пароли И Service Secrets OMS1
 
@@ -378,7 +512,7 @@ OMS5_SERVICE_SECRET=new-oms5-secret
 
 ```powershell
 kubectl -n oms patch secret oms2-secret --type merge -p '{"stringData":{"SERVICE_CLIENT_SECRET":"new-oms2-secret"}}'
-kubectl -n oms create secret generic oms3-secret --from-literal=SERVICE_CLIENT_SECRET=new-oms3-secret --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms patch secret oms3-secret --type merge -p '{"stringData":{"SERVICE_CLIENT_SECRET":"new-oms3-secret"}}'
 kubectl -n oms patch secret oms4-secret --type merge -p '{"stringData":{"SERVICE_CLIENT_SECRET":"new-oms4-secret"}}'
 kubectl -n oms create secret generic oms5-secret --from-literal=SERVICE_CLIENT_SECRET=new-oms5-secret --dry-run=client -o yaml | kubectl apply -f -
 ```
@@ -389,16 +523,145 @@ kubectl -n oms create secret generic oms5-secret --from-literal=SERVICE_CLIENT_S
 kubectl -n oms rollout restart deployment/oms2
 kubectl -n oms rollout restart deployment/oms3
 kubectl -n oms rollout restart deployment/oms3-problem-event-worker
+kubectl -n oms rollout restart deployment/oms3-postgres
 kubectl -n oms rollout restart deployment/oms4
 kubectl -n oms rollout restart deployment/oms4-email-worker
 kubectl -n oms rollout restart deployment/oms4-problem-event-worker
+kubectl -n oms rollout restart deployment/oms4-postgres
 kubectl -n oms rollout restart deployment/oms5
 ```
+
+### Сменить `OMS2_SECRET_KEY`
+
+`OMS2_SECRET_KEY` — криптографический ключ Django OMS2, а не пароль PostgreSQL. Его изменение не требует изменения роли `oms2` в базе данных, но делает недействительными существующие Django-сессии, CSRF-токены и другие подписанные значения.
+
+Сгенерировать новое значение, сохранить его в `.env.k8s.oms1`, пересоздать `oms2-secret` со всеми необходимыми ключами и перезапустить OMS2:
+
+```powershell
+$envFile = "D:\ProjectsDocker\extrawork\.env.k8s.oms1"
+$bytes = New-Object byte[] 64
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$newOms2SecretKey = [Convert]::ToBase64String($bytes)
+$envLines = Get-Content $envFile
+if ($envLines -match '^OMS2_SECRET_KEY=') {
+  $envLines = $envLines -replace '^OMS2_SECRET_KEY=.*$', "OMS2_SECRET_KEY=$newOms2SecretKey"
+} else {
+  $envLines += "OMS2_SECRET_KEY=$newOms2SecretKey"
+}
+$envLines | Set-Content -Encoding utf8 -Path $envFile
+
+$oms2PostgresPassword = (Get-Content $envFile | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2ServiceSecret = (Get-Content $envFile | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$newOms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms2
+kubectl -n oms rollout status deployment/oms2 --timeout=240s
+```
+
+После перезапуска проверить `GET http://oms.local/oms2/health/ready` и повторно войти в OMS2. Не удалять PVC и не менять `OMS2_POSTGRES_PASSWORD` в рамках этой операции.
+
+---
+
+`oms2-postgres`, `oms3-postgres`, `oms4-postgres` и `oms5-postgres` перечитывают `POSTGRES_PASSWORD` из соответствующего Secret при запуске POD. Рестарт не меняет пароль уже инициализированного пользователя PostgreSQL. Для смены пароля каждого сервиса необходимо отдельно изменить пароль в базе, обновить соответствующую переменную в `D:\ProjectsDocker\extrawork\.env.k8s.oms1`, пересоздать Secret и перезапустить PostgreSQL и связанные сервисы.
+
+---
+
+Для смены пароля пользователя PostgreSQL `oms2` сначала замените значение `OMS2_POSTGRES_PASSWORD` в `D:\ProjectsDocker\extrawork\.env.k8s.oms1`. Не удаляйте PVC `oms2-postgres-data`. Затем выполните:
+
+```powershell
+$oms2PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2PasswordSql = $oms2PostgresPassword.Replace("'", "''")
+kubectl -n oms exec deployment/oms2-postgres -- psql -U oms2 -d oms2 -c "ALTER ROLE oms2 PASSWORD '$oms2PasswordSql';"
+$oms2SecretKey = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SECRET_KEY=' }) -replace '^OMS2_SECRET_KEY=', ''
+$oms2ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$oms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms2-postgres
+kubectl -n oms rollout restart deployment/oms2
+```
+
+После изменения проверить, что `OMS2_POSTGRES_PASSWORD` в файле, пароль пользователя `oms2` в базе, ключ `POSTGRES_PASSWORD` в `oms2-secret` и пароль в `DATABASE_URL` совпадают.
+
+---
+
+Для смены пароля пользователя PostgreSQL `oms3` сначала замените значение `OMS3_POSTGRES_PASSWORD` в `D:\ProjectsDocker\extrawork\.env.k8s.oms1`. Не удаляйте PVC `oms3-postgres-data`. Затем выполните:
+
+```powershell
+$oms3PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_POSTGRES_PASSWORD=' }) -replace '^OMS3_POSTGRES_PASSWORD=', ''
+$oms3PasswordSql = $oms3PostgresPassword.Replace("'", "''")
+kubectl -n oms exec deployment/oms3-postgres -- psql -U oms3 -d oms3 -c "ALTER ROLE oms3 PASSWORD '$oms3PasswordSql';"
+$oms3ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_SERVICE_SECRET=' }) -replace '^OMS3_SERVICE_SECRET=', ''
+$oms3PasswordForUrl = [Uri]::EscapeDataString($oms3PostgresPassword)
+kubectl -n oms create secret generic oms3-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms3ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms3PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms3:$oms3PasswordForUrl@oms3-postgres:5432/oms3" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms3-postgres
+kubectl -n oms rollout restart deployment/oms3
+kubectl -n oms rollout restart deployment/oms3-problem-event-worker
+```
+
+После изменения проверить, что `OMS3_POSTGRES_PASSWORD` в файле, пароль пользователя `oms3` в базе, ключ `POSTGRES_PASSWORD` в `oms3-secret` и пароль в `DATABASE_URL` совпадают. Смена значения только в Kubernetes Secret не изменяет пароль уже инициализированной базы.
+
+---
+
+Для смены пароля пользователя PostgreSQL `oms4` сначала замените значение `OMS4_POSTGRES_PASSWORD` в `D:\ProjectsDocker\extrawork\.env.k8s.oms1`. Не удаляйте PVC `oms4-postgres-data`. Затем выполните:
+
+```powershell
+$oms4PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_POSTGRES_PASSWORD=' }) -replace '^OMS4_POSTGRES_PASSWORD=', ''
+$oms4PasswordSql = $oms4PostgresPassword.Replace("'", "''")
+kubectl -n oms exec deployment/oms4-postgres -- psql -U oms4 -d oms4 -c "ALTER ROLE oms4 PASSWORD '$oms4PasswordSql';"
+$oms4ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_SERVICE_SECRET=' }) -replace '^OMS4_SERVICE_SECRET=', ''
+$oms4PasswordForUrl = [Uri]::EscapeDataString($oms4PostgresPassword)
+kubectl -n oms create secret generic oms4-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms4ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms4PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms4:$oms4PasswordForUrl@oms4-postgres:5432/oms4" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms4-postgres
+kubectl -n oms rollout restart deployment/oms4
+kubectl -n oms rollout restart deployment/oms4-email-worker
+kubectl -n oms rollout restart deployment/oms4-problem-event-worker
+```
+
+После изменения проверить, что `OMS4_POSTGRES_PASSWORD` в файле, пароль пользователя `oms4` в базе, ключ `POSTGRES_PASSWORD` в `oms4-secret` и пароль в `DATABASE_URL` совпадают. Смена значения только в Kubernetes Secret не изменяет пароль уже инициализированной базы.
+
+---
+
+Для смены пароля пользователя PostgreSQL `oms5` сначала замените значение `OMS5_POSTGRES_PASSWORD` в `D:\ProjectsDocker\extrawork\.env.k8s.oms1`. Не удаляйте PVC `oms5-postgres-data`. Затем выполните:
+
+```powershell
+$oms5PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_POSTGRES_PASSWORD=' }) -replace '^OMS5_POSTGRES_PASSWORD=', ''
+$oms5PasswordSql = $oms5PostgresPassword.Replace("'", "''")
+kubectl -n oms exec deployment/oms5-postgres -- psql -U oms5 -d oms5 -c "ALTER ROLE oms5 PASSWORD '$oms5PasswordSql';"
+$oms5ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_SERVICE_SECRET=' }) -replace '^OMS5_SERVICE_SECRET=', ''
+$oms5PasswordForUrl = [Uri]::EscapeDataString($oms5PostgresPassword)
+kubectl -n oms create secret generic oms5-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms5ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms5PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms5:$oms5PasswordForUrl@oms5-postgres:5432/oms5" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms rollout restart deployment/oms5-postgres
+kubectl -n oms rollout restart deployment/oms5
+```
+
+После изменения проверить, что `OMS5_POSTGRES_PASSWORD` в файле, пароль пользователя `oms5` в базе, ключ `POSTGRES_PASSWORD` в `oms5-secret` и пароль в `DATABASE_URL` совпадают. Смена значения только в Kubernetes Secret не изменяет пароль уже инициализированной базы.
 
 Затем пересоздать Kubernetes Secret и перезапустить `OMS1`, чтобы runtime env соответствовал локальному файлу:
 
 ```powershell
-kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms1-secret --from-env-file "D:\ProjectsDocker\extrawork\.env.k8s.oms1" --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n oms rollout restart deployment/oms1
 kubectl -n oms rollout status deployment/oms1 --timeout=240s
 ```
@@ -425,9 +688,11 @@ oms2            1/1   Running
 oms2-postgres   1/1   Running
 oms3            1/1   Running
 oms3-problem-event-worker 1/1 Running
+oms3-postgres   1/1   Running
 oms4            1/1   Running
 oms4-email-worker 1/1 Running
 oms4-problem-event-worker 1/1 Running
+oms4-postgres   1/1   Running
 oms5            1/1   Running
 ```
 
@@ -645,13 +910,17 @@ oms4_base_url = http://oms.local/oms4
 oms5_base_url = http://oms.local/oms5
 ```
 
-## 15. Постоянные Данные OMS1 И OMS2 Postgres
+## 15. Постоянные Данные OMS1, OMS2, OMS3, OMS4 И OMS5 Postgres
 
-OMS1 и OMS2 Postgres используют статические `PersistentVolume`, которые хранят данные не внутри pod и не внутри временного local-path volume kind, а в host-папках проекта:
+OMS1, OMS2, OMS3, OMS4 и OMS5 Postgres используют статические `PersistentVolume`, которые хранят данные не внутри pod и не внутри временного local-path volume kind, а в host-папках проекта:
 
 ```text
 D:\ProjectsDocker\extrawork\.runtime\oms1-postgres-data
 D:\ProjectsDocker\extrawork\.runtime\oms2-postgres-data
+D:\ProjectsDocker\extrawork\.runtime\oms3-postgres-data
+D:\ProjectsDocker\extrawork\.runtime\oms4-postgres-data
+D:\ProjectsDocker\extrawork\.runtime\oms5-postgres-data
+D:\ProjectsDocker\extrawork\.runtime\oms3-reports-data
 ```
 
 Эти папки монтируются в kind node через `platform/k8s/kind-cluster.yaml`:
@@ -661,8 +930,24 @@ host:      D:\ProjectsDocker\extrawork\.runtime\oms1-postgres-data
 kind node: /mnt/oms-data/oms1-postgres-data
 pod:       /var/lib/postgresql/data
 
+host:      D:\ProjectsDocker\extrawork\.runtime\oms3-postgres-data
+kind node: /mnt/oms-data/oms3-postgres-data
+pod:       /var/lib/postgresql/data
+
+host:      D:\ProjectsDocker\extrawork\.runtime\oms4-postgres-data
+kind node: /mnt/oms-data/oms4-postgres-data
+pod:       /var/lib/postgresql/data
+
+host:      D:\ProjectsDocker\extrawork\.runtime\oms3-reports-data
+kind node: /mnt/oms-data/oms3-reports-data
+pod:       /data/reports
+
 host:      D:\ProjectsDocker\extrawork\.runtime\oms2-postgres-data
 kind node: /mnt/oms-data/oms2-postgres-data
+pod:       /var/lib/postgresql/data
+
+host:      D:\ProjectsDocker\extrawork\.runtime\oms5-postgres-data
+kind node: /mnt/oms-data/oms5-postgres-data
 pod:       /var/lib/postgresql/data
 ```
 
@@ -673,8 +958,16 @@ pod:       /var/lib/postgresql/data
 ```powershell
 kubectl -n oms get pvc oms1-postgres-data
 kubectl -n oms get pvc oms2-postgres-data
+kubectl -n oms get pvc oms3-postgres-data
+kubectl -n oms get pvc oms4-postgres-data
+kubectl -n oms get pvc oms5-postgres-data
+kubectl -n oms get pvc oms3-reports-data
 kubectl get pv oms1-postgres-data-pv
 kubectl get pv oms2-postgres-data-pv
+kubectl get pv oms3-postgres-data-pv
+kubectl get pv oms4-postgres-data-pv
+kubectl get pv oms5-postgres-data-pv
+kubectl get pv oms3-reports-data-pv
 kubectl get pv oms1-postgres-data-pv -o yaml
 kubectl get pv oms2-postgres-data-pv -o yaml
 ```
@@ -684,8 +977,16 @@ kubectl get pv oms2-postgres-data-pv -o yaml
 ```text
 oms1-postgres-data   Bound
 oms2-postgres-data   Bound
+oms3-postgres-data   Bound
+oms4-postgres-data   Bound
+oms5-postgres-data   Bound
+oms3-reports-data    Bound
 oms1-postgres-data-pv   Bound
 oms2-postgres-data-pv   Bound
+oms3-postgres-data-pv   Bound
+oms4-postgres-data-pv   Bound
+oms5-postgres-data-pv   Bound
+oms3-reports-data-pv    Bound
 ```
 
 ### Проверить Файлы На Host
@@ -693,6 +994,10 @@ oms2-postgres-data-pv   Bound
 ```powershell
 Get-ChildItem -LiteralPath ".runtime\oms1-postgres-data"
 Get-ChildItem -LiteralPath ".runtime\oms2-postgres-data"
+Get-ChildItem -LiteralPath ".runtime\oms3-postgres-data"
+Get-ChildItem -LiteralPath ".runtime\oms4-postgres-data"
+Get-ChildItem -LiteralPath ".runtime\oms5-postgres-data"
+Get-ChildItem -LiteralPath ".runtime\oms3-reports-data"
 ```
 
 ### Проверить Mount Внутри Kind Node
@@ -700,6 +1005,10 @@ Get-ChildItem -LiteralPath ".runtime\oms2-postgres-data"
 ```powershell
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms1-postgres-data
 docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms2-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms3-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms4-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms5-postgres-data
+docker exec oms-cluster-control-plane ls -la /mnt/oms-data/oms3-reports-data
 ```
 
 ### Проверить Доступность БД
@@ -709,15 +1018,25 @@ kubectl -n oms exec deployment/oms1-postgres -- psql -U oms1 -d oms1 -c "select 
 curl http://oms.local/oms1/health/ready
 kubectl -n oms exec deployment/oms2-postgres -- psql -U oms2 -d oms2 -c "select 1;"
 curl http://oms.local/oms2/health/ready/
+kubectl -n oms exec deployment/oms3-postgres -- psql -U oms3 -d oms3 -c "select 1;"
+curl http://oms.local/oms3/health/ready/
+kubectl -n oms exec deployment/oms4-postgres -- psql -U oms4 -d oms4 -c "select 1;"
+curl http://oms.local/oms4/health/ready
+kubectl -n oms exec deployment/oms5-postgres -- psql -U oms5 -d oms5 -c "select 1;"
+curl http://oms.local/oms5/health/ready
 ```
 
-### Пересоздание Kind-Кластера Без Потери Данных OMS1 И OMS2
+### Пересоздание Kind-Кластера Без Потери Данных OMS1, OMS2, OMS3, OMS4 И OMS5
 
 Данные сохранятся, если не удалять папку:
 
 ```text
 .runtime\oms1-postgres-data
 .runtime\oms2-postgres-data
+.runtime\oms3-postgres-data
+.runtime\oms4-postgres-data
+.runtime\oms5-postgres-data
+.runtime\oms3-reports-data
 ```
 
 Порядок:
@@ -726,6 +1045,10 @@ curl http://oms.local/oms2/health/ready/
 kind delete cluster --name oms-cluster
 New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms4-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms5-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-reports-data" -Force
 kind create cluster --config platform/k8s/kind-cluster.yaml
 kubectl config use-context kind-oms-cluster
 ```
@@ -738,7 +1061,7 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
 kubectl apply -f OMS2/k8s/postgres.yaml
-kubectl apply -f OMS2/k8s/
+kubectl apply -f OMS2/k8s/configmap.yaml -f OMS2/k8s/deployment.yaml -f OMS2/k8s/service.yaml
 ```
 
 Postgres pod подключит существующие файлы из `.runtime\oms2-postgres-data` автоматически.
@@ -790,7 +1113,7 @@ kubectl -n oms rollout restart deployment oms2
 
 ### Вариант A. Остановить Работу И Сохранить Kind-Кластер
 
-Используйте этот вариант для обычной перезагрузки ПК. Kubernetes objects сохраняются внутри kind node container, а данные OMS1 и OMS2 Postgres остаются на host в `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`.
+Используйте этот вариант для обычной перезагрузки ПК. Kubernetes objects сохраняются внутри kind node container, а данные OMS1, OMS2, OMS3, OMS4 и OMS5 Postgres и файлы отчетов OMS3 остаются на host в `.runtime\oms1-postgres-data`, `.runtime\oms2-postgres-data`, `.runtime\oms3-postgres-data`, `.runtime\oms4-postgres-data`, `.runtime\oms5-postgres-data` и `.runtime\oms3-reports-data`.
 
 Перейти в каталог проекта:
 
@@ -829,8 +1152,14 @@ kubectl -n oms scale deployment/prometheus --replicas=0
 kubectl -n oms scale deployment/kube-state-metrics --replicas=0
 kubectl -n oms scale deployment/oms1-postgres --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
+kubectl -n oms scale deployment/oms3-postgres --replicas=0
+kubectl -n oms scale deployment/oms4-postgres --replicas=0
 kubectl -n oms delete daemonset prometheus-node-exporter
+$kafkaTopicsInitStatus = kubectl -n oms get job kafka-topics-init -o jsonpath="{.status.succeeded}" 2>$null
+if ($kafkaTopicsInitStatus -eq "1") { kubectl -n oms delete job kafka-topics-init --wait=true }
 ```
+
+Команда удаляет завершившийся одноразовый `kafka-topics-init` Job вместе с pod `kafka-topics-init-*`. Масштабирование Deployment-ов не удаляет Job и его завершившийся pod автоматически.
 
 Дождаться удаления pod-ов в namespace `oms`:
 
@@ -854,7 +1183,7 @@ docker ps -a --filter "name=oms-cluster-control-plane"
 
 ### Вариант B. Полностью Удалить Kind-Кластер
 
-Используйте этот вариант, если кластер нужно пересоздать с нуля или Docker Desktop нестабилен. Kubernetes objects будут удалены, но данные OMS1 и OMS2 Postgres сохранятся, если не удалять папки `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`.
+Используйте этот вариант, если кластер нужно пересоздать с нуля или Docker Desktop нестабилен. Kubernetes objects будут удалены, но данные OMS1, OMS2, OMS3, OMS4 и OMS5 Postgres, а также файлы отчетов OMS3 сохранятся, если не удалять папки `.runtime\oms1-postgres-data`, `.runtime\oms2-postgres-data`, `.runtime\oms3-postgres-data`, `.runtime\oms4-postgres-data`, `.runtime\oms5-postgres-data` и `.runtime\oms3-reports-data`.
 
 ```powershell
 cd D:\ProjectsDocker\extrawork
@@ -863,6 +1192,12 @@ kubectl -n oms scale deployment/oms1 --replicas=0
 kubectl -n oms scale deployment/oms1-postgres --replicas=0
 kubectl -n oms scale deployment/oms2 --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
+kubectl -n oms scale deployment/oms3 --replicas=0
+kubectl -n oms scale deployment/oms3-postgres --replicas=0
+kubectl -n oms scale deployment/oms4 --replicas=0
+kubectl -n oms scale deployment/oms4-postgres --replicas=0
+kubectl -n oms scale deployment/oms5 --replicas=0
+kubectl -n oms scale deployment/oms5-postgres --replicas=0
 kind delete cluster --name oms-cluster
 ```
 
@@ -891,7 +1226,7 @@ wsl -l -v
 kind get clusters
 ```
 
-Важно: не удаляйте `.runtime\oms1-postgres-data` и `.runtime\oms2-postgres-data`, если нужно сохранить данные OMS1 и OMS2 Postgres.
+Важно: перед удалением кластера сохраните `oms2-secret`, `oms3-secret`, `oms4-secret` и `oms5-secret` в `.env.k8s.oms1` по инструкции выше. Не удаляйте `.runtime\oms1-postgres-data`, `.runtime\oms2-postgres-data`, `.runtime\oms3-postgres-data`, `.runtime\oms4-postgres-data`, `.runtime\oms5-postgres-data` и `.runtime\oms3-reports-data`, если нужно сохранить базы данных и файлы отчетов OMS1, OMS2, OMS3, OMS4 и OMS5.
 
 ## 17. Запуск После Перезагрузки Компьютера Или Docker Desktop
 
@@ -976,16 +1311,26 @@ oms-cluster-control-plane   Ready    control-plane   ...   ...
 ```powershell
 kubectl get pods -A
 kubectl -n ingress-nginx wait --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+kubectl get nodes --no-headers | Where-Object { $_ -notmatch ' Ready ' } | ForEach-Object { throw "Kubernetes node is not Ready: $_" }
+kubectl apply -f platform/k8s/prometheus.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type='strategic' -p='{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,Hostname","--kubelet-use-node-status-port","--kubelet-insecure-tls","--metric-resolution=15s"]}]}}}}'
+kubectl -n oms rollout status deployment/prometheus --timeout=180s
+kubectl -n oms rollout status deployment/kube-state-metrics --timeout=180s
+kubectl -n oms rollout status daemonset/prometheus-node-exporter --timeout=180s
+kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+$kafkaTopicsInitStatus = kubectl -n oms get job kafka-topics-init -o jsonpath="{.status.succeeded}" 2>$null
+if ($kafkaTopicsInitStatus -eq "1") { kubectl -n oms delete job kafka-topics-init --wait=true }
 kubectl -n oms get pods
 ```
 
 ### 17.4. Запустить Все Workloads Повторно
 
-Если namespace и deployments существуют, поднять replicas обратно до `1`. Это обязательно после корректного завершения из пункта 16.1, потому что там deployments были остановлены через `scale --replicas=0`.
+Если namespace и deployments существуют, поднять replicas всех deployment-ов обратно до `1`. Это обязательно после корректного завершения из пункта 16.1, потому что там deployments были остановлены через `scale --replicas=0`. Команда `deployment --all` включает все PostgreSQL deployment-ы, OMS-сервисы, workers и системные приложения namespace `oms`.
 
 ```powershell
-kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
-kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
+kubectl -n oms scale deployment --all --replicas=1
+kubectl -n oms wait --for=condition=available deployment --all --timeout=300s
 ```
 
 Если перед запуском `kubectl -n oms get pods` показывает:
@@ -1002,6 +1347,14 @@ No resources found in oms namespace.
 kubectl -n oms get pods -w
 ```
 
+Проверить, что стандартные и Prometheus-метрики доступны после восстановления:
+
+```powershell
+kubectl top nodes
+kubectl top pods -A
+kubectl get --raw "/api/v1/namespaces/oms/services/prometheus-server/proxy/-/ready"
+```
+
 Ожидаемо в итоге:
 
 ```text
@@ -1014,8 +1367,11 @@ oms1-...            1/1   Running
 oms2-...            1/1   Running
 oms2-postgres-...   1/1   Running
 oms3-...            1/1   Running
+oms3-postgres-...   1/1   Running
 oms4-...            1/1   Running
+oms4-postgres-...   1/1   Running
 oms5-...            1/1   Running
+prometheus-node-exporter-... 1/1 Running
 ```
 
 Если deployments отсутствуют, применить манифесты заново:
@@ -1026,11 +1382,48 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
-kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type='strategic' -p='{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,Hostname","--kubelet-use-node-status-port","--kubelet-insecure-tls","--metric-resolution=15s"]}]}}}}'
+kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+$oms2PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2SecretKey = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SECRET_KEY=' }) -replace '^OMS2_SECRET_KEY=', ''
+$oms2ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+$oms3PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_POSTGRES_PASSWORD=' }) -replace '^OMS3_POSTGRES_PASSWORD=', ''
+$oms3ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_SERVICE_SECRET=' }) -replace '^OMS3_SERVICE_SECRET=', ''
+$oms3PasswordForUrl = [Uri]::EscapeDataString($oms3PostgresPassword)
+$oms4PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_POSTGRES_PASSWORD=' }) -replace '^OMS4_POSTGRES_PASSWORD=', ''
+$oms4ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_SERVICE_SECRET=' }) -replace '^OMS4_SERVICE_SECRET=', ''
+$oms4PasswordForUrl = [Uri]::EscapeDataString($oms4PostgresPassword)
+$oms5PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_POSTGRES_PASSWORD=' }) -replace '^OMS5_POSTGRES_PASSWORD=', ''
+$oms5ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_SERVICE_SECRET=' }) -replace '^OMS5_SERVICE_SECRET=', ''
+$oms5PasswordForUrl = [Uri]::EscapeDataString($oms5PostgresPassword)
+kubectl -n oms create secret generic oms1-secret --from-env-file "D:\ProjectsDocker\extrawork\.env.k8s.oms1" --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$oms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms3-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms3ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms3PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms3:$oms3PasswordForUrl@oms3-postgres:5432/oms3" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms4-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms4ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms4PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms4:$oms4PasswordForUrl@oms4-postgres:5432/oms4" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms5-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms5ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms5PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms5:$oms5PasswordForUrl@oms5-postgres:5432/oms5" `
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
-kubectl apply -f OMS2/k8s/
+kubectl apply -f OMS2/k8s/configmap.yaml -f OMS2/k8s/postgres.yaml -f OMS2/k8s/deployment.yaml -f OMS2/k8s/service.yaml
 kubectl apply -f OMS3/k8s/
-kubectl apply -f OMS4/k8s/
+kubectl apply -f OMS4/k8s/configmap.yaml -f OMS4/k8s/postgres.yaml -f OMS4/k8s/deployment.yaml -f OMS4/k8s/service.yaml
 kubectl apply -f OMS5/k8s/
 kubectl apply -f platform/k8s/ingress.yaml
 ```
@@ -1120,26 +1513,18 @@ kubectl -n oms get deployments
 kubectl -n oms scale deployment --all --replicas=0
 ```
 
-Запустить все deployments обратно:
+Запустить все deployments обратно, включая OMS1-OMS5, PostgreSQL и workers:
 
 ```powershell
-kubectl -n oms scale deployment/kafka --replicas=1
-kubectl -n oms scale deployment/rabbitmq --replicas=1
-kubectl -n oms scale deployment/akhq --replicas=1
-kubectl -n oms scale deployment/prometheus --replicas=1
-kubectl -n oms scale deployment/kube-state-metrics --replicas=1
-kubectl -n oms scale deployment/oms2-postgres --replicas=1
-kubectl -n oms scale deployment/oms1 --replicas=1
-kubectl -n oms scale deployment/oms2 --replicas=1
-kubectl -n oms scale deployment/oms3 --replicas=1
-kubectl -n oms scale deployment/oms4 --replicas=1
-kubectl -n oms scale deployment/oms5 --replicas=1
+kubectl -n oms scale deployment --all --replicas=1
+kubectl -n oms wait --for=condition=available deployment --all --timeout=300s
 ```
 
 Перезапустить все deployments:
 
 ```powershell
-kubectl -n oms rollout restart deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5
+kubectl -n oms rollout restart deployment --all
+kubectl -n oms rollout status deployment --all --timeout=300s
 ```
 
 ### 18.4. Kafka
@@ -1229,6 +1614,9 @@ password: oms
 
 ```powershell
 kubectl apply -f platform/k8s/prometheus.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type='strategic' -p='{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,Hostname","--kubelet-use-node-status-port","--kubelet-insecure-tls","--metric-resolution=15s"]}]}}}}'
+kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
 ```
 
 Проверить deployments и service:
@@ -1238,6 +1626,10 @@ kubectl -n oms get deployment prometheus kube-state-metrics
 kubectl -n oms rollout status deployment/prometheus
 kubectl -n oms rollout status deployment/kube-state-metrics
 kubectl -n oms get svc prometheus prometheus-server kube-state-metrics prometheus-node-exporter
+kubectl -n oms rollout status daemonset/prometheus-node-exporter
+kubectl -n kube-system rollout status deployment/metrics-server
+kubectl top nodes
+kubectl top pods -A
 ```
 
 Проверить targets Prometheus через Ingress:
@@ -1710,6 +2102,9 @@ cd D:\ProjectsDocker\extrawork
 kind delete cluster --name oms-cluster
 New-Item -ItemType Directory -Path ".runtime\oms1-postgres-data" -Force
 New-Item -ItemType Directory -Path ".runtime\oms2-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms4-postgres-data" -Force
+New-Item -ItemType Directory -Path ".runtime\oms3-reports-data" -Force
 kind create cluster --config platform/k8s/kind-cluster.yaml
 kubectl config use-context kind-oms-cluster
 
@@ -1728,11 +2123,48 @@ kubectl apply -f platform/k8s/kafka-dev.yaml
 kubectl apply -f platform/k8s/rabbitmq-dev.yaml
 kubectl apply -f platform/k8s/kafka-ui.yaml
 kubectl apply -f platform/k8s/prometheus.yaml
-kubectl -n oms create secret generic oms1-secret --from-env-file .env.k8s.oms1 --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type='strategic' -p='{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,Hostname","--kubelet-use-node-status-port","--kubelet-insecure-tls","--metric-resolution=15s"]}]}}}}'
+kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+$oms2PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_POSTGRES_PASSWORD=' }) -replace '^OMS2_POSTGRES_PASSWORD=', ''
+$oms2SecretKey = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SECRET_KEY=' }) -replace '^OMS2_SECRET_KEY=', ''
+$oms2ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS2_SERVICE_SECRET=' }) -replace '^OMS2_SERVICE_SECRET=', ''
+$oms2PasswordForUrl = [Uri]::EscapeDataString($oms2PostgresPassword)
+$oms3PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_POSTGRES_PASSWORD=' }) -replace '^OMS3_POSTGRES_PASSWORD=', ''
+$oms3ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS3_SERVICE_SECRET=' }) -replace '^OMS3_SERVICE_SECRET=', ''
+$oms3PasswordForUrl = [Uri]::EscapeDataString($oms3PostgresPassword)
+$oms4PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_POSTGRES_PASSWORD=' }) -replace '^OMS4_POSTGRES_PASSWORD=', ''
+$oms4ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS4_SERVICE_SECRET=' }) -replace '^OMS4_SERVICE_SECRET=', ''
+$oms4PasswordForUrl = [Uri]::EscapeDataString($oms4PostgresPassword)
+$oms5PostgresPassword = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_POSTGRES_PASSWORD=' }) -replace '^OMS5_POSTGRES_PASSWORD=', ''
+$oms5ServiceSecret = (Get-Content "D:\ProjectsDocker\extrawork\.env.k8s.oms1" | Where-Object { $_ -match '^OMS5_SERVICE_SECRET=' }) -replace '^OMS5_SERVICE_SECRET=', ''
+$oms5PasswordForUrl = [Uri]::EscapeDataString($oms5PostgresPassword)
+kubectl -n oms create secret generic oms1-secret --from-env-file "D:\ProjectsDocker\extrawork\.env.k8s.oms1" --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms2-secret `
+  --from-literal=SECRET_KEY="$oms2SecretKey" `
+  --from-literal=POSTGRES_PASSWORD="$oms2PostgresPassword" `
+  --from-literal=DATABASE_URL="postgis://oms2:$oms2PasswordForUrl@oms2-postgres:5432/oms2" `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms2ServiceSecret" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms3-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms3ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms3PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms3:$oms3PasswordForUrl@oms3-postgres:5432/oms3" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms4-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms4ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms4PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms4:$oms4PasswordForUrl@oms4-postgres:5432/oms4" `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n oms create secret generic oms5-secret `
+  --from-literal=SERVICE_CLIENT_SECRET="$oms5ServiceSecret" `
+  --from-literal=POSTGRES_PASSWORD="$oms5PostgresPassword" `
+  --from-literal=DATABASE_URL="postgresql://oms5:$oms5PasswordForUrl@oms5-postgres:5432/oms5" `
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f OMS1/k8s/
-kubectl apply -f OMS2/k8s/
+kubectl apply -f OMS2/k8s/configmap.yaml -f OMS2/k8s/postgres.yaml -f OMS2/k8s/deployment.yaml -f OMS2/k8s/service.yaml
 kubectl apply -f OMS3/k8s/
-kubectl apply -f OMS4/k8s/
+kubectl apply -f OMS4/k8s/configmap.yaml -f OMS4/k8s/postgres.yaml -f OMS4/k8s/deployment.yaml -f OMS4/k8s/service.yaml
 kubectl apply -f OMS5/k8s/
 kubectl apply -f platform/k8s/ingress.yaml
 
