@@ -3,6 +3,7 @@ import sys
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi import HTTPException
 
@@ -44,13 +45,27 @@ def shift_item(shift_id: str, starts_at: str) -> dict:
     }
 
 
+class FakeReadStorage:
+    def __init__(self):
+        self.shifts = {}
+
+    def list_shifts(self, starts_at_from: datetime, starts_at_to: datetime) -> list[dict]:
+        result = [
+            shift
+            for shift in self.shifts.values()
+            if starts_at_from <= shift["starts_at"] <= starts_at_to
+        ]
+        return sorted(result, key=lambda shift: (shift["starts_at"], shift["id"]))
+
+
 class Oms5InternalShiftsTest(unittest.TestCase):
     def setUp(self):
         self.main = import_oms5_main()
-        self.main.shifts.clear()
+        self.storage = FakeReadStorage()
+        self.main.storage = self.storage
 
     def test_lists_only_shifts_inside_period_sorted_by_starts_at_then_id(self):
-        self.main.shifts.update(
+        self.storage.shifts.update(
             {
                 "outside-before": shift_item("outside-before", "2026-09-30T09:00:00Z"),
                 "inside-b": shift_item("inside-b", "2026-10-05T09:00:00Z"),
@@ -77,6 +92,43 @@ class Oms5InternalShiftsTest(unittest.TestCase):
 
         self.assertEqual(invalid_period.exception.status_code, 422)
         self.assertEqual(too_large.exception.status_code, 422)
+
+    def test_includes_period_boundaries_and_returns_empty_result(self):
+        self.storage.shifts.update(
+            {
+                "at-start": shift_item("at-start", "2026-10-01T00:00:00Z"),
+                "at-end": shift_item("at-end", "2026-10-31T23:59:59Z"),
+                "outside": shift_item("outside", "2026-11-01T00:00:00Z"),
+            }
+        )
+
+        result = self.main.list_internal_shifts(
+            dt("2026-10-01T00:00:00Z"),
+            dt("2026-10-31T23:59:59Z"),
+        )
+
+        self.assertEqual([item["id"] for item in result], ["at-start", "at-end"])
+        self.assertEqual(
+            self.main.list_internal_shifts(
+                dt("2026-12-01T00:00:00Z"),
+                dt("2026-12-31T23:59:59Z"),
+            ),
+            [],
+        )
+
+    def test_read_does_not_publish_events_or_mutate_shift(self):
+        original = shift_item("read-only", "2026-10-05T09:00:00Z")
+        self.storage.shifts[original["id"]] = original
+
+        with patch.object(self.main, "publish_event") as publish_event:
+            result = self.main.list_internal_shifts(
+                dt("2026-10-01T00:00:00Z"),
+                dt("2026-10-31T23:59:59Z"),
+            )
+
+        self.assertEqual(result[0], original)
+        self.assertEqual(self.storage.shifts[original["id"]], original)
+        publish_event.assert_not_called()
 
 
 if __name__ == "__main__":
