@@ -86,7 +86,7 @@ platform/docs/
 - `POSTMAN_OPENAPI_WORKFLOW.md`
 - `SWAGGER_UPDATE_GUIDE.md`
 - `API_VERSIONING_AND_REPO_COMMITS.md`
-- `проектирование.md`
+- 
 
 ## Микросервисы
 
@@ -545,13 +545,13 @@ Kafka достаточно для MVP, если сообщения являют�
 
 ### Сравнение Вариантов
 
-| Вариант | Плюсы | Минусы | Когда Выбирать |
-| --- | --- | --- | --- |
-| Только Kafka | Меньше инфраструктуры; уже есть в platform; хорошо подходит для event-driven integration; replay и audit из коробки | Неудобна как command queue; retry/DLQ требуют дополнительной реализации; сложно моделировать delayed retry и one-worker commands | Текущий MVP, пока события являются фактами и нет тяжелых фоновых jobs |
-| RabbitMQ | Хорошо подходит для command queue; routing, acknowledgements, retry и DLQ являются естественной моделью; проще контролировать one-worker processing | Добавляет новый broker и эксплуатационную нагрузку; нужны manifests, monitoring, backup/upgrade правила; еще один failure mode | Когда появятся реальные команды `send_email`, `build_report`, `import_file` с retry/DLQ |
-| Lightweight workers + RabbitMQ | Прозрачный worker code; нет Celery runtime; явный контроль queues, retry и DLQ | Retry/backoff/DLQ нужно реализовать дисциплинированно; больше собственного кода, чем с Celery | Выбранный вариант для OMS3/OMS4 MVP |
-| Celery + RabbitMQ | Готовые retry, countdown, scheduling patterns; привычная модель tasks/workers | Celery добавляет свой runtime и discipline: идемпотентность задач, сериализация, версии task signatures; не выбран для MVP | Возможный future option, если lightweight workers станут сложными |
-| Собственный worker без broker | Минимум зависимостей; можно начать с polling по БД | Риск самописной очереди; сложнее retry, locks, visibility timeout, DLQ; быстро становится техническим долгом | Только для очень простых задач или временного решения |
+| Вариант                        | Плюсы                                                                                                                                               | Минусы                                                                                                                           | Когда Выбирать                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Только Kafka                   | Меньше инфраструктуры; уже есть в platform; хорошо подходит для event-driven integration; replay и audit из коробки                                 | Неудобна как command queue; retry/DLQ требуют дополнительной реализации; сложно моделировать delayed retry и one-worker commands | Текущий MVP, пока события являются фактами и нет тяжелых фоновых jobs                   |
+| RabbitMQ                       | Хорошо подходит для command queue; routing, acknowledgements, retry и DLQ являются естественной моделью; проще контролировать one-worker processing | Добавляет новый broker и эксплуатационную нагрузку; нужны manifests, monitoring, backup/upgrade правила; еще один failure mode   | Когда появятся реальные команды `send_email`, `build_report`, `import_file` с retry/DLQ |
+| Lightweight workers + RabbitMQ | Прозрачный worker code; нет Celery runtime; явный контроль queues, retry и DLQ                                                                      | Retry/backoff/DLQ нужно реализовать дисциплинированно; больше собственного кода, чем с Celery                                    | Выбранный вариант для OMS3/OMS4 MVP                                                     |
+| Celery + RabbitMQ              | Готовые retry, countdown, scheduling patterns; привычная модель tasks/workers                                                                       | Celery добавляет свой runtime и discipline: идемпотентность задач, сериализация, версии task signatures; не выбран для MVP       | Возможный future option, если lightweight workers станут сложными                       |
+| Собственный worker без broker  | Минимум зависимостей; можно начать с polling по БД                                                                                                  | Риск самописной очереди; сложнее retry, locks, visibility timeout, DLQ; быстро становится техническим долгом                     | Только для очень простых задач или временного решения                                   |
 
 ### Рекомендация Для Развития Проекта
 
