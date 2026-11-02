@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OMS Microservices OpenAPI",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "OpenAPI contract with request body JSON Schemas for OMS1-OMS5. Import this file into Postman as an API/schema source to populate the Body Schema panel."
   },
   "servers": [
@@ -559,6 +559,14 @@
                 "email": "anna@example.test",
                 "phone": "+375291234567",
                 "status": "active",
+                "engagement_type": "self_employed",
+                "engagement_type_validation_status": "verified",
+                "funnel_stage": "PERFORMER_READY_NON_FOOD",
+                "medical_book_status": "non_food",
+                "completed_shifts_count": 3,
+                "first_booked_at": "2026-10-20T08:00:00Z",
+                "first_shift_completed_at": "2026-10-21T18:00:00Z",
+                "fifth_shift_completed_at": null,
                 "source_version": 3
               }
             }
@@ -629,7 +637,7 @@
           "200": {"description": "Offer campaign created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OfferCampaignResult"}}}},
           "404": {"$ref": "#/components/responses/NotFound"},
           "409": {
-            "description": "self_assignment_not_allowed, performer_inactive, performer_merged или offer_campaign_conflict",
+            "description": "self_assignment_not_allowed, performer_inactive, performer_merged, performer_not_ready, offer_lost, offer_unavailable или offer_campaign_conflict",
             "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
           },
           "422": {"$ref": "#/components/responses/ValidationError"},
@@ -668,7 +676,26 @@
         "summary": "OMS5 accept public shift offer",
         "parameters": [{"name": "token", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": {"description": "Offer accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OfferAcceptResult"}}}},
+          "200": {
+            "description": "Offer accepted",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OfferAcceptResult"},
+                "example": {
+                  "offer": {"id": "b2626b8c-464c-4d18-912d-40844d510f4d", "status": "won"},
+                  "assignment": {
+                    "id": "0d7a4e21-3f6b-4c58-9a2e-6b1d8f0a7c34",
+                    "shift_id": "69ee99cb-df7e-4a16-a613-5b9903fa74d5",
+                    "performer_id": "63c55740-a965-40c6-b699-a65ef887bcf1",
+                    "status": "assigned",
+                    "engagement_type": "self_employed",
+                    "assigned_at": "2026-11-01T09:05:00Z"
+                  },
+                  "shift": {"id": "69ee99cb-df7e-4a16-a613-5b9903fa74d5", "status": "A30_CHOICE"}
+                }
+              }
+            }
+          },
           "404": {"$ref": "#/components/responses/NotFound"},
           "409": {"$ref": "#/components/responses/Conflict"},
           "500": {"$ref": "#/components/responses/InternalServerError"}
@@ -751,7 +778,7 @@
       "post": {
         "operationId": "oms1CreateRoleAssignment",
         "summary": "OMS1 assign access role to user",
-        "description": "Доступно только пользователю с активной ролью administrator. Для manager/supervisor/administrator обязательны employment_episode_id и position_assignment_id, для external_user — membership_id и organization_id. Повторное активное назначение той же роли в том же контексте отклоняется 409. Выдача роли увеличивает auth_version учётной записи.",
+        "description": "Доступно только пользователю с активной ролью administrator. Для manager, supervisor и administrator обязательны operator_employment_period_id и operator_position_assignment_id, для external_user — membership_id. organization_id в запросе запрещён и вычисляется из членства. Повторное активное назначение той же роли в том же контексте отклоняется 409. Выдача роли увеличивает auth_version учётной записи.",
         "security": [{"bearerAuth": []}],
         "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
         "requestBody": {
@@ -761,23 +788,40 @@
               "schema": {"$ref": "#/components/schemas/RoleAssignmentCreate"},
               "example": {
                 "role_code": "manager",
-                "employment_episode_id": "2201",
-                "position_assignment_id": "3301",
-                "membership_id": null,
-                "organization_id": null,
-                "valid_from": "2026-10-28T12:00:00Z",
-                "reason": "Назначение по кадровому приказу"
+                "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                "valid_from": "2026-11-01T00:00:00Z",
+                "reason": "Назначение по приказу о приёме"
               }
             }
           }
         },
         "responses": {
-          "201": {"description": "Роль назначена", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoleAssignment"}}}},
+          "201": {
+            "description": "Роль назначена",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/RoleAssignment"},
+                "example": {
+                  "assignment_id": "5b2c8e10-6d4f-4a71-9c3e-8f0a1b2c3d44",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "person_id": null,
+                  "role_code": "manager",
+                  "status": "active",
+                  "valid_from": "2026-11-01T00:00:00Z",
+                  "valid_to": null,
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                  "organization_id": null
+                }
+              }
+            }
+          },
           "401": {"$ref": "#/components/responses/Unauthorized"},
           "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "409": {
-            "description": "role_assignment_already_active, last_administrator или person_account_conflict",
+            "description": "role_assignment_already_active, role_context_not_active, last_administrator, person_account_conflict или person_already_merged",
             "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
           },
           "422": {
@@ -810,6 +854,212 @@
           "404": {"description": "Назначение не найдено (role_assignment_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "409": {"description": "last_administrator", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "422": {"$ref": "#/components/responses/ValidationError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/operator-employment-periods": {
+      "post": {
+        "operationId": "oms1CreateOperatorEmploymentPeriod",
+        "summary": "OMS1 create operator employment period",
+        "description": "Создаёт период найма оператора и назначение на должность. У пользователя не более одного активного периода. Период и назначение принадлежат учётной записи из пути. Доступно только администратору. Успешный вызов увеличивает auth_version учётной записи.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodCreate"},
+              "example": {"starts_at": "2026-11-01T00:00:00Z", "position_code": "operator_software", "personnel_number": "QA-OPS-001", "reason": "Приём на должность оператора ПО"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Период найма создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriod"},
+                "example": {
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "status": "active",
+                  "starts_at": "2026-11-01T00:00:00Z",
+                  "ends_at": null,
+                  "personnel_number": "QA-OPS-001",
+                  "position_assignment": {
+                    "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                    "position_code": "operator_software",
+                    "status": "active",
+                    "starts_at": "2026-11-01T00:00:00Z",
+                    "ends_at": null
+                  },
+                  "created_at": "2026-11-01T08:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "У пользователя уже есть активный период (operator_employment_already_active)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "invalid_position_code, invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/operator-employment-periods/{periodId}/terminate": {
+      "post": {
+        "operationId": "oms1TerminateOperatorEmploymentPeriod",
+        "summary": "OMS1 terminate operator employment period",
+        "description": "Завершает период найма и активное назначение на должность, отзывает роли, привязанные к периоду, и увеличивает auth_version пользователя один раз. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 operator_employment_period_conflict.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "periodId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"},
+            "description": "UUID периода найма оператора"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodTerminate"}, "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Увольнение"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Период найма завершён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodTerminated"},
+                "example": {
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "status": "terminated",
+                  "ends_at": "2026-12-01T00:00:00Z",
+                  "revoked_role_assignments": 2
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {
+            "description": "Период найма не найден (operator_employment_period_not_found)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {"description": "operator_employment_period_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/external-memberships": {
+      "post": {
+        "operationId": "oms1CreateExternalMembership",
+        "summary": "OMS1 create external organization membership",
+        "description": "Создаёт членство пользователя во внешней организации. organization_id ссылается на clients OMS5 логически и не проверяется запросом в OMS5. У пользователя не более одного активного членства в одной организации.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/ExternalMembershipCreate"},
+              "example": {"organization_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd", "valid_from": "2026-11-01T00:00:00Z"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Внешнее членство создано",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ExternalMembership"},
+                "example": {
+                  "membership_id": "c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "organization_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd",
+                  "status": "active",
+                  "valid_from": "2026-11-01T00:00:00Z",
+                  "valid_to": null,
+                  "created_at": "2026-11-01T08:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "external_membership_already_active", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/external-memberships/{membershipId}/revoke": {
+      "post": {
+        "operationId": "oms1RevokeExternalMembership",
+        "summary": "OMS1 revoke external organization membership",
+        "description": "Отзывает внешнее членство, отзывает активные роли external_user этого членства и увеличивает auth_version пользователя. Другие роли пользователя не затрагиваются. Повтор идемпотентен.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "membershipId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID внешнего членства"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/ExternalMembershipRevoke"},
+              "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Сотрудничество завершено"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Внешнее членство отозвано",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ExternalMembershipRevoked"},
+                "example": {"membership_id": "c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33", "status": "revoked", "valid_to": "2026-12-01T00:00:00Z", "revoked_role_assignments": 1}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {
+            "description": "Внешнее членство не найдено (external_membership_not_found)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {"description": "external_membership_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/performer-link": {
+      "put": {
+        "operationId": "oms1SetPerformerLink",
+        "summary": "OMS1 link user account to OMS2 performer",
+        "description": "Связывает учётную запись с персоной исполнителя OMS2 или снимает связь при person_id=null. Один person_id не может быть связан с двумя активными учётными записями. Изменение увеличивает auth_version.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformerLinkUpdate"}, "example": {"person_id": "1042"}}}},
+        "responses": {
+          "200": {
+            "description": "Связь учётной записи обновлена",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/PerformerLink"}, "example": {"user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55", "person_id": "1042"}}
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_account_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -852,155 +1102,11 @@
         }
       }
     },
-    "/api/v1/people/{personId}/employment-periods": {
-      "post": {
-        "operationId": "oms2CreateEmploymentPeriod",
-        "summary": "OMS2 create employment period",
-        "description": "Создаёт период трудоустройства и назначение на должность operator_software. Требует роль administrator. У человека допускается один активный период; personnel_number уникален.",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {"type": "string", "format": "uuid"},
-            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-          },
-          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {"$ref": "#/components/schemas/EmploymentCreate"},
-              "example": {"starts_at": "2026-10-01T00:00:00Z", "position_code": "operator_software", "personnel_number": "QA-EMP-001"}
-            }
-          }
-        },
-        "responses": {
-          "201": {"description": "Период создан", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Employment"}}}},
-          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "409": {"description": "active_employment_exists или person_already_merged", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "422": {"$ref": "#/components/responses/ValidationError"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
-        }
-      }
-    },
-    "/api/v1/employment-periods/{employmentEpisodeId}/terminate": {
-      "post": {
-        "operationId": "oms2TerminateEmployment",
-        "summary": "OMS2 terminate employment period",
-        "description": "Завершает период трудоустройства и активные назначения на должность. OMS1 получает people.employment.changed и отзывает только роли, связанные с этим периодом. Повтор с теми же данными идемпотентен, иные данные дают 409.",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {"type": "string", "format": "uuid"},
-            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-          },
-          {
-            "name": "employmentEpisodeId",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string", "pattern": "^[0-9]+$"},
-            "description": "ID периода трудоустройства"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {"schema": {"$ref": "#/components/schemas/EmploymentTerminate"}, "example": {"effective_at": "2026-10-20T00:00:00Z", "reason": "dismissal"}}
-          }
-        },
-        "responses": {
-          "200": {"description": "Период завершён", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EmploymentTerminated"}}}},
-          "404": {"description": "employment_episode_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "409": {"description": "employment_period_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "422": {"$ref": "#/components/responses/ValidationError"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
-        }
-      }
-    },
-    "/api/v1/people/{personId}/external-memberships": {
-      "post": {
-        "operationId": "oms2CreateExternalMembership",
-        "summary": "OMS2 create external membership",
-        "description": "Создаёт подтверждённое членство во внешней организации OMS5. Активное членство в одной организации допускается одно. Требует роль administrator.",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {"type": "string", "format": "uuid"},
-            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-          },
-          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {"$ref": "#/components/schemas/MembershipCreate"},
-              "example": {"organization_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd", "valid_from": "2026-10-28T12:00:00Z"}
-            }
-          }
-        },
-        "responses": {
-          "201": {"description": "Членство создано", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Membership"}}}},
-          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "409": {"description": "external_membership_already_active", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "422": {"$ref": "#/components/responses/ValidationError"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
-        }
-      }
-    },
-    "/api/v1/external-memberships/{membershipId}/revoke": {
-      "post": {
-        "operationId": "oms2RevokeExternalMembership",
-        "summary": "OMS2 revoke external membership",
-        "description": "Отзывает членство во внешней организации. OMS1 отзывает только external_user grant для этой организации; операторские роли не затрагиваются. Требует роль administrator.",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {"type": "string", "format": "uuid"},
-            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-          },
-          {"name": "membershipId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "ID членства"}
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {"schema": {"$ref": "#/components/schemas/MembershipRevoke"}, "example": {"effective_at": "2026-10-28T13:00:00Z", "reason": "membership closed"}}
-          }
-        },
-        "responses": {
-          "200": {"description": "Членство отозвано", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Membership"}}}},
-          "404": {"description": "external_membership_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "409": {"description": "external_membership_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "422": {"$ref": "#/components/responses/ValidationError"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
-        }
-      }
-    },
     "/api/v1/people/{personId}/performer-profile": {
-      "post": {
-        "operationId": "oms2SetPerformerProfile",
-        "summary": "OMS2 set performer profile",
-        "description": "Создаёт или меняет профиль исполнителя и публикует people.performer_profile.changed. OMS5 получает снимок person_id, display_name, статуса и подтверждённых контактов. Профиль не связан с employment episode и не даёт операторских прав.",
+      "put": {
+        "operationId": "oms2UpsertPerformerProfile",
+        "summary": "OMS2 create or update performer profile",
+        "description": "Создаёт или обновляет профиль исполнителя. При создании профиль получает engagement_type_validation_status=pending и стадию PERFORMER_PROFILE. При смене типа оформления подтверждение сбрасывается и создаётся запись аудита. Стадию воронки и счётчик смен клиент передавать не может.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {
@@ -1012,15 +1118,442 @@
           },
           {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
         ],
-        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformerProfileSet"}, "example": {"profile_status": "active"}}}},
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PerformerProfileUpdate"},
+              "example": {"profile_status": "active", "engagement_type": "self_employed", "medical_book_status": "non_food", "change_reason": "Регистрация исполнителя"}
+            }
+          }
+        },
         "responses": {
-          "200": {"description": "Профиль обновлён", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformerProfile"}}}},
-          "201": {"description": "Профиль создан", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformerProfile"}}}},
-          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-          "409": {"description": "person_already_merged", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "200": {
+            "description": "Профиль обновлён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Профиль создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
           "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "422": {"$ref": "#/components/responses/ValidationError"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, engagement_type_rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {
+            "description": "invalid_engagement_type, invalid_medical_book_status, validation_error",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      },
+      "get": {
+        "operationId": "oms2GetPerformerProfile",
+        "summary": "OMS2 get performer profile",
+        "description": "Возвращает профиль, периоды работы, адреса, документы и идентификаторы без номеров и значений. Периоды отсортированы по starts_at; адреса — регистрация, приоритетный адрес поиска, остальные по created_at.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}],
+        "responses": {
+          "200": {
+            "description": "Профиль исполнителя",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found, performer_profile_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/performer-profile/engagement-type/verify": {
+      "post": {
+        "operationId": "oms2VerifyEngagementType",
+        "summary": "OMS2 verify or reject performer engagement type",
+        "description": "Фиксирует решение менеджера по типу оформления. Повтор с тем же решением идемпотентен; повтор с другим решением возвращает 409 engagement_type_already_validated. После решения стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EngagementTypeVerify"}, "example": {"decision": "verified", "reason": "Договор ГПХ проверен"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Решение по типу оформления сохранено",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/EngagementTypeVerification"},
+                "example": {
+                  "person_id": "1042",
+                  "engagement_type": "gph",
+                  "engagement_type_validation_status": "verified",
+                  "engagement_type_validated_at": "2026-11-01T10:00:00Z",
+                  "engagement_type_validated_by_user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "engagement_type_rejection_reason": null,
+                  "funnel_stage": "PERFORMER_READY_NON_MEDICAL"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "person_not_found, performer_profile_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, engagement_type_already_validated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "engagement_type_not_selected, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/work-periods": {
+      "post": {
+        "operationId": "oms2CreatePerformerWorkPeriod",
+        "summary": "OMS2 create performer work period",
+        "description": "Создаёт период работы исполнителя. Тип оформления периода должен совпадать с типом профиля. У персоны не более одного активного периода. После создания стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PerformerWorkPeriodCreate"},
+              "example": {"starts_at": "2026-11-05T00:00:00Z", "engagement_type": "self_employed", "personnel_number": "QA-EMP-006", "reason": "Начало работы"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Период работы создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerWorkPeriod"},
+                "example": {
+                  "work_period_id": "31",
+                  "person_id": "1042",
+                  "status": "active",
+                  "engagement_type": "self_employed",
+                  "starts_at": "2026-11-05T00:00:00Z",
+                  "ends_at": null,
+                  "personnel_number": "QA-EMP-006",
+                  "created_at": "2026-11-01T09:10:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "person_already_merged, performer_profile_required, active_work_period_exists",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "engagement_type_mismatch, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/work-periods/{workPeriodId}/terminate": {
+      "post": {
+        "operationId": "oms2TerminatePerformerWorkPeriod",
+        "summary": "OMS2 terminate performer work period",
+        "description": "Завершает период работы. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 work_period_conflict. После завершения стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "workPeriodId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор периода работы"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/PerformerWorkPeriodTerminate"}, "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Завершение работы"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Период работы завершён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerWorkPeriodTerminated"},
+                "example": {"work_period_id": "31", "status": "terminated", "ends_at": "2026-12-01T00:00:00Z", "funnel_stage": "PERFORMER_PROFILE"}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "work_period_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "work_period_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/addresses": {
+      "post": {
+        "operationId": "oms2CreatePersonAddress",
+        "summary": "OMS2 add person address",
+        "description": "Добавляет адрес регистрации или адрес поиска подработки. У персоны один адрес регистрации. Первый адрес поиска подработки становится приоритетным автоматически. Второй адрес регистрации или второй приоритетный адрес отклоняется с 409.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PersonAddressCreate"},
+              "example": {
+                "address_type": "work_search",
+                "is_primary": true,
+                "country_code": "RU",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "house": "17",
+                "flat": "12",
+                "postal_code": "125009",
+                "lat": 55.771216,
+                "lon": 37.57729
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Адрес добавлен",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PersonAddress"},
+                "example": {
+                  "person_address_id": "77",
+                  "person_id": "1042",
+                  "address_type": "work_search",
+                  "is_primary": true,
+                  "country_code": "RU",
+                  "region": "Москва",
+                  "city": "Москва",
+                  "street": "Тверская",
+                  "house": "17",
+                  "block": null,
+                  "flat": "12",
+                  "postal_code": "125009",
+                  "lat": 55.771216,
+                  "lon": 37.57729,
+                  "created_at": "2026-11-01T09:20:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "person_already_merged, registration_address_exists, primary_work_address_exists",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "invalid_address_type, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      },
+      "get": {
+        "operationId": "oms2ListPersonAddresses",
+        "summary": "OMS2 list person addresses",
+        "description": "Возвращает адреса персоны. Сортировка: адрес регистрации, приоритетный адрес поиска подработки, остальные по created_at.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}],
+        "responses": {
+          "200": {
+            "description": "Адреса персоны",
+            "content": {
+              "application/json": {
+                "schema": {"type": "array", "items": {"$ref": "#/components/schemas/PersonAddress"}},
+                "example": [
+                  {
+                    "person_address_id": "77",
+                    "person_id": "1042",
+                    "address_type": "work_search",
+                    "is_primary": true,
+                    "country_code": "RU",
+                    "region": "Москва",
+                    "city": "Москва",
+                    "street": "Тверская",
+                    "house": "17",
+                    "block": null,
+                    "flat": "12",
+                    "postal_code": "125009",
+                    "lat": 55.771216,
+                    "lon": 37.57729,
+                    "created_at": "2026-11-01T09:20:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/addresses/{addressId}/set-primary": {
+      "post": {
+        "operationId": "oms2SetPrimaryPersonAddress",
+        "summary": "OMS2 set primary work search address",
+        "description": "Переключает приоритетный адрес поиска подработки. При is_primary=true приоритет снимается с текущего адреса и устанавливается новому в одной транзакции. Адрес регистрации переключать нельзя.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"},
+          {"name": "addressId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор адреса персоны"}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PersonAddressSetPrimary"}, "example": {"is_primary": true}}}},
+        "responses": {
+          "200": {
+            "description": "Приоритетный адрес обновлён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PersonAddress"},
+                "example": {
+                  "person_address_id": "77",
+                  "person_id": "1042",
+                  "address_type": "work_search",
+                  "is_primary": true,
+                  "country_code": "RU",
+                  "region": "Москва",
+                  "city": "Москва",
+                  "street": "Тверская",
+                  "house": "17",
+                  "block": null,
+                  "flat": "12",
+                  "postal_code": "125009",
+                  "lat": 55.771216,
+                  "lon": 37.57729,
+                  "created_at": "2026-11-01T09:20:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found, person_address_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, primary_work_address_exists", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_address_type, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
           "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
@@ -1574,7 +2107,17 @@
       },
       "PerformerSync": {
         "type": "object",
-        "required": ["person_id", "display_name", "status", "source_version"],
+        "required": [
+          "person_id",
+          "display_name",
+          "status",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "funnel_stage",
+          "medical_book_status",
+          "completed_shifts_count",
+          "source_version"
+        ],
         "properties": {
           "person_id": {"$ref": "#/components/schemas/PersonId"},
           "employee_id": {
@@ -1585,12 +2128,32 @@
           "email": {"type": ["string", "null"], "format": "email"},
           "phone": {"type": ["string", "null"]},
           "status": {"type": "string", "enum": ["active", "inactive"]},
-          "source_version": {"type": "integer", "minimum": 1}
+          "source_version": {"type": "integer", "minimum": 1},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"}
         }
       },
       "Performer": {
         "type": "object",
-        "required": ["id", "person_id", "display_name", "status", "source_version", "synced_at"],
+        "required": [
+          "id",
+          "person_id",
+          "display_name",
+          "status",
+          "source_version",
+          "synced_at",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "funnel_stage",
+          "medical_book_status",
+          "completed_shifts_count"
+        ],
         "properties": {
           "id": {"type": "string", "format": "uuid"},
           "person_id": {"$ref": "#/components/schemas/PersonId"},
@@ -1600,7 +2163,34 @@
           "status": {"type": "string", "enum": ["active", "inactive", "merged"]},
           "source_version": {"type": "integer", "minimum": 1},
           "merged_into_performer_id": {"type": ["string", "null"], "format": "uuid"},
-          "synced_at": {"type": "string", "format": "date-time"}
+          "synced_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {
+            "type": ["string", "null"],
+            "enum": ["gph", "self_employed", null],
+            "description": "Снимок типа оформления; null допустим только для строк, созданных до обновления."
+          },
+          "engagement_type_validation_status": {"type": ["string", "null"], "enum": ["pending", "verified", "rejected", null]},
+          "funnel_stage": {
+            "type": ["string", "null"],
+            "enum": [
+              "PERFORMER_BLANK",
+              "PERFORMER_PROFILE",
+              "PERFORMER_DOCS_PENDING",
+              "PERFORMER_READY_NON_MEDICAL",
+              "PERFORMER_READY_NON_FOOD",
+              "PERFORMER_READY_FOOD",
+              "PERFORMER_BOOKED_SHIFT",
+              "PERFORMER_FIRST_SHIFT_COMPLETED",
+              "PERFORMER_FIFTH_SHIFT_COMPLETED",
+              "PERFORMER_PROFILE_DELETED",
+              null
+            ]
+          },
+          "medical_book_status": {"type": ["string", "null"], "enum": ["none", "non_food", "food", null]},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"}
         }
       },
       "ShiftTransition": {
@@ -1666,8 +2256,7 @@
           "performer_id": {"type": "string"},
           "status": {"type": "string", "enum": ["draft", "sent", "viewed", "accepted", "declined", "won", "lost", "expired", "cancelled"]},
           "expires_at": {"type": "string", "format": "date-time"},
-          "sent_at": {"type": "string", "format": "date-time"},
-          "responded_at": {"type": ["string", "null"], "format": "date-time"}
+          "sent_at": {"type": "string", "format": "date-time"}
         }
       },
       "OfferCampaignResult": {
@@ -1699,14 +2288,18 @@
       },
       "ShiftAssignment": {
         "type": "object",
-        "required": ["id", "shift_id", "performer_id", "offer_id", "status", "assigned_at"],
+        "required": ["id", "shift_id", "performer_id", "status", "engagement_type", "assigned_at"],
         "properties": {
-          "id": {"type": "string"},
-          "shift_id": {"type": "string"},
-          "performer_id": {"type": "string"},
-          "offer_id": {"type": "string"},
+          "id": {"type": "string", "format": "uuid"},
+          "shift_id": {"type": "string", "format": "uuid"},
+          "performer_id": {"type": "string", "format": "uuid"},
           "status": {"type": "string"},
-          "assigned_at": {"type": "string", "format": "date-time"}
+          "assigned_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {
+            "type": ["string", "null"],
+            "enum": ["gph", "self_employed", null],
+            "description": "Снимок типа оформления на момент назначения; null только у назначений до обновления."
+          }
         }
       },
       "OfferAcceptResult": {
@@ -1759,12 +2352,12 @@
       "RoleAssignmentCreate": {
         "type": "object",
         "required": ["role_code", "valid_from", "reason"],
+        "additionalProperties": false,
         "properties": {
           "role_code": {"$ref": "#/components/schemas/RoleCode"},
-          "employment_episode_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
-          "position_assignment_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "operator_employment_period_id": {"type": ["string", "null"], "format": "uuid"},
+          "operator_position_assignment_id": {"type": ["string", "null"], "format": "uuid"},
           "membership_id": {"type": ["string", "null"], "format": "uuid"},
-          "organization_id": {"type": ["string", "null"], "format": "uuid"},
           "valid_from": {"type": "string", "format": "date-time"},
           "reason": {"type": "string", "minLength": 1, "maxLength": 255}
         }
@@ -1780,8 +2373,8 @@
           "status": {"type": "string", "enum": ["active", "revoked"]},
           "valid_from": {"type": "string", "format": "date-time"},
           "valid_to": {"type": ["string", "null"], "format": "date-time"},
-          "employment_episode_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
-          "position_assignment_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "operator_employment_period_id": {"type": ["string", "null"], "format": "uuid"},
+          "operator_position_assignment_id": {"type": ["string", "null"], "format": "uuid"},
           "organization_id": {"type": ["string", "null"], "format": "uuid"}
         }
       },
@@ -1800,6 +2393,108 @@
           "revoked_by_user_id": {"type": "string", "format": "uuid"},
           "reason": {"type": "string"}
         }
+      },
+      "OperatorEmploymentPeriodCreate": {
+        "type": "object",
+        "required": ["starts_at", "position_code", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "starts_at": {"type": "string", "format": "date-time"},
+          "position_code": {"type": "string", "minLength": 1, "maxLength": 64},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
+        }
+      },
+      "OperatorEmploymentPeriod": {
+        "type": "object",
+        "required": ["operator_employment_period_id", "user_id", "status", "starts_at", "position_assignment", "created_at"],
+        "properties": {
+          "operator_employment_period_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "position_assignment": {"$ref": "#/components/schemas/OperatorPositionAssignment"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "OperatorPositionAssignment": {
+        "type": "object",
+        "required": ["operator_position_assignment_id", "position_code", "status", "starts_at"],
+        "properties": {
+          "operator_position_assignment_id": {"type": "string", "format": "uuid"},
+          "position_code": {"type": "string"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"}
+        }
+      },
+      "OperatorEmploymentPeriodTerminate": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "OperatorEmploymentPeriodTerminated": {
+        "type": "object",
+        "required": ["operator_employment_period_id", "status", "ends_at", "revoked_role_assignments"],
+        "properties": {
+          "operator_employment_period_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["terminated"]},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "revoked_role_assignments": {"type": "integer", "minimum": 0}
+        }
+      },
+      "ExternalMembershipCreate": {
+        "type": "object",
+        "required": ["organization_id", "valid_from"],
+        "additionalProperties": false,
+        "properties": {
+          "organization_id": {"type": "string", "format": "uuid"},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "valid_to": {"type": ["string", "null"], "format": "date-time"}
+        }
+      },
+      "ExternalMembership": {
+        "type": "object",
+        "required": ["membership_id", "user_id", "organization_id", "status", "valid_from", "created_at"],
+        "properties": {
+          "membership_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "organization_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["active", "revoked"]},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "valid_to": {"type": ["string", "null"], "format": "date-time"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "ExternalMembershipRevoke": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "ExternalMembershipRevoked": {
+        "type": "object",
+        "required": ["membership_id", "status", "valid_to", "revoked_role_assignments"],
+        "properties": {
+          "membership_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["revoked"]},
+          "valid_to": {"type": "string", "format": "date-time"},
+          "revoked_role_assignments": {"type": "integer", "minimum": 0}
+        }
+      },
+      "PerformerLinkUpdate": {
+        "type": "object",
+        "required": ["person_id"],
+        "additionalProperties": false,
+        "properties": {"person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}}
+      },
+      "PerformerLink": {
+        "type": "object",
+        "required": ["user_id", "person_id"],
+        "properties": {"user_id": {"type": "string", "format": "uuid"}, "person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}}
       },
       "ContactInput": {
         "type": "object",
@@ -1832,78 +2527,182 @@
           "possible_duplicates": {"type": "array", "items": {"$ref": "#/components/schemas/PossibleDuplicate"}}
         }
       },
-      "EmploymentCreate": {
+      "FunnelStage": {
+        "type": "string",
+        "enum": [
+          "PERFORMER_BLANK",
+          "PERFORMER_PROFILE",
+          "PERFORMER_DOCS_PENDING",
+          "PERFORMER_READY_NON_MEDICAL",
+          "PERFORMER_READY_NON_FOOD",
+          "PERFORMER_READY_FOOD",
+          "PERFORMER_BOOKED_SHIFT",
+          "PERFORMER_FIRST_SHIFT_COMPLETED",
+          "PERFORMER_FIFTH_SHIFT_COMPLETED",
+          "PERFORMER_PROFILE_DELETED"
+        ],
+        "description": "PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5."
+      },
+      "EngagementType": {"type": "string", "enum": ["gph", "self_employed"], "description": "Тип оформления исполнителя: договор ГПХ или самозанятость."},
+      "EngagementTypeValidationStatus": {"type": "string", "enum": ["pending", "verified", "rejected"]},
+      "MedicalBookStatus": {"type": "string", "enum": ["none", "non_food", "food"]},
+      "PerformerProfileUpdate": {
         "type": "object",
-        "required": ["starts_at", "position_code"],
+        "required": ["profile_status"],
+        "additionalProperties": false,
         "properties": {
-          "starts_at": {"type": "string", "format": "date-time"},
-          "position_code": {"type": "string", "enum": ["operator_software"]},
-          "personnel_number": {"type": ["string", "null"], "maxLength": 250}
+          "profile_status": {"type": "string", "enum": ["active", "inactive"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "change_reason": {"type": "string", "maxLength": 255}
         }
       },
-      "Employment": {
-        "type": "object",
-        "required": ["employment_episode_id", "person_id", "employment_status", "position_assignment_id", "position_code", "starts_at"],
-        "properties": {
-          "employment_episode_id": {"$ref": "#/components/schemas/PersonId"},
-          "person_id": {"$ref": "#/components/schemas/PersonId"},
-          "employment_status": {"type": "string", "enum": ["active", "terminated"]},
-          "position_assignment_id": {"$ref": "#/components/schemas/PersonId"},
-          "position_code": {"type": "string"},
-          "starts_at": {"type": "string", "format": "date-time"},
-          "ends_at": {"type": ["string", "null"], "format": "date-time"}
-        }
-      },
-      "EmploymentTerminate": {
-        "type": "object",
-        "required": ["effective_at", "reason"],
-        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
-      },
-      "EmploymentTerminated": {
-        "type": "object",
-        "required": ["employment_episode_id", "person_id", "employment_status", "ended_at"],
-        "properties": {
-          "employment_episode_id": {"$ref": "#/components/schemas/PersonId"},
-          "person_id": {"$ref": "#/components/schemas/PersonId"},
-          "employment_status": {"type": "string", "enum": ["terminated"]},
-          "ended_at": {"type": "string", "format": "date-time"},
-          "position_assignment_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}
-        }
-      },
-      "MembershipCreate": {
-        "type": "object",
-        "required": ["organization_id", "valid_from"],
-        "properties": {"organization_id": {"type": "string", "format": "uuid"}, "valid_from": {"type": "string", "format": "date-time"}}
-      },
-      "Membership": {
-        "type": "object",
-        "required": ["membership_id", "person_id", "organization_id", "membership_status", "valid_from"],
-        "properties": {
-          "membership_id": {"$ref": "#/components/schemas/PersonId"},
-          "person_id": {"$ref": "#/components/schemas/PersonId"},
-          "organization_id": {"type": "string", "format": "uuid"},
-          "membership_status": {"type": "string", "enum": ["active", "revoked"]},
-          "valid_from": {"type": "string", "format": "date-time"},
-          "valid_to": {"type": ["string", "null"], "format": "date-time"}
-        }
-      },
-      "MembershipRevoke": {
-        "type": "object",
-        "required": ["effective_at", "reason"],
-        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
-      },
-      "PerformerProfileSet": {"type": "object", "required": ["profile_status"], "properties": {"profile_status": {"type": "string", "enum": ["active", "inactive"]}}},
       "PerformerProfile": {
         "type": "object",
-        "required": ["person_id", "profile_status", "display_name"],
+        "required": [
+          "person_id",
+          "display_name",
+          "profile_status",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "engagement_type_selected_at",
+          "medical_book_status",
+          "funnel_stage",
+          "funnel_stage_changed_at",
+          "completed_shifts_count",
+          "work_periods",
+          "addresses",
+          "documents",
+          "identifiers",
+          "updated_at"
+        ],
         "properties": {
           "person_id": {"$ref": "#/components/schemas/PersonId"},
-          "profile_status": {"type": "string", "enum": ["active", "inactive"]},
           "display_name": {"type": "string", "minLength": 1, "maxLength": 255},
-          "email": {"type": ["string", "null"], "format": "email"},
-          "phone": {"type": ["string", "null"]}
+          "profile_status": {"type": "string", "enum": ["active", "inactive"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "engagement_type_selected_at": {"type": "string", "format": "date-time"},
+          "engagement_type_validated_at": {"type": ["string", "null"], "format": "date-time"},
+          "engagement_type_validated_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+          "engagement_type_rejection_reason": {"type": ["string", "null"], "maxLength": 255},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"},
+          "funnel_stage_changed_at": {"type": "string", "format": "date-time"},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "work_periods": {"type": "array", "items": {"$ref": "#/components/schemas/PerformerWorkPeriod"}},
+          "addresses": {"type": "array", "items": {"$ref": "#/components/schemas/PersonAddress"}},
+          "documents": {"type": "array", "items": {"$ref": "#/components/schemas/Document"}},
+          "identifiers": {"type": "array", "items": {"$ref": "#/components/schemas/Identifier"}},
+          "updated_at": {"type": "string", "format": "date-time"}
         }
       },
+      "EngagementTypeVerify": {
+        "type": "object",
+        "required": ["decision", "reason"],
+        "additionalProperties": false,
+        "properties": {"decision": {"type": "string", "enum": ["verified", "rejected"]}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "EngagementTypeVerification": {
+        "type": "object",
+        "required": ["person_id", "engagement_type", "engagement_type_validation_status", "engagement_type_validated_at", "funnel_stage"],
+        "properties": {
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "engagement_type_validated_at": {"type": "string", "format": "date-time"},
+          "engagement_type_validated_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+          "engagement_type_rejection_reason": {"type": ["string", "null"], "maxLength": 255},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"}
+        }
+      },
+      "PerformerWorkPeriodCreate": {
+        "type": "object",
+        "required": ["starts_at", "engagement_type", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "starts_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
+        }
+      },
+      "PerformerWorkPeriod": {
+        "type": "object",
+        "required": ["work_period_id", "person_id", "status", "engagement_type", "starts_at", "created_at"],
+        "properties": {
+          "work_period_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PerformerWorkPeriodTerminate": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "PerformerWorkPeriodTerminated": {
+        "type": "object",
+        "required": ["work_period_id", "status", "ends_at", "funnel_stage"],
+        "properties": {
+          "work_period_id": {"$ref": "#/components/schemas/PersonId"},
+          "status": {"type": "string", "enum": ["terminated"]},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"}
+        }
+      },
+      "PersonAddressCreate": {
+        "type": "object",
+        "required": ["address_type", "country_code", "region", "city"],
+        "additionalProperties": false,
+        "properties": {
+          "address_type": {"type": "string", "enum": ["registration", "work_search"]},
+          "is_primary": {"type": "boolean", "default": false},
+          "country_code": {"type": "string", "pattern": "^[A-Z]{2}$"},
+          "country": {"type": ["string", "null"], "maxLength": 250},
+          "region": {"type": "string", "minLength": 1, "maxLength": 250},
+          "city": {"type": "string", "minLength": 1, "maxLength": 250},
+          "street": {"type": ["string", "null"], "maxLength": 250},
+          "house": {"type": ["string", "null"], "maxLength": 250},
+          "block": {"type": ["string", "null"], "maxLength": 250},
+          "flat": {"type": ["string", "null"], "maxLength": 250},
+          "postal_code": {"type": ["string", "null"], "maxLength": 32},
+          "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+          "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180}
+        }
+      },
+      "PersonAddress": {
+        "type": "object",
+        "required": ["person_address_id", "person_id", "address_type", "is_primary", "country_code", "region", "city", "created_at"],
+        "properties": {
+          "person_address_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "address_type": {"type": "string", "enum": ["registration", "work_search"]},
+          "is_primary": {"type": "boolean"},
+          "country_code": {"type": "string"},
+          "country": {"type": ["string", "null"], "maxLength": 250},
+          "region": {"type": "string"},
+          "city": {"type": "string"},
+          "street": {"type": ["string", "null"], "maxLength": 250},
+          "house": {"type": ["string", "null"], "maxLength": 250},
+          "block": {"type": ["string", "null"], "maxLength": 250},
+          "flat": {"type": ["string", "null"], "maxLength": 250},
+          "postal_code": {"type": ["string", "null"], "maxLength": 32},
+          "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+          "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PersonAddressSetPrimary": {"type": "object", "required": ["is_primary"], "additionalProperties": false, "properties": {"is_primary": {"type": "boolean"}}},
       "DocumentCreate": {
         "type": "object",
         "required": ["document_type", "issuing_country_code", "document_number", "issued_at"],

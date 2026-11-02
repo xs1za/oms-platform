@@ -528,10 +528,10 @@
               }
             ],
             "url": "{{oms5_base_url}}/performers/sync",
-            "description": "### OMS5 sync performer projection from OMS2\n\nВнутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\",\n    \"display_name\",\n    \"status\",\n    \"source_version\"\n  ],\n  \"properties\": {\n    \"person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"employee_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Legacy поле на время поэтапного развёртывания; при расхождении с person_id запрос отклоняется 409 person_id_conflict.\"\n    },\n    \"display_name\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    },\n    \"email\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"email\"\n    },\n    \"phone\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    },\n    \"source_version\": {\n      \"type\": \"integer\",\n      \"minimum\": 1\n    }\n  }\n}\n```",
+            "description": "### OMS5 sync performer projection from OMS2\n\nВнутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\",\n    \"display_name\",\n    \"status\",\n    \"engagement_type\",\n    \"engagement_type_validation_status\",\n    \"funnel_stage\",\n    \"medical_book_status\",\n    \"completed_shifts_count\",\n    \"source_version\"\n  ],\n  \"properties\": {\n    \"person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"employee_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Legacy поле на время поэтапного развёртывания; при расхождении с person_id запрос отклоняется 409 person_id_conflict.\"\n    },\n    \"display_name\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    },\n    \"email\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"email\"\n    },\n    \"phone\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    },\n    \"source_version\": {\n      \"type\": \"integer\",\n      \"minimum\": 1\n    },\n    \"engagement_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"gph\",\n        \"self_employed\"\n      ],\n      \"description\": \"Тип оформления исполнителя: договор ГПХ или самозанятость.\"\n    },\n    \"engagement_type_validation_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"pending\",\n        \"verified\",\n        \"rejected\"\n      ]\n    },\n    \"funnel_stage\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"PERFORMER_BLANK\",\n        \"PERFORMER_PROFILE\",\n        \"PERFORMER_DOCS_PENDING\",\n        \"PERFORMER_READY_NON_MEDICAL\",\n        \"PERFORMER_READY_NON_FOOD\",\n        \"PERFORMER_READY_FOOD\",\n        \"PERFORMER_BOOKED_SHIFT\",\n        \"PERFORMER_FIRST_SHIFT_COMPLETED\",\n        \"PERFORMER_FIFTH_SHIFT_COMPLETED\",\n        \"PERFORMER_PROFILE_DELETED\"\n      ],\n      \"description\": \"PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5.\"\n    },\n    \"medical_book_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"none\",\n        \"non_food\",\n        \"food\"\n      ]\n    },\n    \"completed_shifts_count\": {\n      \"type\": \"integer\",\n      \"minimum\": 0\n    },\n    \"first_booked_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"first_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"fifth_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna@example.test\",\n  \"phone\": \"+375291234567\",\n  \"status\": \"active\",\n  \"source_version\": 3\n}",
+              "raw": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna@example.test\",\n  \"phone\": \"+375291234567\",\n  \"status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"verified\",\n  \"funnel_stage\": \"PERFORMER_READY_NON_FOOD\",\n  \"medical_book_status\": \"non_food\",\n  \"completed_shifts_count\": 3,\n  \"first_booked_at\": \"2026-10-20T08:00:00Z\",\n  \"first_shift_completed_at\": \"2026-10-21T18:00:00Z\",\n  \"fifth_shift_completed_at\": null,\n  \"source_version\": 3\n}",
               "options": {
                 "raw": {
                   "language": "json",
@@ -541,6 +541,11 @@
                       "person_id",
                       "display_name",
                       "status",
+                      "engagement_type",
+                      "engagement_type_validation_status",
+                      "funnel_stage",
+                      "medical_book_status",
+                      "completed_shifts_count",
                       "source_version"
                     ],
                     "properties": {
@@ -584,6 +589,71 @@
                       "source_version": {
                         "type": "integer",
                         "minimum": 1
+                      },
+                      "engagement_type": {
+                        "type": "string",
+                        "enum": [
+                          "gph",
+                          "self_employed"
+                        ],
+                        "description": "Тип оформления исполнителя: договор ГПХ или самозанятость."
+                      },
+                      "engagement_type_validation_status": {
+                        "type": "string",
+                        "enum": [
+                          "pending",
+                          "verified",
+                          "rejected"
+                        ]
+                      },
+                      "funnel_stage": {
+                        "type": "string",
+                        "enum": [
+                          "PERFORMER_BLANK",
+                          "PERFORMER_PROFILE",
+                          "PERFORMER_DOCS_PENDING",
+                          "PERFORMER_READY_NON_MEDICAL",
+                          "PERFORMER_READY_NON_FOOD",
+                          "PERFORMER_READY_FOOD",
+                          "PERFORMER_BOOKED_SHIFT",
+                          "PERFORMER_FIRST_SHIFT_COMPLETED",
+                          "PERFORMER_FIFTH_SHIFT_COMPLETED",
+                          "PERFORMER_PROFILE_DELETED"
+                        ],
+                        "description": "PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5."
+                      },
+                      "medical_book_status": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "non_food",
+                          "food"
+                        ]
+                      },
+                      "completed_shifts_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "first_booked_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      },
+                      "first_shift_completed_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      },
+                      "fifth_shift_completed_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
                       }
                     }
                   }
@@ -602,7 +672,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"person_id\": \"string\",\n  \"display_name\": \"string\",\n  \"email\": \"string\",\n  \"phone\": \"string\",\n  \"status\": \"active\",\n  \"source_version\": 1,\n  \"merged_into_performer_id\": \"string\",\n  \"synced_at\": \"2026-09-20T12:00:00Z\"\n}"
+              "body": "{\n  \"id\": \"string\",\n  \"person_id\": \"string\",\n  \"display_name\": \"string\",\n  \"email\": \"string\",\n  \"phone\": \"string\",\n  \"status\": \"active\",\n  \"source_version\": 1,\n  \"merged_into_performer_id\": \"string\",\n  \"synced_at\": \"2026-09-20T12:00:00Z\",\n  \"engagement_type\": \"gph\",\n  \"engagement_type_validation_status\": \"pending\",\n  \"funnel_stage\": \"PERFORMER_BLANK\",\n  \"medical_book_status\": \"none\",\n  \"completed_shifts_count\": 1,\n  \"first_booked_at\": \"2026-09-20T12:00:00Z\",\n  \"first_shift_completed_at\": \"2026-09-20T12:00:00Z\",\n  \"fifth_shift_completed_at\": \"2026-09-20T12:00:00Z\"\n}"
             },
             {
               "name": "401 Нет или неверный service token (service_token_required)",
@@ -899,8 +969,8 @@
               "body": "{\n  \"detail\": \"string\"\n}"
             },
             {
-              "name": "409 self_assignment_not_allowed, performer_inactive, performer_merged или offer_campaign_conflict",
-              "status": "self_assignment_not_allowed, performer_inactive, performer_merged или offer_campaign_conflict",
+              "name": "409 self_assignment_not_allowed, performer_inactive, performer_merged, performer_not_ready, offer_lost, offer_unavailable или offer_campaign_conflict",
+              "status": "self_assignment_not_allowed, performer_inactive, performer_merged, performer_not_ready, offer_lost, offer_unavailable или offer_campaign_conflict",
               "code": 409,
               "header": [
                 {
@@ -955,7 +1025,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"offer\": {\n    \"id\": \"string\",\n    \"campaign_id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"status\": \"draft\",\n    \"expires_at\": \"2026-09-20T12:00:00Z\",\n    \"sent_at\": \"2026-09-20T12:00:00Z\",\n    \"responded_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"shift\": {\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"location\": \"string\",\n    \"required_performers_count\": 1,\n    \"id\": \"string\",\n    \"status\": \"A00_DRAFT\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"auto_closed\": true,\n    \"auto_close_reason\": \"string\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\",\n    \"assigned_performer_person_id\": \"string\",\n    \"created_by_user_id\": \"string\",\n    \"created_by_person_id\": \"string\",\n    \"created_by_display_name\": \"string\"\n  },\n  \"performer\": {\n    \"id\": \"string\",\n    \"person_id\": \"string\",\n    \"display_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string\",\n    \"status\": \"active\",\n    \"source_version\": 1,\n    \"merged_into_performer_id\": \"string\",\n    \"synced_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"available\": true,\n  \"reason\": \"string\"\n}"
+              "body": "{\n  \"offer\": {\n    \"id\": \"string\",\n    \"campaign_id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"status\": \"draft\",\n    \"expires_at\": \"2026-09-20T12:00:00Z\",\n    \"sent_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"shift\": {\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"location\": \"string\",\n    \"required_performers_count\": 1,\n    \"id\": \"string\",\n    \"status\": \"A00_DRAFT\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"auto_closed\": true,\n    \"auto_close_reason\": \"string\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\",\n    \"assigned_performer_person_id\": \"string\",\n    \"created_by_user_id\": \"string\",\n    \"created_by_person_id\": \"string\",\n    \"created_by_display_name\": \"string\"\n  },\n  \"performer\": {\n    \"id\": \"string\",\n    \"person_id\": \"string\",\n    \"display_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string\",\n    \"status\": \"active\",\n    \"source_version\": 1,\n    \"merged_into_performer_id\": \"string\",\n    \"synced_at\": \"2026-09-20T12:00:00Z\",\n    \"engagement_type\": \"gph\",\n    \"engagement_type_validation_status\": \"pending\",\n    \"funnel_stage\": \"PERFORMER_BLANK\",\n    \"medical_book_status\": \"none\",\n    \"completed_shifts_count\": 1,\n    \"first_booked_at\": \"2026-09-20T12:00:00Z\",\n    \"first_shift_completed_at\": \"2026-09-20T12:00:00Z\",\n    \"fifth_shift_completed_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"available\": true,\n  \"reason\": \"string\"\n}"
             },
             {
               "name": "404 Not found",
@@ -1049,7 +1119,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"offer\": {\n    \"id\": \"string\",\n    \"campaign_id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"status\": \"draft\",\n    \"expires_at\": \"2026-09-20T12:00:00Z\",\n    \"sent_at\": \"2026-09-20T12:00:00Z\",\n    \"responded_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"assignment\": {\n    \"id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"offer_id\": \"string\",\n    \"status\": \"string\",\n    \"assigned_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"shift\": {\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"location\": \"string\",\n    \"required_performers_count\": 1,\n    \"id\": \"string\",\n    \"status\": \"A00_DRAFT\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"auto_closed\": true,\n    \"auto_close_reason\": \"string\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\",\n    \"assigned_performer_person_id\": \"string\",\n    \"created_by_user_id\": \"string\",\n    \"created_by_person_id\": \"string\",\n    \"created_by_display_name\": \"string\"\n  }\n}"
+              "body": "{\n  \"offer\": {\n    \"id\": \"b2626b8c-464c-4d18-912d-40844d510f4d\",\n    \"status\": \"won\"\n  },\n  \"assignment\": {\n    \"id\": \"0d7a4e21-3f6b-4c58-9a2e-6b1d8f0a7c34\",\n    \"shift_id\": \"69ee99cb-df7e-4a16-a613-5b9903fa74d5\",\n    \"performer_id\": \"63c55740-a965-40c6-b699-a65ef887bcf1\",\n    \"status\": \"assigned\",\n    \"engagement_type\": \"self_employed\",\n    \"assigned_at\": \"2026-11-01T09:05:00Z\"\n  },\n  \"shift\": {\n    \"id\": \"69ee99cb-df7e-4a16-a613-5b9903fa74d5\",\n    \"status\": \"A30_CHOICE\"\n  }\n}"
             },
             {
               "name": "404 Not found",
@@ -1108,7 +1178,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"offer\": {\n    \"id\": \"string\",\n    \"campaign_id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"status\": \"draft\",\n    \"expires_at\": \"2026-09-20T12:00:00Z\",\n    \"sent_at\": \"2026-09-20T12:00:00Z\",\n    \"responded_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"shift\": {\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"location\": \"string\",\n    \"required_performers_count\": 1,\n    \"id\": \"string\",\n    \"status\": \"A00_DRAFT\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"auto_closed\": true,\n    \"auto_close_reason\": \"string\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\",\n    \"assigned_performer_person_id\": \"string\",\n    \"created_by_user_id\": \"string\",\n    \"created_by_person_id\": \"string\",\n    \"created_by_display_name\": \"string\"\n  },\n  \"performer\": {\n    \"id\": \"string\",\n    \"person_id\": \"string\",\n    \"display_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string\",\n    \"status\": \"active\",\n    \"source_version\": 1,\n    \"merged_into_performer_id\": \"string\",\n    \"synced_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"available\": true,\n  \"reason\": \"string\"\n}"
+              "body": "{\n  \"offer\": {\n    \"id\": \"string\",\n    \"campaign_id\": \"string\",\n    \"shift_id\": \"string\",\n    \"performer_id\": \"string\",\n    \"status\": \"draft\",\n    \"expires_at\": \"2026-09-20T12:00:00Z\",\n    \"sent_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"shift\": {\n    \"client_id\": \"string\",\n    \"starts_at\": \"2026-09-20T12:00:00Z\",\n    \"ends_at\": \"2026-09-20T12:00:00Z\",\n    \"location\": \"string\",\n    \"required_performers_count\": 1,\n    \"id\": \"string\",\n    \"status\": \"A00_DRAFT\",\n    \"assigned_performer_id\": \"string\",\n    \"close_reason\": \"paid\",\n    \"failure_reason\": \"absence\",\n    \"auto_closed\": true,\n    \"auto_close_reason\": \"string\",\n    \"created_at\": \"2026-09-20T12:00:00Z\",\n    \"updated_at\": \"2026-09-20T12:00:00Z\",\n    \"assigned_performer_person_id\": \"string\",\n    \"created_by_user_id\": \"string\",\n    \"created_by_person_id\": \"string\",\n    \"created_by_display_name\": \"string\"\n  },\n  \"performer\": {\n    \"id\": \"string\",\n    \"person_id\": \"string\",\n    \"display_name\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string\",\n    \"status\": \"active\",\n    \"source_version\": 1,\n    \"merged_into_performer_id\": \"string\",\n    \"synced_at\": \"2026-09-20T12:00:00Z\",\n    \"engagement_type\": \"gph\",\n    \"engagement_type_validation_status\": \"pending\",\n    \"funnel_stage\": \"PERFORMER_BLANK\",\n    \"medical_book_status\": \"none\",\n    \"completed_shifts_count\": 1,\n    \"first_booked_at\": \"2026-09-20T12:00:00Z\",\n    \"first_shift_completed_at\": \"2026-09-20T12:00:00Z\",\n    \"fifth_shift_completed_at\": \"2026-09-20T12:00:00Z\"\n  },\n  \"available\": true,\n  \"reason\": \"string\"\n}"
             },
             {
               "name": "404 Not found",
@@ -1925,682 +1995,6 @@
                 }
               ],
               "body": "{\n  \"person_id\": \"string\",\n  \"identity_status\": \"provisional\",\n  \"created_at\": \"2026-09-20T12:00:00Z\",\n  \"possible_duplicates\": [\n    {\n      \"person_id\": \"string\",\n      \"match_reasons\": [\n        \"string\"\n      ]\n    }\n  ]\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "403 Forbidden",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "422 Validation error",
-              "status": "Validation error",
-              "code": 422,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "500 Internal server error",
-              "status": "Internal server error",
-              "code": 500,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "OMS2 create employment period",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-              }
-            ],
-            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/employment-periods",
-            "description": "### OMS2 create employment period\n\nСоздаёт период трудоустройства и назначение на должность operator_software. Требует роль administrator. У человека допускается один активный период; personnel_number уникален.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"starts_at\",\n    \"position_code\"\n  ],\n  \"properties\": {\n    \"starts_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"position_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"operator_software\"\n      ]\n    },\n    \"personnel_number\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    }\n  }\n}\n```",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"starts_at\": \"2026-10-01T00:00:00Z\",\n  \"position_code\": \"operator_software\",\n  \"personnel_number\": \"QA-EMP-001\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json",
-                  "schema": {
-                    "type": "object",
-                    "required": [
-                      "starts_at",
-                      "position_code"
-                    ],
-                    "properties": {
-                      "starts_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "position_code": {
-                        "type": "string",
-                        "enum": [
-                          "operator_software"
-                        ]
-                      },
-                      "personnel_number": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "maxLength": 250
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "response": [
-            {
-              "name": "201 Период создан",
-              "status": "Период создан",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"employment_episode_id\": \"string\",\n  \"person_id\": \"string\",\n  \"employment_status\": \"active\",\n  \"position_assignment_id\": \"string\",\n  \"position_code\": \"string\",\n  \"starts_at\": \"2026-09-20T12:00:00Z\",\n  \"ends_at\": \"2026-09-20T12:00:00Z\"\n}"
-            },
-            {
-              "name": "404 person_not_found",
-              "status": "person_not_found",
-              "code": 404,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "409 active_employment_exists или person_already_merged",
-              "status": "active_employment_exists или person_already_merged",
-              "code": 409,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "403 Forbidden",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "422 Validation error",
-              "status": "Validation error",
-              "code": 422,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "500 Internal server error",
-              "status": "Internal server error",
-              "code": 500,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "OMS2 terminate employment period",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-              }
-            ],
-            "url": "{{oms2_base_url}}/api/v1/employment-periods/{{param}}/terminate",
-            "description": "### OMS2 terminate employment period\n\nЗавершает период трудоустройства и активные назначения на должность. OMS1 получает people.employment.changed и отзывает только роли, связанные с этим периодом. Повтор с теми же данными идемпотентен, иные данные дают 409.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"effective_at\",\n    \"reason\"\n  ],\n  \"properties\": {\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"effective_at\": \"2026-10-20T00:00:00Z\",\n  \"reason\": \"dismissal\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json",
-                  "schema": {
-                    "type": "object",
-                    "required": [
-                      "effective_at",
-                      "reason"
-                    ],
-                    "properties": {
-                      "effective_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "reason": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 255
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "response": [
-            {
-              "name": "200 Период завершён",
-              "status": "Период завершён",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"employment_episode_id\": \"string\",\n  \"person_id\": \"string\",\n  \"employment_status\": \"terminated\",\n  \"ended_at\": \"2026-09-20T12:00:00Z\",\n  \"position_assignment_id\": \"string\"\n}"
-            },
-            {
-              "name": "404 employment_episode_not_found",
-              "status": "employment_episode_not_found",
-              "code": 404,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "409 employment_period_conflict",
-              "status": "employment_period_conflict",
-              "code": 409,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "403 Forbidden",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "422 Validation error",
-              "status": "Validation error",
-              "code": 422,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "500 Internal server error",
-              "status": "Internal server error",
-              "code": 500,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "OMS2 create external membership",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-              }
-            ],
-            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/external-memberships",
-            "description": "### OMS2 create external membership\n\nСоздаёт подтверждённое членство во внешней организации OMS5. Активное членство в одной организации допускается одно. Требует роль administrator.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"organization_id\",\n    \"valid_from\"\n  ],\n  \"properties\": {\n    \"organization_id\": {\n      \"type\": \"string\",\n      \"format\": \"uuid\"\n    },\n    \"valid_from\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    }\n  }\n}\n```",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"organization_id\": \"3f6e2890-f24e-48e3-9034-c81f64716ebd\",\n  \"valid_from\": \"2026-10-28T12:00:00Z\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json",
-                  "schema": {
-                    "type": "object",
-                    "required": [
-                      "organization_id",
-                      "valid_from"
-                    ],
-                    "properties": {
-                      "organization_id": {
-                        "type": "string",
-                        "format": "uuid"
-                      },
-                      "valid_from": {
-                        "type": "string",
-                        "format": "date-time"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "response": [
-            {
-              "name": "201 Членство создано",
-              "status": "Членство создано",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"membership_id\": \"string\",\n  \"person_id\": \"string\",\n  \"organization_id\": \"string\",\n  \"membership_status\": \"active\",\n  \"valid_from\": \"2026-09-20T12:00:00Z\",\n  \"valid_to\": \"2026-09-20T12:00:00Z\"\n}"
-            },
-            {
-              "name": "404 person_not_found",
-              "status": "person_not_found",
-              "code": 404,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "409 external_membership_already_active",
-              "status": "external_membership_already_active",
-              "code": 409,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "403 Forbidden",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "422 Validation error",
-              "status": "Validation error",
-              "code": 422,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "500 Internal server error",
-              "status": "Internal server error",
-              "code": 500,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "OMS2 revoke external membership",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-              }
-            ],
-            "url": "{{oms2_base_url}}/api/v1/external-memberships/{{param}}/revoke",
-            "description": "### OMS2 revoke external membership\n\nОтзывает членство во внешней организации. OMS1 отзывает только external_user grant для этой организации; операторские роли не затрагиваются. Требует роль administrator.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"effective_at\",\n    \"reason\"\n  ],\n  \"properties\": {\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"effective_at\": \"2026-10-28T13:00:00Z\",\n  \"reason\": \"membership closed\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json",
-                  "schema": {
-                    "type": "object",
-                    "required": [
-                      "effective_at",
-                      "reason"
-                    ],
-                    "properties": {
-                      "effective_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "reason": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 255
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "response": [
-            {
-              "name": "200 Членство отозвано",
-              "status": "Членство отозвано",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"membership_id\": \"string\",\n  \"person_id\": \"string\",\n  \"organization_id\": \"string\",\n  \"membership_status\": \"active\",\n  \"valid_from\": \"2026-09-20T12:00:00Z\",\n  \"valid_to\": \"2026-09-20T12:00:00Z\"\n}"
-            },
-            {
-              "name": "404 external_membership_not_found",
-              "status": "external_membership_not_found",
-              "code": 404,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "409 external_membership_conflict",
-              "status": "external_membership_conflict",
-              "code": 409,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "403 Forbidden",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "422 Validation error",
-              "status": "Validation error",
-              "code": 422,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "500 Internal server error",
-              "status": "Internal server error",
-              "code": 500,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "OMS2 set performer profile",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{$guid}}",
-                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
-              }
-            ],
-            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/performer-profile",
-            "description": "### OMS2 set performer profile\n\nСоздаёт или меняет профиль исполнителя и публикует people.performer_profile.changed. OMS5 получает снимок person_id, display_name, статуса и подтверждённых контактов. Профиль не связан с employment episode и не даёт операторских прав.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"profile_status\"\n  ],\n  \"properties\": {\n    \"profile_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    }\n  }\n}\n```",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"profile_status\": \"active\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json",
-                  "schema": {
-                    "type": "object",
-                    "required": [
-                      "profile_status"
-                    ],
-                    "properties": {
-                      "profile_status": {
-                        "type": "string",
-                        "enum": [
-                          "active",
-                          "inactive"
-                        ]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "response": [
-            {
-              "name": "200 Профиль обновлён",
-              "status": "Профиль обновлён",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"person_id\": \"string\",\n  \"profile_status\": \"active\",\n  \"display_name\": \"string\",\n  \"email\": \"string\",\n  \"phone\": \"string\"\n}"
-            },
-            {
-              "name": "201 Профиль создан",
-              "status": "Профиль создан",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"person_id\": \"string\",\n  \"profile_status\": \"active\",\n  \"display_name\": \"string\",\n  \"email\": \"string\",\n  \"phone\": \"string\"\n}"
-            },
-            {
-              "name": "404 person_not_found",
-              "status": "person_not_found",
-              "code": 404,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
-            },
-            {
-              "name": "409 person_already_merged",
-              "status": "person_already_merged",
-              "code": 409,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"detail\": \"string\"\n}"
             },
             {
               "name": "401 Unauthorized",
@@ -3622,6 +3016,1073 @@
             {
               "name": "422 Validation error",
               "status": "Validation error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 create or update performer profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/performer-profile",
+            "description": "### OMS2 create or update performer profile\n\nСоздаёт или обновляет профиль исполнителя. При создании профиль получает engagement_type_validation_status=pending и стадию PERFORMER_PROFILE. При смене типа оформления подтверждение сбрасывается и создаётся запись аудита. Стадию воронки и счётчик смен клиент передавать не может.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"profile_status\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"profile_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    },\n    \"engagement_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"gph\",\n        \"self_employed\"\n      ],\n      \"description\": \"Тип оформления исполнителя: договор ГПХ или самозанятость.\"\n    },\n    \"medical_book_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"none\",\n        \"non_food\",\n        \"food\"\n      ]\n    },\n    \"change_reason\": {\n      \"type\": \"string\",\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"medical_book_status\": \"non_food\",\n  \"change_reason\": \"Регистрация исполнителя\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "profile_status"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "profile_status": {
+                        "type": "string",
+                        "enum": [
+                          "active",
+                          "inactive"
+                        ]
+                      },
+                      "engagement_type": {
+                        "type": "string",
+                        "enum": [
+                          "gph",
+                          "self_employed"
+                        ],
+                        "description": "Тип оформления исполнителя: договор ГПХ или самозанятость."
+                      },
+                      "medical_book_status": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "non_food",
+                          "food"
+                        ]
+                      },
+                      "change_reason": {
+                        "type": "string",
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Профиль обновлён",
+              "status": "Профиль обновлён",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"profile_status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"pending\",\n  \"engagement_type_selected_at\": \"2026-11-01T09:00:00Z\",\n  \"engagement_type_validated_at\": null,\n  \"engagement_type_validated_by_user_id\": null,\n  \"engagement_type_rejection_reason\": null,\n  \"medical_book_status\": \"non_food\",\n  \"funnel_stage\": \"PERFORMER_PROFILE\",\n  \"funnel_stage_changed_at\": \"2026-11-01T09:00:00Z\",\n  \"completed_shifts_count\": 0,\n  \"first_booked_at\": null,\n  \"first_shift_completed_at\": null,\n  \"fifth_shift_completed_at\": null,\n  \"work_periods\": [],\n  \"addresses\": [],\n  \"documents\": [],\n  \"identifiers\": [],\n  \"updated_at\": \"2026-11-01T09:00:00Z\"\n}"
+            },
+            {
+              "name": "201 Профиль создан",
+              "status": "Профиль создан",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"profile_status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"pending\",\n  \"engagement_type_selected_at\": \"2026-11-01T09:00:00Z\",\n  \"engagement_type_validated_at\": null,\n  \"engagement_type_validated_by_user_id\": null,\n  \"engagement_type_rejection_reason\": null,\n  \"medical_book_status\": \"non_food\",\n  \"funnel_stage\": \"PERFORMER_PROFILE\",\n  \"funnel_stage_changed_at\": \"2026-11-01T09:00:00Z\",\n  \"completed_shifts_count\": 0,\n  \"first_booked_at\": null,\n  \"first_shift_completed_at\": null,\n  \"fifth_shift_completed_at\": null,\n  \"work_periods\": [],\n  \"addresses\": [],\n  \"documents\": [],\n  \"identifiers\": [],\n  \"updated_at\": \"2026-11-01T09:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found",
+              "status": "person_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_already_merged, engagement_type_rejected",
+              "status": "person_already_merged, engagement_type_rejected",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_engagement_type, invalid_medical_book_status, validation_error",
+              "status": "invalid_engagement_type, invalid_medical_book_status, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 get performer profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/performer-profile",
+            "description": "### OMS2 get performer profile\n\nВозвращает профиль, периоды работы, адреса, документы и идентификаторы без номеров и значений. Периоды отсортированы по starts_at; адреса — регистрация, приоритетный адрес поиска, остальные по created_at."
+          },
+          "response": [
+            {
+              "name": "200 Профиль исполнителя",
+              "status": "Профиль исполнителя",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"profile_status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"pending\",\n  \"engagement_type_selected_at\": \"2026-11-01T09:00:00Z\",\n  \"engagement_type_validated_at\": null,\n  \"engagement_type_validated_by_user_id\": null,\n  \"engagement_type_rejection_reason\": null,\n  \"medical_book_status\": \"non_food\",\n  \"funnel_stage\": \"PERFORMER_PROFILE\",\n  \"funnel_stage_changed_at\": \"2026-11-01T09:00:00Z\",\n  \"completed_shifts_count\": 0,\n  \"first_booked_at\": null,\n  \"first_shift_completed_at\": null,\n  \"fifth_shift_completed_at\": null,\n  \"work_periods\": [],\n  \"addresses\": [],\n  \"documents\": [],\n  \"identifiers\": [],\n  \"updated_at\": \"2026-11-01T09:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found, performer_profile_not_found",
+              "status": "person_not_found, performer_profile_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 verify or reject performer engagement type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/performer-profile/engagement-type/verify",
+            "description": "### OMS2 verify or reject performer engagement type\n\nФиксирует решение менеджера по типу оформления. Повтор с тем же решением идемпотентен; повтор с другим решением возвращает 409 engagement_type_already_validated. После решения стадия воронки пересчитывается.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"decision\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"decision\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"verified\",\n        \"rejected\"\n      ]\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"verified\",\n  \"reason\": \"Договор ГПХ проверен\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "decision",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "decision": {
+                        "type": "string",
+                        "enum": [
+                          "verified",
+                          "rejected"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Решение по типу оформления сохранено",
+              "status": "Решение по типу оформления сохранено",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_id\": \"1042\",\n  \"engagement_type\": \"gph\",\n  \"engagement_type_validation_status\": \"verified\",\n  \"engagement_type_validated_at\": \"2026-11-01T10:00:00Z\",\n  \"engagement_type_validated_by_user_id\": \"7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55\",\n  \"engagement_type_rejection_reason\": null,\n  \"funnel_stage\": \"PERFORMER_READY_NON_MEDICAL\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found, performer_profile_not_found",
+              "status": "person_not_found, performer_profile_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_already_merged, engagement_type_already_validated",
+              "status": "person_already_merged, engagement_type_already_validated",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 engagement_type_not_selected, validation_error",
+              "status": "engagement_type_not_selected, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 create performer work period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/work-periods",
+            "description": "### OMS2 create performer work period\n\nСоздаёт период работы исполнителя. Тип оформления периода должен совпадать с типом профиля. У персоны не более одного активного периода. После создания стадия воронки пересчитывается.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"starts_at\",\n    \"engagement_type\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"starts_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"engagement_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"gph\",\n        \"self_employed\"\n      ],\n      \"description\": \"Тип оформления исполнителя: договор ГПХ или самозанятость.\"\n    },\n    \"personnel_number\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"starts_at\": \"2026-11-05T00:00:00Z\",\n  \"engagement_type\": \"self_employed\",\n  \"personnel_number\": \"QA-EMP-006\",\n  \"reason\": \"Начало работы\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "starts_at",
+                      "engagement_type",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "engagement_type": {
+                        "type": "string",
+                        "enum": [
+                          "gph",
+                          "self_employed"
+                        ],
+                        "description": "Тип оформления исполнителя: договор ГПХ или самозанятость."
+                      },
+                      "personnel_number": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Период работы создан",
+              "status": "Период работы создан",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"work_period_id\": \"31\",\n  \"person_id\": \"1042\",\n  \"status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"starts_at\": \"2026-11-05T00:00:00Z\",\n  \"ends_at\": null,\n  \"personnel_number\": \"QA-EMP-006\",\n  \"created_at\": \"2026-11-01T09:10:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found",
+              "status": "person_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_already_merged, performer_profile_required, active_work_period_exists",
+              "status": "person_already_merged, performer_profile_required, active_work_period_exists",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 engagement_type_mismatch, validation_error",
+              "status": "engagement_type_mismatch, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 terminate performer work period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/work-periods/{{param}}/terminate",
+            "description": "### OMS2 terminate performer work period\n\nЗавершает период работы. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 work_period_conflict. После завершения стадия воронки пересчитывается.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"effective_at\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"effective_at\": \"2026-12-01T00:00:00Z\",\n  \"reason\": \"Завершение работы\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "effective_at",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "effective_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Период работы завершён",
+              "status": "Период работы завершён",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"work_period_id\": \"31\",\n  \"status\": \"terminated\",\n  \"ends_at\": \"2026-12-01T00:00:00Z\",\n  \"funnel_stage\": \"PERFORMER_PROFILE\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 work_period_not_found",
+              "status": "work_period_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 work_period_conflict",
+              "status": "work_period_conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_period, validation_error",
+              "status": "invalid_period, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 add person address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/addresses",
+            "description": "### OMS2 add person address\n\nДобавляет адрес регистрации или адрес поиска подработки. У персоны один адрес регистрации. Первый адрес поиска подработки становится приоритетным автоматически. Второй адрес регистрации или второй приоритетный адрес отклоняется с 409.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"address_type\",\n    \"country_code\",\n    \"region\",\n    \"city\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"address_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"registration\",\n        \"work_search\"\n      ]\n    },\n    \"is_primary\": {\n      \"type\": \"boolean\",\n      \"default\": false\n    },\n    \"country_code\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[A-Z]{2}$\"\n    },\n    \"country\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"region\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 250\n    },\n    \"city\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 250\n    },\n    \"street\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"house\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"block\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"flat\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"postal_code\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 32\n    },\n    \"lat\": {\n      \"type\": [\n        \"number\",\n        \"null\"\n      ],\n      \"minimum\": -90,\n      \"maximum\": 90\n    },\n    \"lon\": {\n      \"type\": [\n        \"number\",\n        \"null\"\n      ],\n      \"minimum\": -180,\n      \"maximum\": 180\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_type\": \"work_search\",\n  \"is_primary\": true,\n  \"country_code\": \"RU\",\n  \"region\": \"Москва\",\n  \"city\": \"Москва\",\n  \"street\": \"Тверская\",\n  \"house\": \"17\",\n  \"flat\": \"12\",\n  \"postal_code\": \"125009\",\n  \"lat\": 55.771216,\n  \"lon\": 37.57729\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "address_type",
+                      "country_code",
+                      "region",
+                      "city"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "address_type": {
+                        "type": "string",
+                        "enum": [
+                          "registration",
+                          "work_search"
+                        ]
+                      },
+                      "is_primary": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "country_code": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}$"
+                      },
+                      "country": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "region": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      },
+                      "city": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      },
+                      "street": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "house": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "block": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "flat": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "postal_code": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 32
+                      },
+                      "lat": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "lon": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": -180,
+                        "maximum": 180
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Адрес добавлен",
+              "status": "Адрес добавлен",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_address_id\": \"77\",\n  \"person_id\": \"1042\",\n  \"address_type\": \"work_search\",\n  \"is_primary\": true,\n  \"country_code\": \"RU\",\n  \"region\": \"Москва\",\n  \"city\": \"Москва\",\n  \"street\": \"Тверская\",\n  \"house\": \"17\",\n  \"block\": null,\n  \"flat\": \"12\",\n  \"postal_code\": \"125009\",\n  \"lat\": 55.771216,\n  \"lon\": 37.57729,\n  \"created_at\": \"2026-11-01T09:20:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found",
+              "status": "person_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_already_merged, registration_address_exists, primary_work_address_exists",
+              "status": "person_already_merged, registration_address_exists, primary_work_address_exists",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_address_type, validation_error",
+              "status": "invalid_address_type, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 list person addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/addresses",
+            "description": "### OMS2 list person addresses\n\nВозвращает адреса персоны. Сортировка: адрес регистрации, приоритетный адрес поиска подработки, остальные по created_at."
+          },
+          "response": [
+            {
+              "name": "200 Адреса персоны",
+              "status": "Адреса персоны",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"person_address_id\": \"77\",\n    \"person_id\": \"1042\",\n    \"address_type\": \"work_search\",\n    \"is_primary\": true,\n    \"country_code\": \"RU\",\n    \"region\": \"Москва\",\n    \"city\": \"Москва\",\n    \"street\": \"Тверская\",\n    \"house\": \"17\",\n    \"block\": null,\n    \"flat\": \"12\",\n    \"postal_code\": \"125009\",\n    \"lat\": 55.771216,\n    \"lon\": 37.57729,\n    \"created_at\": \"2026-11-01T09:20:00Z\"\n  }\n]"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found",
+              "status": "person_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS2 set primary work search address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+              }
+            ],
+            "url": "{{oms2_base_url}}/api/v1/people/{{param}}/addresses/{{param}}/set-primary",
+            "description": "### OMS2 set primary work search address\n\nПереключает приоритетный адрес поиска подработки. При is_primary=true приоритет снимается с текущего адреса и устанавливается новому в одной транзакции. Адрес регистрации переключать нельзя.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"is_primary\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"is_primary\": {\n      \"type\": \"boolean\"\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_primary\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "is_primary"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "is_primary": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Приоритетный адрес обновлён",
+              "status": "Приоритетный адрес обновлён",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"person_address_id\": \"77\",\n  \"person_id\": \"1042\",\n  \"address_type\": \"work_search\",\n  \"is_primary\": true,\n  \"country_code\": \"RU\",\n  \"region\": \"Москва\",\n  \"city\": \"Москва\",\n  \"street\": \"Тверская\",\n  \"house\": \"17\",\n  \"block\": null,\n  \"flat\": \"12\",\n  \"postal_code\": \"125009\",\n  \"lat\": 55.771216,\n  \"lon\": 37.57729,\n  \"created_at\": \"2026-11-01T09:20:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 person_not_found, person_address_not_found",
+              "status": "person_not_found, person_address_not_found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_already_merged, primary_work_address_exists",
+              "status": "person_already_merged, primary_work_address_exists",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_address_type, validation_error",
+              "status": "invalid_address_type, validation_error",
               "code": 422,
               "header": [
                 {
@@ -5750,10 +6211,10 @@
               }
             ],
             "url": "{{oms1_base_url}}/admin/users/{{param}}/role-assignments",
-            "description": "### OMS1 assign access role to user\n\nДоступно только пользователю с активной ролью administrator. Для manager/supervisor/administrator обязательны employment_episode_id и position_assignment_id, для external_user — membership_id и organization_id. Повторное активное назначение той же роли в том же контексте отклоняется 409. Выдача роли увеличивает auth_version учётной записи.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"role_code\",\n    \"valid_from\",\n    \"reason\"\n  ],\n  \"properties\": {\n    \"role_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"manager\",\n        \"supervisor\",\n        \"administrator\",\n        \"external_user\"\n      ]\n    },\n    \"employment_episode_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    },\n    \"position_assignment_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    },\n    \"membership_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"uuid\"\n    },\n    \"organization_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"uuid\"\n    },\n    \"valid_from\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "description": "### OMS1 assign access role to user\n\nДоступно только пользователю с активной ролью administrator. Для manager, supervisor и administrator обязательны operator_employment_period_id и operator_position_assignment_id, для external_user — membership_id. organization_id в запросе запрещён и вычисляется из членства. Повторное активное назначение той же роли в том же контексте отклоняется 409. Выдача роли увеличивает auth_version учётной записи.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"role_code\",\n    \"valid_from\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"role_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"manager\",\n        \"supervisor\",\n        \"administrator\",\n        \"external_user\"\n      ]\n    },\n    \"operator_employment_period_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"uuid\"\n    },\n    \"operator_position_assignment_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"uuid\"\n    },\n    \"membership_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"uuid\"\n    },\n    \"valid_from\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role_code\": \"manager\",\n  \"employment_episode_id\": \"2201\",\n  \"position_assignment_id\": \"3301\",\n  \"membership_id\": null,\n  \"organization_id\": null,\n  \"valid_from\": \"2026-10-28T12:00:00Z\",\n  \"reason\": \"Назначение по кадровому приказу\"\n}",
+              "raw": "{\n  \"role_code\": \"manager\",\n  \"operator_employment_period_id\": \"0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10\",\n  \"operator_position_assignment_id\": \"9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22\",\n  \"valid_from\": \"2026-11-01T00:00:00Z\",\n  \"reason\": \"Назначение по приказу о приёме\"\n}",
               "options": {
                 "raw": {
                   "language": "json",
@@ -5764,6 +6225,7 @@
                       "valid_from",
                       "reason"
                     ],
+                    "additionalProperties": false,
                     "properties": {
                       "role_code": {
                         "type": "string",
@@ -5774,38 +6236,21 @@
                           "external_user"
                         ]
                       },
-                      "employment_episode_id": {
-                        "oneOf": [
-                          {
-                            "type": "string",
-                            "pattern": "^[0-9]+$",
-                            "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "position_assignment_id": {
-                        "oneOf": [
-                          {
-                            "type": "string",
-                            "pattern": "^[0-9]+$",
-                            "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "membership_id": {
+                      "operator_employment_period_id": {
                         "type": [
                           "string",
                           "null"
                         ],
                         "format": "uuid"
                       },
-                      "organization_id": {
+                      "operator_position_assignment_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "membership_id": {
                         "type": [
                           "string",
                           "null"
@@ -5838,7 +6283,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"assignment_id\": \"string\",\n  \"user_id\": \"string\",\n  \"person_id\": \"string\",\n  \"role_code\": \"manager\",\n  \"status\": \"active\",\n  \"valid_from\": \"2026-09-20T12:00:00Z\",\n  \"valid_to\": \"2026-09-20T12:00:00Z\",\n  \"employment_episode_id\": \"string\",\n  \"position_assignment_id\": \"string\",\n  \"organization_id\": \"string\"\n}"
+              "body": "{\n  \"assignment_id\": \"5b2c8e10-6d4f-4a71-9c3e-8f0a1b2c3d44\",\n  \"user_id\": \"7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55\",\n  \"person_id\": null,\n  \"role_code\": \"manager\",\n  \"status\": \"active\",\n  \"valid_from\": \"2026-11-01T00:00:00Z\",\n  \"valid_to\": null,\n  \"operator_employment_period_id\": \"0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10\",\n  \"operator_position_assignment_id\": \"9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22\",\n  \"organization_id\": null\n}"
             },
             {
               "name": "401 Unauthorized",
@@ -5877,8 +6322,8 @@
               "body": "{\n  \"detail\": \"string\"\n}"
             },
             {
-              "name": "409 role_assignment_already_active, last_administrator или person_account_conflict",
-              "status": "role_assignment_already_active, last_administrator или person_account_conflict",
+              "name": "409 role_assignment_already_active, role_context_not_active, last_administrator, person_account_conflict или person_already_merged",
+              "status": "role_assignment_already_active, role_context_not_active, last_administrator, person_account_conflict или person_already_merged",
               "code": 409,
               "header": [
                 {
@@ -6007,6 +6452,667 @@
               "name": "422 Validation error",
               "status": "Validation error",
               "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS1 create operator employment period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/admin/users/{{param}}/operator-employment-periods",
+            "description": "### OMS1 create operator employment period\n\nСоздаёт период найма оператора и назначение на должность. У пользователя не более одного активного периода. Период и назначение принадлежат учётной записи из пути. Доступно только администратору. Успешный вызов увеличивает auth_version учётной записи.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"starts_at\",\n    \"position_code\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"starts_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"position_code\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 64\n    },\n    \"personnel_number\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 250\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"starts_at\": \"2026-11-01T00:00:00Z\",\n  \"position_code\": \"operator_software\",\n  \"personnel_number\": \"QA-OPS-001\",\n  \"reason\": \"Приём на должность оператора ПО\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "starts_at",
+                      "position_code",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "position_code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      },
+                      "personnel_number": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 250
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Период найма создан",
+              "status": "Период найма создан",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"operator_employment_period_id\": \"0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10\",\n  \"user_id\": \"7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55\",\n  \"status\": \"active\",\n  \"starts_at\": \"2026-11-01T00:00:00Z\",\n  \"ends_at\": null,\n  \"personnel_number\": \"QA-OPS-001\",\n  \"position_assignment\": {\n    \"operator_position_assignment_id\": \"9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22\",\n    \"position_code\": \"operator_software\",\n    \"status\": \"active\",\n    \"starts_at\": \"2026-11-01T00:00:00Z\",\n    \"ends_at\": null\n  },\n  \"created_at\": \"2026-11-01T08:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Пользователь не найден (user_not_found)",
+              "status": "Пользователь не найден (user_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 У пользователя уже есть активный период (operator_employment_already_active)",
+              "status": "У пользователя уже есть активный период (operator_employment_already_active)",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_position_code, invalid_period, validation_error",
+              "status": "invalid_position_code, invalid_period, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS1 terminate operator employment period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/admin/operator-employment-periods/{{param}}/terminate",
+            "description": "### OMS1 terminate operator employment period\n\nЗавершает период найма и активное назначение на должность, отзывает роли, привязанные к периоду, и увеличивает auth_version пользователя один раз. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 operator_employment_period_conflict.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"effective_at\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"effective_at\": \"2026-12-01T00:00:00Z\",\n  \"reason\": \"Увольнение\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "effective_at",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "effective_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Период найма завершён",
+              "status": "Период найма завершён",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"operator_employment_period_id\": \"0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10\",\n  \"status\": \"terminated\",\n  \"ends_at\": \"2026-12-01T00:00:00Z\",\n  \"revoked_role_assignments\": 2\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Период найма не найден (operator_employment_period_not_found)",
+              "status": "Период найма не найден (operator_employment_period_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 operator_employment_period_conflict",
+              "status": "operator_employment_period_conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_period, validation_error",
+              "status": "invalid_period, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS1 create external organization membership",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/admin/users/{{param}}/external-memberships",
+            "description": "### OMS1 create external organization membership\n\nСоздаёт членство пользователя во внешней организации. organization_id ссылается на clients OMS5 логически и не проверяется запросом в OMS5. У пользователя не более одного активного членства в одной организации.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"organization_id\",\n    \"valid_from\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"organization_id\": {\n      \"type\": \"string\",\n      \"format\": \"uuid\"\n    },\n    \"valid_from\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"valid_to\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization_id\": \"3f6e2890-f24e-48e3-9034-c81f64716ebd\",\n  \"valid_from\": \"2026-11-01T00:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "organization_id",
+                      "valid_from"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "organization_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "valid_from": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "valid_to": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Внешнее членство создано",
+              "status": "Внешнее членство создано",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"membership_id\": \"c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33\",\n  \"user_id\": \"7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55\",\n  \"organization_id\": \"3f6e2890-f24e-48e3-9034-c81f64716ebd\",\n  \"status\": \"active\",\n  \"valid_from\": \"2026-11-01T00:00:00Z\",\n  \"valid_to\": null,\n  \"created_at\": \"2026-11-01T08:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Пользователь не найден (user_not_found)",
+              "status": "Пользователь не найден (user_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 external_membership_already_active",
+              "status": "external_membership_already_active",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 validation_error",
+              "status": "validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS1 revoke external organization membership",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/admin/external-memberships/{{param}}/revoke",
+            "description": "### OMS1 revoke external organization membership\n\nОтзывает внешнее членство, отзывает активные роли external_user этого членства и увеличивает auth_version пользователя. Другие роли пользователя не затрагиваются. Повтор идемпотентен.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"effective_at\",\n    \"reason\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"effective_at\": \"2026-12-01T00:00:00Z\",\n  \"reason\": \"Сотрудничество завершено\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "effective_at",
+                      "reason"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "effective_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Внешнее членство отозвано",
+              "status": "Внешнее членство отозвано",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"membership_id\": \"c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33\",\n  \"status\": \"revoked\",\n  \"valid_to\": \"2026-12-01T00:00:00Z\",\n  \"revoked_role_assignments\": 1\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Внешнее членство не найдено (external_membership_not_found)",
+              "status": "Внешнее членство не найдено (external_membership_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 external_membership_conflict",
+              "status": "external_membership_conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 invalid_period, validation_error",
+              "status": "invalid_period, validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS1 link user account to OMS2 performer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": "{{oms1_base_url}}/admin/users/{{param}}/performer-link",
+            "description": "### OMS1 link user account to OMS2 performer\n\nСвязывает учётную запись с персоной исполнителя OMS2 или снимает связь при person_id=null. Один person_id не может быть связан с двумя активными учётными записями. Изменение увеличивает auth_version.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"person_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    }\n  }\n}\n```",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person_id\": \"1042\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json",
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "person_id"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "person_id": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[0-9]+$",
+                            "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Связь учётной записи обновлена",
+              "status": "Связь учётной записи обновлена",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user_id\": \"7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55\",\n  \"person_id\": \"1042\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "403 Нет активной роли administrator (administrator_required)",
+              "status": "Нет активной роли administrator (administrator_required)",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "404 Пользователь не найден (user_not_found)",
+              "status": "Пользователь не найден (user_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "409 person_account_conflict",
+              "status": "person_account_conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "422 validation_error",
+              "status": "validation_error",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
               "header": [
                 {
                   "key": "Content-Type",
