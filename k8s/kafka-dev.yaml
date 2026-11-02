@@ -135,3 +135,5 @@ spec:
               ensure_topic operations.shift.performer_assigned 1
               ensure_topic operations.shift.closed 1
               ensure_topic operations.timesheet.submitted 1
+              ensure_topic people.access.v1 3
+              ensure_topic people.performer.v1 3
