@@ -1677,6 +1677,97 @@ PROMETHEUS HTTPS REQUESTS: выключено
 PROMETHEUS REQUEST METHOD: GET
 ```
 
+### 18.4.4. Kafka Topics И Проверка
+
+Topics создаёт Job `kafka-topics-init` из `platform/k8s/kafka-dev.yaml`. Job ждёт доступности брокера, создаёт отсутствующие topics, увеличивает число партиций до требуемого и применяет topic-level настройки. Topic-ы не удаляются и не пересоздаются при повторном запуске.
+
+| Topic | Партиции | Назначение |
+| --- | --- | --- |
+| `auth.user_logged_in` | 1 | вход пользователя |
+| `auth.service_token_issued` | 1 | выдача service token |
+| `employee.created` | 1 | создание сотрудника OMS2 |
+| `notification.email_status` | 1 | результат отправки письма |
+| `report.requested`, `report.cancelled` | 1 | жизненный цикл отчёта |
+| `operations.*` (кроме перечисленных ниже) | 1 | операционные уведомления OMS5 |
+| `operations.performer.v1` | 3 | факты воронки исполнителя |
+| `operations.shift.status_changed` | 3 | смена статуса смены |
+| `people.access.v1` | 3 | события доступа |
+| `people.performer.v1` | 3 | снимок профиля исполнителя |
+
+Topic `operations.performer.v1` публикует OMS5, читает OMS2 в consumer group `oms2.operations.performer`.
+
+| Параметр | Значение |
+| --- | --- |
+| Партиции | 3 |
+| Replication factor | 1 (dev) |
+| `cleanup.policy` | `delete` |
+| `retention.ms` | `604800000` (7 суток) |
+| Ключ сообщения | `person_id` десятичной строкой |
+| Compact | не включён |
+
+Ключ `person_id` держит все факты одного исполнителя в одной партиции. Порядок сообщений не важен: OMS2 дедуплицирует по `event_id` и `assignment_id`, `aggregate_version` в этом потоке отсутствует. Этим поток отличается от `people.performer.v1`, где передаётся версия агрегата.
+
+Типы событий:
+
+- `operations.shift.assigned` — исполнитель принял предложение, назначение записано;
+- `operations.shift.completed` — смена перешла в `A60_SETTLE` или закрыта с `close_reason=paid`.
+
+Проверить Job и параметры topic:
+
+```powershell
+kubectl -n oms get job kafka-topics-init
+kubectl -n oms exec deployment/kafka -- /opt/kafka/bin/kafka-topics.sh `
+  --bootstrap-server localhost:9092 `
+  --describe --topic operations.performer.v1
+```
+
+Ожидаемый вывод содержит `PartitionCount: 3`, `ReplicationFactor: 1`, `retention.ms=604800000`, `cleanup.policy=delete`.
+
+Проверить, что два сообщения с одним `person_id` попадают в одну партицию:
+
+```powershell
+@(
+  '1042:{"shift_id":"a"}'
+  '1042:{"shift_id":"b"}'
+) | kubectl -n oms exec -i deployment/kafka -- /opt/kafka/bin/kafka-console-producer.sh `
+  --bootstrap-server localhost:9092 `
+  --topic operations.performer.v1 `
+  --property parse.key=true `
+  --property key.separator=:
+```
+
+Прочитать topic и вывести ключ и партицию:
+
+```powershell
+kubectl -n oms exec deployment/kafka -- /opt/kafka/bin/kafka-console-consumer.sh `
+  --bootstrap-server localhost:9092 `
+  --topic operations.performer.v1 `
+  --from-beginning `
+  --property print.key=true `
+  --property print.partition=true `
+  --max-messages 2
+```
+
+Обе строки должны иметь одинаковый номер партиции.
+
+Повторный запуск инициализации. Job неизменяем, завершённый Job нужно удалить перед повторным применением:
+
+```powershell
+kubectl -n oms delete job kafka-topics-init --ignore-not-found
+kubectl apply -f platform/k8s/kafka-dev.yaml
+kubectl -n oms wait --for=condition=complete job/kafka-topics-init --timeout=180s
+```
+
+После повторного запуска число партиций не меняется, сообщения остаются в topic.
+
+Если Kafka поднимается долго, Job остаётся в `Running` и повторяет подключение каждые 5 секунд. Проверить прогресс:
+
+```powershell
+kubectl -n oms logs job/kafka-topics-init
+```
+
+Недоступный брокер не приводит к падению: Job ждёт его в цикле подключения. Ошибкой завершаются отказ в создании topic и ошибка `kafka-configs.sh`. Логи содержат имя topic и применённую настройку.
+
 ### 18.5. Ingress NGINX
 
 Установить или обновить ingress-nginx:

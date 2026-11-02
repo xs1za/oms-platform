@@ -108,6 +108,14 @@ OMS3 -> ReportStore: Mark report cache stale
 OMS4 <- Kafka: consume operations.*_created
 OMS4 -> OMS4: Optional operational notification
 
+== Performer Funnel Facts ==
+
+OMS5 -> OMS5: Accept offer / complete shift
+OMS5 -> Kafka: publish operations.performer.v1\nkey=person_id, no aggregate_version
+OMS2 <- Kafka: consume operations.performer.v1\nconsumer group oms2.operations.performer
+OMS2 -> DB2: Insert OperationsEventInbox by event_id\nand assignment_id
+OMS2 -> DB2: Recompute performer funnel stage
+
 == Notification Status ==
 
 Client -> OMS4: POST /notifications/email

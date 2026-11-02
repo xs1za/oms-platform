@@ -112,7 +112,24 @@ spec:
                     --alter \
                     --topic "$topic" \
                     --partitions "$partitions"
+                elif [ "$current_partitions" -gt "$partitions" ]; then
+                  echo "WARNING: topic $topic has $current_partitions partitions, expected $partitions; not shrinking"
                 fi
+              }
+
+              # Applies topic-level config. The call is idempotent: repeating it
+              # with the same values does not change the topic.
+              ensure_topic_config() {
+                topic="$1"
+                key="$2"
+                value="$3"
+
+                /opt/kafka/bin/kafka-configs.sh \
+                  --bootstrap-server "$bootstrap_server" \
+                  --alter \
+                  --entity-type topics \
+                  --entity-name "$topic" \
+                  --add-config "$key=$value"
               }
 
               ensure_topic auth.user_logged_in 1
@@ -137,3 +154,20 @@ spec:
               ensure_topic operations.timesheet.submitted 1
               ensure_topic people.access.v1 3
               ensure_topic people.performer.v1 3
+
+              # Performer funnel facts published by OMS5 and consumed by OMS2
+              # (consumer group oms2.operations.performer).
+              #
+              # Message key: person_id as a decimal string, so every fact of one
+              # performer goes to the same partition. The key is not shift_id and
+              # not performer_id.
+              #
+              # This is a replayable fact stream, not a snapshot: cleanup.policy
+              # stays delete, compaction is not enabled. Retention is 7 days.
+              #
+              # Unlike people.performer.v1 there is no aggregate_version here.
+              # OMS2 deduplicates by event_id and assignment_id, so message order
+              # does not change the resulting funnel stage.
+              ensure_topic operations.performer.v1 3
+              ensure_topic_config operations.performer.v1 retention.ms 604800000
+              ensure_topic_config operations.performer.v1 cleanup.policy delete

@@ -468,7 +468,8 @@ platform/docs/kafka_interservice_sequence.puml
 - async report workflow OMS3;
 - consumption report/employee/operations events;
 - notification status events OMS4;
-- operations domain events OMS5.
+- operations domain events OMS5;
+- performer funnel facts `operations.performer.v1` from OMS5 to OMS2.
 
 ## Kafka Event Model
 
@@ -490,6 +491,9 @@ Producer -> Kafka topic -> one or many independent consumer groups
 - `report.cancelled`
 - `notification.email_status`
 - `operations.*_created`
+- `operations.performer.v1`
+
+Topic `operations.performer.v1` публикует OMS5, читает OMS2 в consumer group `oms2.operations.performer`. Сообщение содержит `person_id` в ключе и в payload. Ключ держит все факты одного исполнителя в одной партиции. События `operations.shift.assigned` и `operations.shift.completed` описывают бронирование и отработку смены. `aggregate_version` в потоке нет: OMS2 дедуплицирует по `event_id` и `assignment_id`, порядок сообщений не влияет на стадию воронки. Topic не компактируется, retention 7 суток, события доступны для replay.
 
 Kafka оправдана для:
 
