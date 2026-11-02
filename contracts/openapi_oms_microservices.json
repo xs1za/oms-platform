@@ -2,15 +2,15 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OMS Microservices OpenAPI",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "OpenAPI contract with request body JSON Schemas for OMS1-OMS5. Import this file into Postman as an API/schema source to populate the Body Schema panel."
   },
   "servers": [
-    { "url": "http://oms.local/oms1", "description": "OMS1 Auth Service" },
-    { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
-    { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
-    { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
-    { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+    {"url": "http://oms.local/oms1", "description": "OMS1 Auth Service"},
+    {"url": "http://oms.local/oms2", "description": "OMS2 Employee Service"},
+    {"url": "http://oms.local/oms3", "description": "OMS3 Report Service"},
+    {"url": "http://oms.local/oms4", "description": "OMS4 Notification Service"},
+    {"url": "http://oms.local/oms5", "description": "OMS5 Operations Service"}
   ],
   "paths": {
     "/health": {
@@ -19,8 +19,8 @@
         "summary": "Health check",
         "description": "Basic service health endpoint. Select the required service server in Swagger UI before executing.",
         "responses": {
-          "200": { "description": "Service is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Service is alive", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HealthResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -30,8 +30,8 @@
         "summary": "Liveness probe",
         "description": "Checks that the application process is alive. Select the required service server in Swagger UI before executing.",
         "responses": {
-          "200": { "description": "Application process is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LivenessResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Application process is alive", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LivenessResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -41,9 +41,9 @@
         "summary": "Readiness probe",
         "description": "Checks service dependencies such as Kafka or database. Select the required service server in Swagger UI before executing.",
         "responses": {
-          "200": { "description": "Service is ready", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
-          "503": { "description": "Service dependency failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Service is ready", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReadinessResponse"}}}},
+          "503": {"description": "Service dependency failed", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReadinessResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -52,16 +52,16 @@
         "operationId": "commonHealthSlash",
         "summary": "Health check with trailing slash",
         "description": "Service health endpoint with trailing slash for services that expose slash-terminated health URLs.",
-        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "x-postman-services": ["OMS1 Auth Service", "OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
         "servers": [
-          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
-          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
-          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
-          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+          {"url": "http://oms.local/oms2", "description": "OMS2 Employee Service"},
+          {"url": "http://oms.local/oms3", "description": "OMS3 Report Service"},
+          {"url": "http://oms.local/oms4", "description": "OMS4 Notification Service"},
+          {"url": "http://oms.local/oms5", "description": "OMS5 Operations Service"}
         ],
         "responses": {
-          "200": { "description": "Service is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Service is alive", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HealthResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -70,16 +70,16 @@
         "operationId": "commonLivenessSlash",
         "summary": "Liveness probe with trailing slash",
         "description": "Service liveness endpoint with trailing slash for services that expose slash-terminated health URLs.",
-        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "x-postman-services": ["OMS1 Auth Service", "OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
         "servers": [
-          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
-          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
-          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
-          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+          {"url": "http://oms.local/oms2", "description": "OMS2 Employee Service"},
+          {"url": "http://oms.local/oms3", "description": "OMS3 Report Service"},
+          {"url": "http://oms.local/oms4", "description": "OMS4 Notification Service"},
+          {"url": "http://oms.local/oms5", "description": "OMS5 Operations Service"}
         ],
         "responses": {
-          "200": { "description": "Application process is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LivenessResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Application process is alive", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LivenessResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -88,39 +88,35 @@
         "operationId": "commonReadinessSlash",
         "summary": "Readiness probe with trailing slash",
         "description": "Service readiness endpoint with trailing slash for services that expose slash-terminated health URLs.",
-        "x-postman-services": ["OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
+        "x-postman-services": ["OMS1 Auth Service", "OMS2 Employee Service", "OMS3 Report Service", "OMS4 Notification Service", "OMS5 Operations Service"],
         "servers": [
-          { "url": "http://oms.local/oms2", "description": "OMS2 Employee Service" },
-          { "url": "http://oms.local/oms3", "description": "OMS3 Report Service" },
-          { "url": "http://oms.local/oms4", "description": "OMS4 Notification Service" },
-          { "url": "http://oms.local/oms5", "description": "OMS5 Operations Service" }
+          {"url": "http://oms.local/oms2", "description": "OMS2 Employee Service"},
+          {"url": "http://oms.local/oms3", "description": "OMS3 Report Service"},
+          {"url": "http://oms.local/oms4", "description": "OMS4 Notification Service"},
+          {"url": "http://oms.local/oms5", "description": "OMS5 Operations Service"}
         ],
         "responses": {
-          "200": { "description": "Service is ready", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
-          "503": { "description": "Service dependency failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReadinessResponse" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Service is ready", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReadinessResponse"}}}},
+          "503": {"description": "Service dependency failed", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReadinessResponse"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
     "/auth/token": {
       "post": {
         "operationId": "oms1UserToken",
-        "summary": "OMS1 user token",
+        "summary": "OMS1 user token (username or verified phone)",
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UserLogin" },
-              "example": { "username": "admin", "password": "admin" }
-            }
-          }
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UserLogin"}, "example": {"username": "+375291234567", "password": "test-password"}}}
         },
         "responses": {
-          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "200": {"description": "Token issued", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TokenResponse"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Принимает username или подтверждённый телефон в формате E.164. Пароль проверяется у найденной канонической учётной записи. JWT сохраняет прежние sub и scopes и добавляет person_id, roles, auth_version и organization_id."
       }
     },
     "/auth/service-token": {
@@ -129,18 +125,13 @@
         "summary": "OMS1 service token",
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ServiceLogin" },
-              "example": { "client_id": "OMS2", "client_secret": "oms2-secret" }
-            }
-          }
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ServiceLogin"}, "example": {"client_id": "OMS2", "client_secret": "oms2-secret"}}}
         },
         "responses": {
-          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Token issued", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TokenResponse"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -148,25 +139,29 @@
       "get": {
         "operationId": "oms1VerifyToken",
         "summary": "OMS1 verify JWT token",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{"bearerAuth": []}],
         "responses": {
-          "200": { "description": "Token is active", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenVerification" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "200": {"description": "Token is active", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TokenVerification"}}}},
+          "401": {
+            "description": "Токен недействителен или отозван (invalid_token, token_revoked)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Проверяет JWT и состояние доступа в БД. Для human user возвращает user_id, person_id, display_name, roles, organization_id и auth_version; токен со старым auth_version, неактивной учётной записью или отозванной ролью отклоняется с 401 token_revoked. Для type=service пользовательские поля отсутствуют."
       }
     },
     "/api/employees/": {
       "get": {
         "operationId": "oms2ListEmployees",
         "summary": "OMS2 list employees",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{"bearerAuth": []}],
         "responses": {
-          "200": { "description": "Employees list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeList" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Employees list", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EmployeeList"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       },
       "post": {
@@ -176,23 +171,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/EmployeeCreate" },
-              "example": {
-                "surname": "Иванов",
-                "firstname": "Иван",
-                "patronymic": "Иванович",
-                "personnel_number": "EMP-0001",
-                "gender": "M"
-              }
+              "schema": {"$ref": "#/components/schemas/EmployeeCreate"},
+              "example": {"surname": "Иванов", "firstname": "Иван", "patronymic": "Иванович", "personnel_number": "EMP-0001", "gender": "M"}
             }
           }
         },
         "responses": {
-          "201": { "description": "Employee created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "201": {"description": "Employee created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Employee"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -200,15 +189,13 @@
       "get": {
         "operationId": "oms2GetEmployeeById",
         "summary": "OMS2 get employee by ID",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "employee_id", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
-        ],
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "employee_id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}],
         "responses": {
-          "200": { "description": "Employee", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Employee", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Employee"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -217,43 +204,26 @@
         "operationId": "oms3StartReportTask",
         "summary": "OMS3 start async report generation",
         "description": "### Асинхронная операция\n\nЗапрос запускает формирование отчета и не возвращает файл немедленно.\n\n- `202 Accepted` — задача принята в обработку.\n- `Location` — URL для проверки состояния задачи.\n- `Retry-After` — рекомендуемый интервал до следующей проверки.\n- Используйте `Get report task status`, пока статус не станет `completed`.\n- После завершения скачайте файл через `Download report`.\n- При статусах `failed`, `cancelled` или `expired` повторите операцию с учетом ошибки.",
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "schema": { "type": "string", "minLength": 1 }
-          }
-        ],
+        "parameters": [{"name": "Idempotency-Key", "in": "header", "required": false, "schema": {"type": "string", "minLength": 1}}],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ReportTaskCreate" },
-              "example": {
-                "reportType": "shifts",
-                "filter": {
-                  "startsAtFrom": "2026-10-01T00:00:00Z",
-                  "startsAtTo": "2026-10-31T23:59:59Z"
-                },
-                "format": "xlsx"
-              }
+              "schema": {"$ref": "#/components/schemas/ReportTaskCreate"},
+              "example": {"reportType": "shifts", "filter": {"startsAtFrom": "2026-10-01T00:00:00Z", "startsAtTo": "2026-10-31T23:59:59Z"}, "format": "xlsx"}
             }
           }
         },
         "responses": {
           "202": {
             "description": "Report task accepted",
-            "headers": {
-              "Location": { "schema": { "type": "string" } },
-              "Retry-After": { "schema": { "type": "integer", "minimum": 1 } }
-            },
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportTaskAccepted" } } }
+            "headers": {"Location": {"schema": {"type": "string"}}, "Retry-After": {"schema": {"type": "integer", "minimum": 1}}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportTaskAccepted"}}}
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -262,31 +232,31 @@
         "operationId": "oms3GetReportTaskStatus",
         "summary": "OMS3 get report task status",
         "description": "Returns the current state of an asynchronous report generation task.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "taskId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Report task state", "headers": { "Retry-After": { "schema": { "type": "integer", "minimum": 1 } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportTask" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {
+            "description": "Report task state",
+            "headers": {"Retry-After": {"schema": {"type": "integer", "minimum": 1}}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportTask"}}}
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       },
       "delete": {
         "operationId": "oms3CancelReportTask",
         "summary": "OMS3 cancel report task",
         "description": "Cancels a queued or running report task.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "taskId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "204": { "description": "Report task cancelled" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "204": {"description": "Report task cancelled"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -295,23 +265,21 @@
         "operationId": "oms3DownloadReport",
         "summary": "OMS3 download report result",
         "description": "Returns a temporary download URL for generic reports or the XLSX file for `reportType=shifts` when the report task is completed.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "taskId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
           "200": {
             "description": "Report download result",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ReportDownload" } },
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { "schema": { "type": "string", "format": "binary" } }
+              "application/json": {"schema": {"$ref": "#/components/schemas/ReportDownload"}},
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "410": { "$ref": "#/components/responses/Gone" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "410": {"$ref": "#/components/responses/Gone"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -324,18 +292,18 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/EmailNotification" },
-              "example": { "to": "user@example.com", "subject": "OMS notification", "body": "Test email notification from OMS4." }
+              "schema": {"$ref": "#/components/schemas/EmailNotification"},
+              "example": {"to": "user@example.com", "subject": "OMS notification", "body": "Test email notification from OMS4."}
             }
           }
         },
         "responses": {
-          "200": { "description": "Email command queued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationResult" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "503": { "description": "Email command queue is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Email command queued", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/NotificationResult"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "503": {"description": "Email command queue is unavailable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -346,17 +314,23 @@
         "description": "Returns problem events created by Kafka consumers for operational analysis and reprocessing. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "status", "in": "query", "required": false, "schema": { "$ref": "#/components/schemas/ProblemEventStatus" } },
-          { "name": "error_code", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "error_type", "in": "query", "required": false, "schema": { "$ref": "#/components/schemas/ProblemEventErrorType" } },
-          { "name": "shift_id", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "event_type", "in": "query", "required": false, "schema": { "type": "string", "example": "operations.shift.status_changed" } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "status", "in": "query", "required": false, "schema": {"$ref": "#/components/schemas/ProblemEventStatus"}},
+          {"name": "error_code", "in": "query", "required": false, "schema": {"type": "string"}},
+          {"name": "error_type", "in": "query", "required": false, "schema": {"$ref": "#/components/schemas/ProblemEventErrorType"}},
+          {"name": "shift_id", "in": "query", "required": false, "schema": {"type": "string"}},
+          {"name": "event_type", "in": "query", "required": false, "schema": {"type": "string", "example": "operations.shift.status_changed"}}
         ],
         "responses": {
-          "200": { "description": "Problem events list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProblemEvent" } } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem events list", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/ProblemEvent"}}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -367,14 +341,20 @@
         "description": "Returns a problem event card with original payload, Kafka metadata, error details and manual action audit. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "problemEventId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}
         ],
         "responses": {
-          "200": { "description": "Problem event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem event", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProblemEvent"}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -385,16 +365,27 @@
         "description": "Queues a problem event for manual reprocessing through RabbitMQ. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "problemEventId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}
         ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Первопричина устранена, запустить повторную обработку." } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ManualProblemEventAction"}, "example": {"comment": "Первопричина устранена, запустить повторную обработку."}}
+          }
+        },
         "responses": {
-          "200": { "description": "Problem event queued for reprocessing", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem event queued for reprocessing", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProblemEvent"}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -405,16 +396,27 @@
         "description": "Marks a problem event as ignored with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "problemEventId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}
         ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Событие неактуально после ручного разбора." } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ManualProblemEventAction"}, "example": {"comment": "Событие неактуально после ручного разбора."}}
+          }
+        },
         "responses": {
-          "200": { "description": "Problem event ignored", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem event ignored", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProblemEvent"}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -425,16 +427,27 @@
         "description": "Marks a problem event as requiring manual review with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "problemEventId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}
         ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Требуется ручной разбор операционного отдела." } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ManualProblemEventAction"}, "example": {"comment": "Требуется ручной разбор операционного отдела."}}
+          }
+        },
         "responses": {
-          "200": { "description": "Problem event moved to manual review", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem event moved to manual review", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProblemEvent"}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -445,34 +458,60 @@
         "description": "Marks a problem event as DLQ with a mandatory comment. Available in OMS3 and OMS4. Requires `X-Operational-Role: operations`.",
         "x-postman-services": ["OMS3 Report Service", "OMS4 Notification Service"],
         "parameters": [
-          { "name": "X-Operational-Role", "in": "header", "required": true, "description": "Operational access marker.", "schema": { "type": "string", "const": "operations", "default": "operations" } },
-          { "name": "problemEventId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+          {
+            "name": "X-Operational-Role",
+            "in": "header",
+            "required": true,
+            "description": "Operational access marker.",
+            "schema": {"type": "string", "const": "operations", "default": "operations"}
+          },
+          {"name": "problemEventId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}
         ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ManualProblemEventAction" }, "example": { "comment": "Событие признано некорректным после анализа." } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ManualProblemEventAction"}, "example": {"comment": "Событие признано некорректным после анализа."}}
+          }
+        },
         "responses": {
-          "200": { "description": "Problem event moved to DLQ", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProblemEvent" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Problem event moved to DLQ", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProblemEvent"}}}},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
     "/clients": {
       "post": {
         "operationId": "oms5CreateClient",
-        "summary": "OMS5 create client",
+        "summary": "OMS5 create client node",
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClientCreate" }, "example": { "name": "ООО Клиент", "external_id": "CLIENT-0001" } } }
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/ClientCreate"},
+              "example": {
+                "name": "КлиентРФ1 Магазин Москва 1",
+                "external_id": "QA-STORE-RF-02-01",
+                "client_type_code": "object",
+                "parent_client_id": "6f1d0e64-6f8c-5a1e-9d0f-1b2c3d4e5f60",
+                "address": "г. Москва, ул. Тверская, д. 17",
+                "country_code": "RU",
+                "timezone": "Europe/Moscow",
+                "lon": 37.57729,
+                "lat": 55.771216
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "Client created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Client" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "201": {"description": "Узел клиента создан", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Client"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Создаёт узел оргструктуры: head → division → object. Глубина не больше трёх уровней, head без родителя, division подчиняется head, object — division либо существует автономно. Магазин (object) хранит адрес, country_code, timezone и координаты WGS84; shifts.client_id должен ссылаться только на object."
       }
     },
     "/shifts": {
@@ -483,55 +522,85 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ShiftCreate" },
-              "example": { "client_id": "cli_123", "starts_at": "2026-01-20T09:00:00Z", "ends_at": "2026-01-20T18:00:00Z", "location": "Москва" }
+              "schema": {"$ref": "#/components/schemas/ShiftCreate"},
+              "example": {
+                "client_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd",
+                "starts_at": "2026-11-01T09:00:00Z",
+                "ends_at": "2026-11-01T17:00:00Z",
+                "location": "Минск, объект 12",
+                "required_performers_count": 1
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "Shift created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Shift" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "201": {"description": "Смена создана", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Shift"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Роль или область организации не разрешены", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Создаёт смену. Автор берётся из проверенного JWT, поля created_by_* в теле отсутствуют и отклоняются. Для внешнего пользователя client_id обязан быть object в поддереве organization_id из токена, иначе 403 organization_scope_violation."
       }
     },
     "/performers/sync": {
       "post": {
         "operationId": "oms5SyncPerformer",
-        "summary": "OMS5 sync performer projection from OMS2 Employee",
+        "summary": "OMS5 sync performer projection from OMS2",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/PerformerSync" },
-              "example": { "employee_id": 1, "display_name": "Иванов Иван", "email": "performer@example.com", "phone": "+79990000000", "status": "active", "source_version": 1 }
+              "schema": {"$ref": "#/components/schemas/PerformerSync"},
+              "example": {
+                "person_id": "1042",
+                "display_name": "Анна Сергеевна Иванова",
+                "email": "anna@example.test",
+                "phone": "+375291234567",
+                "status": "active",
+                "engagement_type": "self_employed",
+                "engagement_type_validation_status": "verified",
+                "funnel_stage": "PERFORMER_READY_NON_FOOD",
+                "medical_book_status": "non_food",
+                "completed_shifts_count": 3,
+                "first_booked_at": "2026-10-20T08:00:00Z",
+                "first_shift_completed_at": "2026-10-21T18:00:00Z",
+                "fifth_shift_completed_at": null,
+                "source_version": 3
+              }
             }
           }
         },
         "responses": {
-          "200": { "description": "Performer projection created or updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Performer" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "200": {"description": "Проекция создана или обновлена", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Performer"}}}},
+          "401": {"description": "Нет или неверный service token (service_token_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "Конфликт person_id и legacy employee_id (person_id_conflict)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Внутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.",
+        "parameters": [{"name": "X-Service-Token", "in": "header", "required": true, "schema": {"type": "string"}, "description": "Service token OMS2 из секрета OMS2_SERVICE_SECRET"}]
       }
     },
     "/shifts/{shiftId}/transition": {
       "post": {
         "operationId": "oms5TransitionShift",
         "summary": "OMS5 transition shift status",
-        "parameters": [
-          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftTransition" }, "example": { "new_status": "A10_CONFIRM", "reason": "confirmed by manager", "actor_user_id": "usr_123" } } } },
+        "parameters": [{"name": "shiftId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ShiftTransition"}, "example": {"new_status": "A10_CONFIRM", "reason": "confirmed by manager"}}}
+        },
         "responses": {
-          "200": { "description": "Shift transitioned", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftTransitionResult" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Shift transitioned", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ShiftTransitionResult"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -539,13 +608,14 @@
       "get": {
         "operationId": "oms5GetShiftHistory",
         "summary": "OMS5 get shift status history",
-        "parameters": [
-          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "parameters": [{"name": "shiftId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Shift status history", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ShiftStatusHistory" } } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {
+            "description": "Shift status history",
+            "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/ShiftStatusHistory"}}}}
+          },
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -553,30 +623,38 @@
       "post": {
         "operationId": "oms5CreateOfferCampaign",
         "summary": "OMS5 create shift offer campaign",
-        "parameters": [
-          { "name": "shiftId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferCampaignCreate" }, "example": { "performer_ids": ["perf_1", "perf_2"], "created_by_user_id": "usr_123" } } } },
+        "parameters": [{"name": "shiftId", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/OfferCampaignCreate"},
+              "example": {"performer_ids": ["63c55740-a965-40c6-b699-a65ef887bcf1", "5e23893c-1a35-4956-b1b8-38c231ed9e5c"]}
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Offer campaign created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferCampaignResult" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
-        }
+          "200": {"description": "Offer campaign created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OfferCampaignResult"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {
+            "description": "self_assignment_not_allowed, performer_inactive, performer_merged, performer_not_ready, offer_lost, offer_unavailable или offer_campaign_conflict",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        },
+        "description": "Создаёт кампанию и офферы для активных канонических профилей. Автор берётся из JWT. Совпадение actor.person_id с performer.person_id отклоняет всю кампанию с 409 self_assignment_not_allowed без создания записей и событий. Merged и неактивные профили отклоняются."
       }
     },
     "/public/shift-offers/{token}": {
       "get": {
         "operationId": "oms5GetPublicShiftOffer",
         "summary": "OMS5 get public shift offer",
-        "parameters": [
-          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "parameters": [{"name": "token", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Public offer details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicOffer" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Public offer details", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PublicOffer"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -584,13 +662,11 @@
       "post": {
         "operationId": "oms5MarkShiftOfferViewed",
         "summary": "OMS5 mark public shift offer viewed",
-        "parameters": [
-          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "parameters": [{"name": "token", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Offer view logged", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferAvailability" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Offer view logged", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OfferAvailability"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -598,14 +674,31 @@
       "post": {
         "operationId": "oms5AcceptShiftOffer",
         "summary": "OMS5 accept public shift offer",
-        "parameters": [
-          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "parameters": [{"name": "token", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Offer accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OfferAcceptResult" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {
+            "description": "Offer accepted",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OfferAcceptResult"},
+                "example": {
+                  "offer": {"id": "b2626b8c-464c-4d18-912d-40844d510f4d", "status": "won"},
+                  "assignment": {
+                    "id": "0d7a4e21-3f6b-4c58-9a2e-6b1d8f0a7c34",
+                    "shift_id": "69ee99cb-df7e-4a16-a613-5b9903fa74d5",
+                    "performer_id": "63c55740-a965-40c6-b699-a65ef887bcf1",
+                    "status": "assigned",
+                    "engagement_type": "self_employed",
+                    "assigned_at": "2026-11-01T09:05:00Z"
+                  },
+                  "shift": {"id": "69ee99cb-df7e-4a16-a613-5b9903fa74d5", "status": "A30_CHOICE"}
+                }
+              }
+            }
+          },
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -613,13 +706,11 @@
       "post": {
         "operationId": "oms5DeclineShiftOffer",
         "summary": "OMS5 decline public shift offer",
-        "parameters": [
-          { "name": "token", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
-        ],
+        "parameters": [{"name": "token", "in": "path", "required": true, "schema": {"type": "string", "minLength": 1}}],
         "responses": {
-          "200": { "description": "Offer declined", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicOffer" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Offer declined", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PublicOffer"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -628,8 +719,8 @@
         "operationId": "oms5AutoCloseUnfilledShifts",
         "summary": "OMS5 auto close unfilled shifts after reporting period",
         "responses": {
-          "200": { "description": "Auto close result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AutoCloseResult" } } } },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Auto close result", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AutoCloseResult"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -638,13 +729,13 @@
         "operationId": "oms5ListInternalShifts",
         "summary": "OMS5 list shifts by starts_at for internal reports",
         "parameters": [
-          { "name": "startsAtFrom", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" }, "description": "Inclusive starts_at lower bound" },
-          { "name": "startsAtTo", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" }, "description": "Inclusive starts_at upper bound" }
+          {"name": "startsAtFrom", "in": "query", "required": true, "schema": {"type": "string", "format": "date-time"}, "description": "Inclusive starts_at lower bound"},
+          {"name": "startsAtTo", "in": "query", "required": true, "schema": {"type": "string", "format": "date-time"}, "description": "Inclusive starts_at upper bound"}
         ],
         "responses": {
-          "200": { "description": "Internal shifts list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InternalShift" } } } } },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Internal shifts list", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/InternalShift"}}}}},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -656,17 +747,17 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/TimesheetCreate" },
-              "example": { "performer_id": "perf_123", "shift_id": "shf_123", "work_date": "2026-01-20", "hours": 8 }
+              "schema": {"$ref": "#/components/schemas/TimesheetCreate"},
+              "example": {"performer_id": "perf_123", "shift_id": "shf_123", "work_date": "2026-01-20", "hours": 8}
             }
           }
         },
         "responses": {
-          "200": { "description": "Timesheet created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Timesheet" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Timesheet created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Timesheet"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     },
@@ -674,12 +765,1064 @@
       "get": {
         "operationId": "oms5OperationsSummary",
         "summary": "OMS5 operations summary",
-        "security": [{ "bearerAuth": [] }],
+        "security": [{"bearerAuth": []}],
         "responses": {
-          "200": { "description": "Operations summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OperationsSummary" } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "200": {"description": "Operations summary", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OperationsSummary"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/role-assignments": {
+      "post": {
+        "operationId": "oms1CreateRoleAssignment",
+        "summary": "OMS1 assign access role to user",
+        "description": "Доступно только пользователю с активной ролью administrator. Для manager, supervisor и administrator обязательны operator_employment_period_id и operator_position_assignment_id, для external_user — membership_id. organization_id в запросе запрещён и вычисляется из членства. Повторное активное назначение той же роли в том же контексте отклоняется 409. Выдача роли увеличивает auth_version учётной записи.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/RoleAssignmentCreate"},
+              "example": {
+                "role_code": "manager",
+                "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                "valid_from": "2026-11-01T00:00:00Z",
+                "reason": "Назначение по приказу о приёме"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Роль назначена",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/RoleAssignment"},
+                "example": {
+                  "assignment_id": "5b2c8e10-6d4f-4a71-9c3e-8f0a1b2c3d44",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "person_id": null,
+                  "role_code": "manager",
+                  "status": "active",
+                  "valid_from": "2026-11-01T00:00:00Z",
+                  "valid_to": null,
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                  "organization_id": null
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "role_assignment_already_active, role_context_not_active, last_administrator, person_account_conflict или person_already_merged",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {
+            "description": "invalid_role_code, invalid_role_context, validation_error",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          }
+        }
+      }
+    },
+    "/admin/role-assignments/{assignmentId}/revoke": {
+      "post": {
+        "operationId": "oms1RevokeRoleAssignment",
+        "summary": "OMS1 revoke access role assignment",
+        "description": "Мягкий отзыв назначения с сохранением истории. Запрещён отзыв последнего активного назначения administrator (409 last_administrator). Отзыв увеличивает auth_version, поэтому ранее выданные токены перестают проходить /auth/verify.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "assignmentId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID назначения роли"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/RoleAssignmentRevoke"},
+              "example": {"effective_at": "2026-10-28T13:00:00Z", "reason": "Завершение периода трудоустройства"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Назначение отозвано", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoleAssignmentRevoked"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Назначение не найдено (role_assignment_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "last_administrator", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"$ref": "#/components/responses/ValidationError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/operator-employment-periods": {
+      "post": {
+        "operationId": "oms1CreateOperatorEmploymentPeriod",
+        "summary": "OMS1 create operator employment period",
+        "description": "Создаёт период найма оператора и назначение на должность. У пользователя не более одного активного периода. Период и назначение принадлежат учётной записи из пути. Доступно только администратору. Успешный вызов увеличивает auth_version учётной записи.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodCreate"},
+              "example": {"starts_at": "2026-11-01T00:00:00Z", "position_code": "operator_software", "personnel_number": "QA-OPS-001", "reason": "Приём на должность оператора ПО"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Период найма создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriod"},
+                "example": {
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "status": "active",
+                  "starts_at": "2026-11-01T00:00:00Z",
+                  "ends_at": null,
+                  "personnel_number": "QA-OPS-001",
+                  "position_assignment": {
+                    "operator_position_assignment_id": "9a6d1f42-7c2e-4b8a-8f51-3d9e0b7c1a22",
+                    "position_code": "operator_software",
+                    "status": "active",
+                    "starts_at": "2026-11-01T00:00:00Z",
+                    "ends_at": null
+                  },
+                  "created_at": "2026-11-01T08:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "У пользователя уже есть активный период (operator_employment_already_active)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "invalid_position_code, invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/operator-employment-periods/{periodId}/terminate": {
+      "post": {
+        "operationId": "oms1TerminateOperatorEmploymentPeriod",
+        "summary": "OMS1 terminate operator employment period",
+        "description": "Завершает период найма и активное назначение на должность, отзывает роли, привязанные к периоду, и увеличивает auth_version пользователя один раз. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 operator_employment_period_conflict.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "periodId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"},
+            "description": "UUID периода найма оператора"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodTerminate"}, "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Увольнение"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Период найма завершён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/OperatorEmploymentPeriodTerminated"},
+                "example": {
+                  "operator_employment_period_id": "0f3b7a52-4f4a-4f6e-9d3e-2f1a6c8b7d10",
+                  "status": "terminated",
+                  "ends_at": "2026-12-01T00:00:00Z",
+                  "revoked_role_assignments": 2
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {
+            "description": "Период найма не найден (operator_employment_period_not_found)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {"description": "operator_employment_period_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/external-memberships": {
+      "post": {
+        "operationId": "oms1CreateExternalMembership",
+        "summary": "OMS1 create external organization membership",
+        "description": "Создаёт членство пользователя во внешней организации. organization_id ссылается на clients OMS5 логически и не проверяется запросом в OMS5. У пользователя не более одного активного членства в одной организации.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/ExternalMembershipCreate"},
+              "example": {"organization_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd", "valid_from": "2026-11-01T00:00:00Z"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Внешнее членство создано",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ExternalMembership"},
+                "example": {
+                  "membership_id": "c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33",
+                  "user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "organization_id": "3f6e2890-f24e-48e3-9034-c81f64716ebd",
+                  "status": "active",
+                  "valid_from": "2026-11-01T00:00:00Z",
+                  "valid_to": null,
+                  "created_at": "2026-11-01T08:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "external_membership_already_active", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/external-memberships/{membershipId}/revoke": {
+      "post": {
+        "operationId": "oms1RevokeExternalMembership",
+        "summary": "OMS1 revoke external organization membership",
+        "description": "Отзывает внешнее членство, отзывает активные роли external_user этого членства и увеличивает auth_version пользователя. Другие роли пользователя не затрагиваются. Повтор идемпотентен.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "membershipId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID внешнего членства"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/ExternalMembershipRevoke"},
+              "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Сотрудничество завершено"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Внешнее членство отозвано",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ExternalMembershipRevoked"},
+                "example": {"membership_id": "c1a7e5d4-3b2f-4a90-8e61-5f7d2c9b0a33", "status": "revoked", "valid_to": "2026-12-01T00:00:00Z", "revoked_role_assignments": 1}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {
+            "description": "Внешнее членство не найдено (external_membership_not_found)",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "409": {"description": "external_membership_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/admin/users/{userId}/performer-link": {
+      "put": {
+        "operationId": "oms1SetPerformerLink",
+        "summary": "OMS1 link user account to OMS2 performer",
+        "description": "Связывает учётную запись с персоной исполнителя OMS2 или снимает связь при person_id=null. Один person_id не может быть связан с двумя активными учётными записями. Изменение увеличивает auth_version.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{36}$"}, "description": "UUID учётной записи OMS1"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformerLinkUpdate"}, "example": {"person_id": "1042"}}}},
+        "responses": {
+          "200": {
+            "description": "Связь учётной записи обновлена",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/PerformerLink"}, "example": {"user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55", "person_id": "1042"}}
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "Пользователь не найден (user_not_found)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_account_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people": {
+      "post": {
+        "operationId": "oms2CreatePerson",
+        "summary": "OMS2 create canonical Person",
+        "description": "Создаёт Person в статусе provisional и ставит событие people.identity.changed в outbox. Ответ содержит возможных дублей по нормализованному имени и контактам; автоматическое объединение выполняется только по подтверждённому INN/SNILS.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PersonCreate"},
+              "example": {
+                "surname": "Иванов",
+                "firstname": "Иван",
+                "patronymic": "Иванович",
+                "gender": "M",
+                "contacts": [{"type": "phone", "value": "+79161234567", "is_primary": true}]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Person создан", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PersonCreated"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/performer-profile": {
+      "put": {
+        "operationId": "oms2UpsertPerformerProfile",
+        "summary": "OMS2 create or update performer profile",
+        "description": "Создаёт или обновляет профиль исполнителя. При создании профиль получает engagement_type_validation_status=pending и стадию PERFORMER_PROFILE. При смене типа оформления подтверждение сбрасывается и создаётся запись аудита. Стадию воронки и счётчик смен клиент передавать не может.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PerformerProfileUpdate"},
+              "example": {"profile_status": "active", "engagement_type": "self_employed", "medical_book_status": "non_food", "change_reason": "Регистрация исполнителя"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Профиль обновлён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Профиль создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, engagement_type_rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {
+            "description": "invalid_engagement_type, invalid_medical_book_status, validation_error",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      },
+      "get": {
+        "operationId": "oms2GetPerformerProfile",
+        "summary": "OMS2 get performer profile",
+        "description": "Возвращает профиль, периоды работы, адреса, документы и идентификаторы без номеров и значений. Периоды отсортированы по starts_at; адреса — регистрация, приоритетный адрес поиска, остальные по created_at.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}],
+        "responses": {
+          "200": {
+            "description": "Профиль исполнителя",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerProfile"},
+                "example": {
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "profile_status": "active",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "pending",
+                  "engagement_type_selected_at": "2026-11-01T09:00:00Z",
+                  "engagement_type_validated_at": null,
+                  "engagement_type_validated_by_user_id": null,
+                  "engagement_type_rejection_reason": null,
+                  "medical_book_status": "non_food",
+                  "funnel_stage": "PERFORMER_PROFILE",
+                  "funnel_stage_changed_at": "2026-11-01T09:00:00Z",
+                  "completed_shifts_count": 0,
+                  "first_booked_at": null,
+                  "first_shift_completed_at": null,
+                  "fifth_shift_completed_at": null,
+                  "work_periods": [],
+                  "addresses": [],
+                  "documents": [],
+                  "identifiers": [],
+                  "updated_at": "2026-11-01T09:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found, performer_profile_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/performer-profile/engagement-type/verify": {
+      "post": {
+        "operationId": "oms2VerifyEngagementType",
+        "summary": "OMS2 verify or reject performer engagement type",
+        "description": "Фиксирует решение менеджера по типу оформления. Повтор с тем же решением идемпотентен; повтор с другим решением возвращает 409 engagement_type_already_validated. После решения стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EngagementTypeVerify"}, "example": {"decision": "verified", "reason": "Договор ГПХ проверен"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Решение по типу оформления сохранено",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/EngagementTypeVerification"},
+                "example": {
+                  "person_id": "1042",
+                  "engagement_type": "gph",
+                  "engagement_type_validation_status": "verified",
+                  "engagement_type_validated_at": "2026-11-01T10:00:00Z",
+                  "engagement_type_validated_by_user_id": "7e1f3a20-8c5d-4b62-a0f4-9d3e2c1b0a55",
+                  "engagement_type_rejection_reason": null,
+                  "funnel_stage": "PERFORMER_READY_NON_MEDICAL"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "person_not_found, performer_profile_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, engagement_type_already_validated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "engagement_type_not_selected, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/work-periods": {
+      "post": {
+        "operationId": "oms2CreatePerformerWorkPeriod",
+        "summary": "OMS2 create performer work period",
+        "description": "Создаёт период работы исполнителя. Тип оформления периода должен совпадать с типом профиля. У персоны не более одного активного периода. После создания стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PerformerWorkPeriodCreate"},
+              "example": {"starts_at": "2026-11-05T00:00:00Z", "engagement_type": "self_employed", "personnel_number": "QA-EMP-006", "reason": "Начало работы"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Период работы создан",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerWorkPeriod"},
+                "example": {
+                  "work_period_id": "31",
+                  "person_id": "1042",
+                  "status": "active",
+                  "engagement_type": "self_employed",
+                  "starts_at": "2026-11-05T00:00:00Z",
+                  "ends_at": null,
+                  "personnel_number": "QA-EMP-006",
+                  "created_at": "2026-11-01T09:10:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "person_already_merged, performer_profile_required, active_work_period_exists",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "engagement_type_mismatch, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/work-periods/{workPeriodId}/terminate": {
+      "post": {
+        "operationId": "oms2TerminatePerformerWorkPeriod",
+        "summary": "OMS2 terminate performer work period",
+        "description": "Завершает период работы. Повтор с теми же значениями идемпотентен; повтор с другими значениями возвращает 409 work_period_conflict. После завершения стадия воронки пересчитывается.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "workPeriodId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор периода работы"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/PerformerWorkPeriodTerminate"}, "example": {"effective_at": "2026-12-01T00:00:00Z", "reason": "Завершение работы"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Период работы завершён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PerformerWorkPeriodTerminated"},
+                "example": {"work_period_id": "31", "status": "terminated", "ends_at": "2026-12-01T00:00:00Z", "funnel_stage": "PERFORMER_PROFILE"}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "Нет активной роли administrator (administrator_required)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "404": {"description": "work_period_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "work_period_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_period, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/addresses": {
+      "post": {
+        "operationId": "oms2CreatePersonAddress",
+        "summary": "OMS2 add person address",
+        "description": "Добавляет адрес регистрации или адрес поиска подработки. У персоны один адрес регистрации. Первый адрес поиска подработки становится приоритетным автоматически. Второй адрес регистрации или второй приоритетный адрес отклоняется с 409.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PersonAddressCreate"},
+              "example": {
+                "address_type": "work_search",
+                "is_primary": true,
+                "country_code": "RU",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "house": "17",
+                "flat": "12",
+                "postal_code": "125009",
+                "lat": 55.771216,
+                "lon": 37.57729
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Адрес добавлен",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PersonAddress"},
+                "example": {
+                  "person_address_id": "77",
+                  "person_id": "1042",
+                  "address_type": "work_search",
+                  "is_primary": true,
+                  "country_code": "RU",
+                  "region": "Москва",
+                  "city": "Москва",
+                  "street": "Тверская",
+                  "house": "17",
+                  "block": null,
+                  "flat": "12",
+                  "postal_code": "125009",
+                  "lat": 55.771216,
+                  "lon": 37.57729,
+                  "created_at": "2026-11-01T09:20:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {
+            "description": "person_already_merged, registration_address_exists, primary_work_address_exists",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+          },
+          "422": {"description": "invalid_address_type, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      },
+      "get": {
+        "operationId": "oms2ListPersonAddresses",
+        "summary": "OMS2 list person addresses",
+        "description": "Возвращает адреса персоны. Сортировка: адрес регистрации, приоритетный адрес поиска подработки, остальные по created_at.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}],
+        "responses": {
+          "200": {
+            "description": "Адреса персоны",
+            "content": {
+              "application/json": {
+                "schema": {"type": "array", "items": {"$ref": "#/components/schemas/PersonAddress"}},
+                "example": [
+                  {
+                    "person_address_id": "77",
+                    "person_id": "1042",
+                    "address_type": "work_search",
+                    "is_primary": true,
+                    "country_code": "RU",
+                    "region": "Москва",
+                    "city": "Москва",
+                    "street": "Тверская",
+                    "house": "17",
+                    "block": null,
+                    "flat": "12",
+                    "postal_code": "125009",
+                    "lat": 55.771216,
+                    "lon": 37.57729,
+                    "created_at": "2026-11-01T09:20:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/addresses/{addressId}/set-primary": {
+      "post": {
+        "operationId": "oms2SetPrimaryPersonAddress",
+        "summary": "OMS2 set primary work search address",
+        "description": "Переключает приоритетный адрес поиска подработки. При is_primary=true приоритет снимается с текущего адреса и устанавливается новому в одной транзакции. Адрес регистрации переключать нельзя.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"},
+          {"name": "addressId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор адреса персоны"}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PersonAddressSetPrimary"}, "example": {"is_primary": true}}}},
+        "responses": {
+          "200": {
+            "description": "Приоритетный адрес обновлён",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PersonAddress"},
+                "example": {
+                  "person_address_id": "77",
+                  "person_id": "1042",
+                  "address_type": "work_search",
+                  "is_primary": true,
+                  "country_code": "RU",
+                  "region": "Москва",
+                  "city": "Москва",
+                  "street": "Тверская",
+                  "house": "17",
+                  "block": null,
+                  "flat": "12",
+                  "postal_code": "125009",
+                  "lat": 55.771216,
+                  "lon": 37.57729,
+                  "created_at": "2026-11-01T09:20:00Z"
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden", "description": "administrator_required, scope_required"},
+          "404": {"description": "person_not_found, person_address_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged, primary_work_address_exists", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"description": "invalid_address_type, validation_error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/documents": {
+      "post": {
+        "operationId": "oms2CreatePersonDocument",
+        "summary": "OMS2 add person document",
+        "description": "Добавляет паспорт или свидетельство о смене имени. Номер хранится зашифрованным, для точного поиска используется HMAC. Документ создаётся в статусе pending_verification. Требует роль administrator.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id OMS2"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/DocumentCreate"},
+              "example": {
+                "document_type": "passport",
+                "passport_kind": "national",
+                "issuing_country_code": "RU",
+                "document_number": "4510 123456",
+                "issued_at": "2020-05-14",
+                "valid_from": "2020-05-14",
+                "valid_to": "2030-05-14",
+                "is_primary": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Документ добавлен", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Document"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/documents/{documentId}/verify": {
+      "post": {
+        "operationId": "oms2VerifyPersonDocument",
+        "summary": "OMS2 verify person document",
+        "description": "Выносит решение по документу. Подтверждённый основной паспорт переводит Person в identity_status=verified. Совпадение паспорта с другим человеком требует ручного разбора (409 document_identity_conflict).",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"},
+          {"name": "documentId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DocumentVerify"}, "example": {"decision": "verified", "reason": "паспорт проверен"}}}
+        },
+        "responses": {
+          "200": {"description": "Решение сохранено", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DocumentVerification"}}}},
+          "404": {"description": "person_document_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "document_identity_conflict или document_not_verified", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/documents/{documentId}/replace": {
+      "post": {
+        "operationId": "oms2ReplacePersonDocument",
+        "summary": "OMS2 replace passport",
+        "description": "Помечает старый подтверждённый паспорт как replaced и переносит признак основного на новый документ. История не удаляется, авторство прежних действий не меняется.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"},
+          {"name": "documentId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/DocumentReplace"},
+              "example": {"replacement_document_id": "778", "effective_at": "2026-10-28T12:00:00Z", "reason_code": "expired_by_age"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Паспорт заменён", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DocumentReplacement"}}}},
+          "404": {"description": "person_document_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "replacement_document_invalid", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/identifiers": {
+      "post": {
+        "operationId": "oms2CreatePersonIdentifier",
+        "summary": "OMS2 add INN or SNILS",
+        "description": "Добавляет ИНН или СНИЛС (только RU) с проверкой контрольной суммы. Значение хранится зашифрованным, для точного совпадения используется HMAC. Идентификатор создаётся в статусе pending.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/IdentifierCreate"}, "example": {"identifier_type": "inn", "country_code": "RU", "identifier_value": "500100732259"}}
+          }
+        },
+        "responses": {
+          "201": {"description": "Идентификатор добавлен", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Identifier"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/identifiers/{identifierId}/verify": {
+      "post": {
+        "operationId": "oms2VerifyPersonIdentifier",
+        "summary": "OMS2 verify INN or SNILS",
+        "description": "Подтверждает идентификатор. При точном совпадении с уже подтверждённым INN/SNILS другого человека выполняется автоматическое объединение дублей (resolution=linked_existing_person), иначе создаётся новый подтверждённый идентификатор.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"},
+          {"name": "identifierId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/IdentifierVerify"},
+              "example": {"decision": "verified", "verification_method": "official_source", "reason": "проверено в ФНС"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Идентификатор подтверждён", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IdentifierVerification"}}}},
+          "404": {"description": "person_identifier_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "identifier_identity_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{personId}/legal-name-changes": {
+      "post": {
+        "operationId": "oms2ChangeLegalName",
+        "summary": "OMS2 change legal name",
+        "description": "Создаёт новую версию ФИО с сохранением истории и публикует people.identity.changed и people.performer_profile.changed. person_id, username, login methods и роли не меняются. Для marriage, divorce и court_order требуется подтверждённое свидетельство о смене имени.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "personId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Идентификатор"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/LegalNameChange"},
+              "example": {
+                "surname": "Петрова",
+                "firstname": "Анна",
+                "patronymic": "Сергеевна",
+                "effective_at": "2026-10-29T00:00:00Z",
+                "reason_code": "marriage",
+                "source_document_id": "515"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "ФИО изменено", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LegalNameChanged"}}}},
+          "404": {"description": "person_not_found или person_document_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "name_history_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/api/v1/people/{duplicatePersonId}/merge": {
+      "post": {
+        "operationId": "oms2MergePeople",
+        "summary": "OMS2 merge duplicate persons",
+        "description": "Объединяет дубль с канонической персоной. Для reason_code=verified_identifier требуется точное совпадение подтверждённого INN/SNILS или паспорта. Публикует people.merged в оба топика; история, идентификаторы и профиль дубля сохраняются со ссылкой на каноническую персону. Требует роль administrator.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID ключа идемпотентности; повтор с тем же ключом возвращает сохранённый ответ"
+          },
+          {"name": "duplicatePersonId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "person_id дубля"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/MergeCreate"}, "example": {"canonical_person_id": "2000", "reason_code": "verified_identifier"}}}
+        },
+        "responses": {
+          "200": {"description": "Персоны объединены", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/MergeResult"}}}},
+          "404": {"description": "person_not_found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"description": "person_already_merged или person_merge_conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "422": {"$ref": "#/components/responses/ValidationError"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/external/assignment-stats": {
+      "get": {
+        "operationId": "oms5ExternalAssignmentStats",
+        "summary": "OMS5 assignment stats for external user organization",
+        "description": "Область берётся только из проверенного JWT (organization_id), query и body не принимаются. Считает смены организации и всех дочерних узлов по parent_client_id. Доступно только роли external_user.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {"description": "Статистика по организации", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExternalAssignmentStats"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"description": "external_user_scope_required", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
         }
       }
     }
@@ -691,241 +1834,217 @@
         "required": ["username", "password"],
         "additionalProperties": false,
         "properties": {
-          "username": { "type": "string", "minLength": 1 },
-          "password": { "type": "string", "minLength": 1 }
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Username или подтверждённый телефон в формате E.164. Телефон ищется по активному подтверждённому login method и ведёт в ту же каноническую учётную запись."
+          },
+          "password": {"type": "string", "minLength": 1}
         }
       },
       "ServiceLogin": {
         "type": "object",
         "required": ["client_id", "client_secret"],
         "additionalProperties": false,
-        "properties": {
-          "client_id": { "type": "string", "minLength": 1 },
-          "client_secret": { "type": "string", "minLength": 1 }
-        }
+        "properties": {"client_id": {"type": "string", "minLength": 1}, "client_secret": {"type": "string", "minLength": 1}}
       },
       "TokenResponse": {
         "type": "object",
         "required": ["access_token", "token_type", "expires_at"],
-        "properties": {
-          "access_token": { "type": "string" },
-          "token_type": { "type": "string", "const": "bearer" },
-          "expires_at": { "type": "string", "format": "date-time" }
-        }
+        "properties": {"access_token": {"type": "string"}, "token_type": {"type": "string", "const": "bearer"}, "expires_at": {"type": "string", "format": "date-time"}}
       },
       "TokenVerification": {
         "type": "object",
         "required": ["active", "subject", "type", "scopes"],
         "properties": {
-          "active": { "type": "boolean" },
-          "subject": { "type": "string" },
-          "type": { "type": "string", "enum": ["user", "service"] },
-          "scopes": { "type": "array", "items": { "type": "string" } }
+          "active": {"type": "boolean"},
+          "subject": {"type": "string"},
+          "type": {"type": "string", "enum": ["user", "service"]},
+          "scopes": {"type": "array", "items": {"type": "string"}},
+          "user_id": {"type": "string", "format": "uuid"},
+          "person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "display_name": {"type": ["string", "null"]},
+          "roles": {"type": "array", "items": {"$ref": "#/components/schemas/RoleCode"}},
+          "organization_id": {"type": ["string", "null"], "format": "uuid"},
+          "auth_version": {"type": "integer", "minimum": 1}
         }
       },
-      "HealthResponse": {
-        "type": "object",
-        "required": ["status", "service"],
-        "properties": {
-          "status": { "type": "string", "const": "ok" },
-          "service": { "type": "string" }
-        }
-      },
+      "HealthResponse": {"type": "object", "required": ["status", "service"], "properties": {"status": {"type": "string", "const": "ok"}, "service": {"type": "string"}}},
       "LivenessResponse": {
         "type": "object",
         "required": ["status", "service", "checks"],
-        "properties": {
-          "status": { "type": "string", "const": "ok" },
-          "service": { "type": "string" },
-          "checks": { "type": "object", "additionalProperties": true }
-        }
+        "properties": {"status": {"type": "string", "const": "ok"}, "service": {"type": "string"}, "checks": {"type": "object", "additionalProperties": true}}
       },
       "ReadinessResponse": {
         "type": "object",
         "required": ["status", "service", "checks"],
-        "properties": {
-          "status": { "type": "string", "enum": ["ok", "failed"] },
-          "service": { "type": "string" },
-          "checks": { "type": "object", "additionalProperties": true }
-        }
+        "properties": {"status": {"type": "string", "enum": ["ok", "failed"]}, "service": {"type": "string"}, "checks": {"type": "object", "additionalProperties": true}}
       },
       "EmployeeCreate": {
         "type": "object",
         "required": ["surname", "firstname", "gender"],
         "additionalProperties": false,
         "properties": {
-          "surname": { "type": "string", "minLength": 1, "maxLength": 50 },
-          "firstname": { "type": "string", "minLength": 1, "maxLength": 50 },
-          "patronymic": { "type": "string", "maxLength": 50 },
-          "personnel_number": { "type": "string", "maxLength": 250 },
-          "gender": { "type": "string", "minLength": 1, "maxLength": 6 }
+          "surname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "firstname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "patronymic": {"type": "string", "maxLength": 50},
+          "personnel_number": {"type": "string", "maxLength": 250},
+          "gender": {"type": "string", "minLength": 1, "maxLength": 6}
         }
       },
       "Employee": {
         "allOf": [
-          { "$ref": "#/components/schemas/EmployeeCreate" },
+          {"$ref": "#/components/schemas/EmployeeCreate"},
           {
             "type": "object",
             "required": ["id"],
             "properties": {
-              "id": { "type": "integer" },
-              "address": { "type": ["object", "null"] },
-              "created_at": { "type": "string", "format": "date-time" },
-              "updated_at": { "type": "string", "format": "date-time" }
+              "id": {"type": "integer"},
+              "address": {"type": ["object", "null"]},
+              "created_at": {"type": "string", "format": "date-time"},
+              "updated_at": {"type": "string", "format": "date-time"}
             }
           }
         ]
       },
-      "EmployeeList": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Employee" } }
-        }
-      },
+      "EmployeeList": {"type": "object", "required": ["items"], "properties": {"items": {"type": "array", "items": {"$ref": "#/components/schemas/Employee"}}}},
       "ReportTaskCreate": {
         "type": "object",
         "required": ["reportType", "format"],
         "additionalProperties": false,
-        "properties": {
-          "reportType": { "type": "string", "minLength": 1 },
-          "filter": { "type": "object" },
-          "format": { "type": "string", "enum": ["xlsx", "csv", "pdf"] }
-        }
+        "properties": {"reportType": {"type": "string", "minLength": 1}, "filter": {"type": "object"}, "format": {"type": "string", "enum": ["xlsx", "csv", "pdf"]}}
       },
       "ReportTaskAccepted": {
         "type": "object",
         "required": ["taskId", "status", "statusUrl", "createdAt"],
         "properties": {
-          "taskId": { "type": "string" },
-          "status": { "type": "string", "const": "queued" },
-          "statusUrl": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "taskId": {"type": "string"},
+          "status": {"type": "string", "const": "queued"},
+          "statusUrl": {"type": "string"},
+          "createdAt": {"type": "string", "format": "date-time"}
         }
       },
       "ReportTask": {
         "type": "object",
         "required": ["taskId", "status", "progress", "createdAt", "updatedAt"],
         "properties": {
-          "taskId": { "type": "string" },
-          "status": { "type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled", "expired"] },
-          "progress": { "type": "number", "minimum": 0, "maximum": 100 },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" },
-          "result": { "$ref": "#/components/schemas/ReportResult" },
-          "error": { "$ref": "#/components/schemas/ReportError" }
+          "taskId": {"type": "string"},
+          "status": {"type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled", "expired"]},
+          "progress": {"type": "number", "minimum": 0, "maximum": 100},
+          "createdAt": {"type": "string", "format": "date-time"},
+          "updatedAt": {"type": "string", "format": "date-time"},
+          "result": {"$ref": "#/components/schemas/ReportResult"},
+          "error": {"$ref": "#/components/schemas/ReportError"}
         }
       },
       "ReportResult": {
         "type": ["object", "null"],
         "properties": {
-          "fileName": { "type": "string" },
-          "downloadUrl": { "type": "string" },
-          "expiresAt": { "type": "string", "format": "date-time" },
-          "sizeBytes": { "type": "integer", "minimum": 0 }
+          "fileName": {"type": "string"},
+          "downloadUrl": {"type": "string"},
+          "expiresAt": {"type": "string", "format": "date-time"},
+          "sizeBytes": {"type": "integer", "minimum": 0}
         }
       },
-      "ReportError": {
-        "type": ["object", "null"],
-        "properties": {
-          "code": { "type": "string" },
-          "message": { "type": "string" }
-        }
-      },
+      "ReportError": {"type": ["object", "null"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}}},
       "ReportDownload": {
         "type": "object",
         "required": ["downloadUrl", "expiresAt"],
-        "properties": {
-          "downloadUrl": { "type": "string", "format": "uri" },
-          "expiresAt": { "type": "string", "format": "date-time" }
-        }
+        "properties": {"downloadUrl": {"type": "string", "format": "uri"}, "expiresAt": {"type": "string", "format": "date-time"}}
       },
       "EmailNotification": {
         "type": "object",
         "required": ["to", "subject", "body"],
         "additionalProperties": false,
-        "properties": {
-          "to": { "type": "string", "format": "email" },
-          "subject": { "type": "string", "minLength": 1 },
-          "body": { "type": "string", "minLength": 1 }
-        }
+        "properties": {"to": {"type": "string", "format": "email"}, "subject": {"type": "string", "minLength": 1}, "body": {"type": "string", "minLength": 1}}
       },
       "NotificationResult": {
         "type": "object",
         "required": ["notification_id", "channel", "to", "status", "created_at"],
         "properties": {
-          "notification_id": { "type": "string" },
-          "channel": { "type": "string", "const": "email" },
-          "to": { "type": "string", "format": "email" },
-          "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
-          "created_at": { "type": "string", "format": "date-time" }
+          "notification_id": {"type": "string"},
+          "channel": {"type": "string", "const": "email"},
+          "to": {"type": "string", "format": "email"},
+          "status": {"type": "string", "enum": ["queued", "sent", "failed"]},
+          "created_at": {"type": "string", "format": "date-time"}
         }
       },
-      "ProblemEventStatus": {
-        "type": "string",
-        "enum": ["pending", "retry_scheduled", "retrying", "resolved", "dlq", "ignored", "manual_review"]
-      },
-      "ProblemEventErrorType": {
-        "type": "string",
-        "enum": ["technical", "business", "contract"]
-      },
+      "ProblemEventStatus": {"type": "string", "enum": ["pending", "retry_scheduled", "retrying", "resolved", "dlq", "ignored", "manual_review"]},
+      "ProblemEventErrorType": {"type": "string", "enum": ["technical", "business", "contract"]},
       "ProblemEvent": {
         "type": "object",
-        "required": ["id", "event_id", "event_type", "payload", "error_type", "error_code", "error_message", "status", "attempt_count", "max_attempts", "first_failed_at", "last_failed_at", "consumer_service"],
+        "required": [
+          "id",
+          "event_id",
+          "event_type",
+          "payload",
+          "error_type",
+          "error_code",
+          "error_message",
+          "status",
+          "attempt_count",
+          "max_attempts",
+          "first_failed_at",
+          "last_failed_at",
+          "consumer_service"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "event_id": { "type": "string" },
-          "event_type": { "type": ["string", "null"], "example": "operations.shift.status_changed" },
-          "schema_version": { "type": ["integer", "null"] },
-          "correlation_id": { "type": ["string", "null"] },
-          "producer": { "type": ["string", "null"], "example": "OMS5" },
-          "source_topic": { "type": ["string", "null"], "example": "operations.shift.status_changed" },
-          "source_partition": { "type": ["integer", "null"] },
-          "source_offset": { "type": ["integer", "null"] },
-          "kafka_key": { "type": ["string", "null"] },
-          "shift_id": { "type": ["string", "null"] },
-          "external_store_id": { "type": ["string", "null"] },
-          "external_client_id": { "type": ["string", "null"] },
-          "payload": { "type": "object", "additionalProperties": true },
-          "error_type": { "$ref": "#/components/schemas/ProblemEventErrorType" },
-          "error_code": { "type": "string", "example": "store_not_found" },
-          "error_message": { "type": "string" },
-          "status": { "$ref": "#/components/schemas/ProblemEventStatus" },
-          "attempt_count": { "type": "integer", "minimum": 0 },
-          "max_attempts": { "type": "integer", "minimum": 0 },
-          "first_failed_at": { "type": "string", "format": "date-time" },
-          "last_failed_at": { "type": "string", "format": "date-time" },
-          "next_retry_at": { "type": ["string", "null"], "format": "date-time" },
-          "last_retry_interval": { "type": ["string", "null"], "enum": ["5m", "15m", "1h", null] },
-          "consumer_service": { "type": "string", "example": "OMS3" },
-          "resolved_at": { "type": ["string", "null"], "format": "date-time" },
-          "resolved_by": { "type": ["string", "null"] },
-          "last_manual_action_by": { "type": ["string", "null"] },
-          "last_manual_action_at": { "type": ["string", "null"], "format": "date-time" },
-          "last_manual_comment": { "type": ["string", "null"] }
+          "id": {"type": "string"},
+          "event_id": {"type": "string"},
+          "event_type": {"type": ["string", "null"], "example": "operations.shift.status_changed"},
+          "schema_version": {"type": ["integer", "null"]},
+          "correlation_id": {"type": ["string", "null"]},
+          "producer": {"type": ["string", "null"], "example": "OMS5"},
+          "source_topic": {"type": ["string", "null"], "example": "operations.shift.status_changed"},
+          "source_partition": {"type": ["integer", "null"]},
+          "source_offset": {"type": ["integer", "null"]},
+          "kafka_key": {"type": ["string", "null"]},
+          "shift_id": {"type": ["string", "null"]},
+          "external_store_id": {"type": ["string", "null"]},
+          "external_client_id": {"type": ["string", "null"]},
+          "payload": {"type": "object", "additionalProperties": true},
+          "error_type": {"$ref": "#/components/schemas/ProblemEventErrorType"},
+          "error_code": {"type": "string", "example": "store_not_found"},
+          "error_message": {"type": "string"},
+          "status": {"$ref": "#/components/schemas/ProblemEventStatus"},
+          "attempt_count": {"type": "integer", "minimum": 0},
+          "max_attempts": {"type": "integer", "minimum": 0},
+          "first_failed_at": {"type": "string", "format": "date-time"},
+          "last_failed_at": {"type": "string", "format": "date-time"},
+          "next_retry_at": {"type": ["string", "null"], "format": "date-time"},
+          "last_retry_interval": {"type": ["string", "null"], "enum": ["5m", "15m", "1h", null]},
+          "consumer_service": {"type": "string", "example": "OMS3"},
+          "resolved_at": {"type": ["string", "null"], "format": "date-time"},
+          "resolved_by": {"type": ["string", "null"]},
+          "last_manual_action_by": {"type": ["string", "null"]},
+          "last_manual_action_at": {"type": ["string", "null"], "format": "date-time"},
+          "last_manual_comment": {"type": ["string", "null"]}
         }
       },
-      "ManualProblemEventAction": {
-        "type": "object",
-        "required": ["comment"],
-        "additionalProperties": false,
-        "properties": {
-          "comment": { "type": "string", "minLength": 1 }
-        }
-      },
+      "ManualProblemEventAction": {"type": "object", "required": ["comment"], "additionalProperties": false, "properties": {"comment": {"type": "string", "minLength": 1}}},
       "ClientCreate": {
         "type": "object",
         "required": ["name"],
-        "additionalProperties": false,
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
-          "external_id": { "type": ["string", "null"] }
+          "name": {"type": "string", "minLength": 1, "maxLength": 255},
+          "external_id": {"type": ["string", "null"], "maxLength": 255},
+          "client_type_code": {"type": "string", "enum": ["head", "division", "object"], "default": "head"},
+          "parent_client_id": {"type": ["string", "null"], "format": "uuid"},
+          "address": {"type": ["string", "null"], "maxLength": 500},
+          "country_code": {"type": ["string", "null"], "pattern": "^[A-Za-z]{2}$"},
+          "timezone": {"type": ["string", "null"], "maxLength": 64},
+          "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+          "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90}
         }
       },
       "Client": {
         "allOf": [
-          { "$ref": "#/components/schemas/ClientCreate" },
-          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+          {"$ref": "#/components/schemas/ClientCreate"},
+          {
+            "type": "object",
+            "required": ["id", "name", "client_type_code", "created_at"],
+            "properties": {"id": {"type": "string", "format": "uuid"}, "created_at": {"type": "string", "format": "date-time"}}
+          }
         ]
       },
       "ShiftCreate": {
@@ -933,30 +2052,33 @@
         "required": ["client_id", "starts_at", "ends_at"],
         "additionalProperties": false,
         "properties": {
-          "client_id": { "type": "string", "minLength": 1 },
-          "starts_at": { "type": "string", "format": "date-time" },
-          "ends_at": { "type": "string", "format": "date-time" },
-          "location": { "type": ["string", "null"] },
-          "required_performers_count": { "type": "integer", "minimum": 1, "maximum": 1, "default": 1 },
-          "created_by_user_id": { "type": ["string", "null"] }
+          "client_id": {"type": "string", "minLength": 1},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "location": {"type": ["string", "null"], "maxLength": 255},
+          "required_performers_count": {"type": "integer", "minimum": 1, "maximum": 1, "default": 1}
         }
       },
       "Shift": {
         "allOf": [
-          { "$ref": "#/components/schemas/ShiftCreate" },
+          {"$ref": "#/components/schemas/ShiftCreate"},
           {
             "type": "object",
             "required": ["id", "status", "created_at", "updated_at"],
             "properties": {
-              "id": { "type": "string" },
-              "status": { "$ref": "#/components/schemas/ShiftStatus" },
-              "assigned_performer_id": { "type": ["string", "null"] },
-              "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
-              "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] },
-              "auto_closed": { "type": "boolean" },
-              "auto_close_reason": { "type": ["string", "null"] },
-              "created_at": { "type": "string", "format": "date-time" },
-              "updated_at": { "type": "string", "format": "date-time" }
+              "id": {"type": "string"},
+              "status": {"$ref": "#/components/schemas/ShiftStatus"},
+              "assigned_performer_id": {"type": ["string", "null"]},
+              "close_reason": {"type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null]},
+              "failure_reason": {"type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null]},
+              "auto_closed": {"type": "boolean"},
+              "auto_close_reason": {"type": ["string", "null"]},
+              "created_at": {"type": "string", "format": "date-time"},
+              "updated_at": {"type": "string", "format": "date-time"},
+              "assigned_performer_person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+              "created_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+              "created_by_person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+              "created_by_display_name": {"type": ["string", "null"], "maxLength": 255}
             }
           }
         ]
@@ -966,17 +2088,17 @@
         "required": ["id", "client_id", "starts_at", "ends_at", "status", "created_at", "updated_at"],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string" },
-          "client_id": { "type": "string" },
-          "starts_at": { "type": "string", "format": "date-time" },
-          "ends_at": { "type": "string", "format": "date-time" },
-          "status": { "$ref": "#/components/schemas/ShiftStatus" },
-          "location": { "type": ["string", "null"] },
-          "assigned_performer_id": { "type": ["string", "null"] },
-          "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
-          "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {"type": "string"},
+          "client_id": {"type": "string"},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "status": {"$ref": "#/components/schemas/ShiftStatus"},
+          "location": {"type": ["string", "null"]},
+          "assigned_performer_id": {"type": ["string", "null"]},
+          "close_reason": {"type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null]},
+          "failure_reason": {"type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null]},
+          "created_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"}
         }
       },
       "ShiftStatus": {
@@ -985,142 +2107,208 @@
       },
       "PerformerSync": {
         "type": "object",
-        "required": ["employee_id", "display_name"],
-        "additionalProperties": false,
+        "required": [
+          "person_id",
+          "display_name",
+          "status",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "funnel_stage",
+          "medical_book_status",
+          "completed_shifts_count",
+          "source_version"
+        ],
         "properties": {
-          "employee_id": { "type": "integer", "minimum": 1 },
-          "display_name": { "type": "string", "minLength": 1 },
-          "email": { "type": ["string", "null"], "format": "email" },
-          "phone": { "type": ["string", "null"] },
-          "status": { "type": "string", "default": "active" },
-          "source_version": { "type": ["integer", "null"] }
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "employee_id": {
+            "type": ["string", "null"],
+            "description": "Legacy поле на время поэтапного развёртывания; при расхождении с person_id запрос отклоняется 409 person_id_conflict."
+          },
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 255},
+          "email": {"type": ["string", "null"], "format": "email"},
+          "phone": {"type": ["string", "null"]},
+          "status": {"type": "string", "enum": ["active", "inactive"]},
+          "source_version": {"type": "integer", "minimum": 1},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"}
         }
       },
       "Performer": {
-        "allOf": [
-          { "$ref": "#/components/schemas/PerformerSync" },
-          { "type": "object", "required": ["id", "synced_at"], "properties": { "id": { "type": "string" }, "synced_at": { "type": "string", "format": "date-time" } } }
-        ]
+        "type": "object",
+        "required": [
+          "id",
+          "person_id",
+          "display_name",
+          "status",
+          "source_version",
+          "synced_at",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "funnel_stage",
+          "medical_book_status",
+          "completed_shifts_count"
+        ],
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "display_name": {"type": "string"},
+          "email": {"type": ["string", "null"]},
+          "phone": {"type": ["string", "null"]},
+          "status": {"type": "string", "enum": ["active", "inactive", "merged"]},
+          "source_version": {"type": "integer", "minimum": 1},
+          "merged_into_performer_id": {"type": ["string", "null"], "format": "uuid"},
+          "synced_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {
+            "type": ["string", "null"],
+            "enum": ["gph", "self_employed", null],
+            "description": "Снимок типа оформления; null допустим только для строк, созданных до обновления."
+          },
+          "engagement_type_validation_status": {"type": ["string", "null"], "enum": ["pending", "verified", "rejected", null]},
+          "funnel_stage": {
+            "type": ["string", "null"],
+            "enum": [
+              "PERFORMER_BLANK",
+              "PERFORMER_PROFILE",
+              "PERFORMER_DOCS_PENDING",
+              "PERFORMER_READY_NON_MEDICAL",
+              "PERFORMER_READY_NON_FOOD",
+              "PERFORMER_READY_FOOD",
+              "PERFORMER_BOOKED_SHIFT",
+              "PERFORMER_FIRST_SHIFT_COMPLETED",
+              "PERFORMER_FIFTH_SHIFT_COMPLETED",
+              "PERFORMER_PROFILE_DELETED",
+              null
+            ]
+          },
+          "medical_book_status": {"type": ["string", "null"], "enum": ["none", "non_food", "food", null]},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"}
+        }
       },
       "ShiftTransition": {
         "type": "object",
         "required": ["new_status"],
         "additionalProperties": false,
         "properties": {
-          "new_status": { "$ref": "#/components/schemas/ShiftStatus" },
-          "reason": { "type": ["string", "null"] },
-          "actor_user_id": { "type": ["string", "null"] },
-          "close_reason": { "type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null] },
-          "failure_reason": { "type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null] }
+          "new_status": {"$ref": "#/components/schemas/ShiftStatus"},
+          "reason": {"type": ["string", "null"]},
+          "close_reason": {"type": ["string", "null"], "enum": ["paid", "canceled", "failed", "deleted", null]},
+          "failure_reason": {"type": ["string", "null"], "enum": ["absence", "no_performer_found", "client_rejected", "timesheet_invalid", "manual_admin_decision", null]}
         }
       },
       "ShiftStatusHistory": {
         "type": "object",
         "required": ["id", "shift_id", "from_status", "to_status", "transition_code", "occurred_at"],
         "properties": {
-          "id": { "type": "string" },
-          "shift_id": { "type": "string" },
-          "from_status": { "$ref": "#/components/schemas/ShiftStatus" },
-          "to_status": { "$ref": "#/components/schemas/ShiftStatus" },
-          "transition_code": { "type": "string" },
-          "reason": { "type": ["string", "null"] },
-          "actor_user_id": { "type": ["string", "null"] },
-          "occurred_at": { "type": "string", "format": "date-time" },
-          "correlation_id": { "type": "string" },
-          "metadata": { "type": "object", "additionalProperties": true }
+          "id": {"type": "string"},
+          "shift_id": {"type": "string"},
+          "from_status": {"$ref": "#/components/schemas/ShiftStatus"},
+          "to_status": {"$ref": "#/components/schemas/ShiftStatus"},
+          "transition_code": {"type": "string"},
+          "reason": {"type": ["string", "null"]},
+          "actor_user_id": {"type": ["string", "null"]},
+          "occurred_at": {"type": "string", "format": "date-time"},
+          "correlation_id": {"type": "string"},
+          "metadata": {"type": "object", "additionalProperties": true},
+          "actor_person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "actor_display_name": {"type": ["string", "null"], "maxLength": 255}
         }
       },
       "ShiftTransitionResult": {
         "type": "object",
         "required": ["shift", "history"],
-        "properties": {
-          "shift": { "$ref": "#/components/schemas/Shift" },
-          "history": { "$ref": "#/components/schemas/ShiftStatusHistory" }
-        }
+        "properties": {"shift": {"$ref": "#/components/schemas/Shift"}, "history": {"$ref": "#/components/schemas/ShiftStatusHistory"}}
       },
       "OfferCampaignCreate": {
         "type": "object",
         "required": ["performer_ids"],
         "additionalProperties": false,
-        "properties": {
-          "performer_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-          "created_by_user_id": { "type": ["string", "null"] }
-        }
+        "properties": {"performer_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}}}
       },
       "ShiftOfferCampaign": {
         "type": "object",
         "required": ["id", "shift_id", "status", "created_at"],
         "properties": {
-          "id": { "type": "string" },
-          "shift_id": { "type": "string" },
-          "status": { "type": "string", "enum": ["draft", "sent", "closed", "cancelled"] },
-          "created_by_user_id": { "type": ["string", "null"] },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {"type": "string"},
+          "shift_id": {"type": "string"},
+          "status": {"type": "string", "enum": ["draft", "sent", "closed", "cancelled"]},
+          "created_by_user_id": {"type": ["string", "null"]},
+          "created_at": {"type": "string", "format": "date-time"},
+          "created_by_person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "created_by_display_name": {"type": ["string", "null"], "maxLength": 255}
         }
       },
       "ShiftOffer": {
         "type": "object",
         "required": ["id", "campaign_id", "shift_id", "performer_id", "status", "expires_at"],
         "properties": {
-          "id": { "type": "string" },
-          "campaign_id": { "type": "string" },
-          "shift_id": { "type": "string" },
-          "performer_id": { "type": "string" },
-          "status": { "type": "string", "enum": ["draft", "sent", "viewed", "accepted", "declined", "won", "lost", "expired", "cancelled"] },
-          "expires_at": { "type": "string", "format": "date-time" },
-          "sent_at": { "type": "string", "format": "date-time" },
-          "responded_at": { "type": ["string", "null"], "format": "date-time" }
+          "id": {"type": "string"},
+          "campaign_id": {"type": "string"},
+          "shift_id": {"type": "string"},
+          "performer_id": {"type": "string"},
+          "status": {"type": "string", "enum": ["draft", "sent", "viewed", "accepted", "declined", "won", "lost", "expired", "cancelled"]},
+          "expires_at": {"type": "string", "format": "date-time"},
+          "sent_at": {"type": "string", "format": "date-time"}
         }
       },
       "OfferCampaignResult": {
         "type": "object",
         "required": ["campaign", "offers"],
-        "properties": {
-          "campaign": { "$ref": "#/components/schemas/ShiftOfferCampaign" },
-          "offers": { "type": "array", "items": { "allOf": [{ "$ref": "#/components/schemas/ShiftOffer" }, { "type": "object", "properties": { "token": { "type": "string" }, "public_url": { "type": "string" } } }] } }
-        }
+        "properties": {"campaign": {"$ref": "#/components/schemas/ShiftOfferCampaign"}, "offers": {"type": "array", "items": {"$ref": "#/components/schemas/CampaignOffer"}}}
       },
       "OfferAvailability": {
         "type": "object",
         "required": ["status", "offerStatus", "shiftStatus", "available"],
         "properties": {
-          "status": { "type": "string" },
-          "offerStatus": { "type": "string" },
-          "shiftStatus": { "$ref": "#/components/schemas/ShiftStatus" },
-          "available": { "type": "boolean" },
-          "reason": { "type": ["string", "null"] }
+          "status": {"type": "string"},
+          "offerStatus": {"type": "string"},
+          "shiftStatus": {"$ref": "#/components/schemas/ShiftStatus"},
+          "available": {"type": "boolean"},
+          "reason": {"type": ["string", "null"]}
         }
       },
       "PublicOffer": {
         "type": "object",
         "required": ["offer", "shift", "performer", "available"],
         "properties": {
-          "offer": { "$ref": "#/components/schemas/ShiftOffer" },
-          "shift": { "$ref": "#/components/schemas/Shift" },
-          "performer": { "$ref": "#/components/schemas/Performer" },
-          "available": { "type": "boolean" },
-          "reason": { "type": ["string", "null"] }
+          "offer": {"$ref": "#/components/schemas/ShiftOffer"},
+          "shift": {"$ref": "#/components/schemas/Shift"},
+          "performer": {"$ref": "#/components/schemas/Performer"},
+          "available": {"type": "boolean"},
+          "reason": {"type": ["string", "null"]}
         }
       },
       "ShiftAssignment": {
         "type": "object",
-        "required": ["id", "shift_id", "performer_id", "offer_id", "status", "assigned_at"],
+        "required": ["id", "shift_id", "performer_id", "status", "engagement_type", "assigned_at"],
         "properties": {
-          "id": { "type": "string" },
-          "shift_id": { "type": "string" },
-          "performer_id": { "type": "string" },
-          "offer_id": { "type": "string" },
-          "status": { "type": "string" },
-          "assigned_at": { "type": "string", "format": "date-time" }
+          "id": {"type": "string", "format": "uuid"},
+          "shift_id": {"type": "string", "format": "uuid"},
+          "performer_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string"},
+          "assigned_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {
+            "type": ["string", "null"],
+            "enum": ["gph", "self_employed", null],
+            "description": "Снимок типа оформления на момент назначения; null только у назначений до обновления."
+          }
         }
       },
       "OfferAcceptResult": {
         "type": "object",
         "required": ["offer", "assignment", "shift"],
         "properties": {
-          "offer": { "$ref": "#/components/schemas/ShiftOffer" },
-          "assignment": { "$ref": "#/components/schemas/ShiftAssignment" },
-          "shift": { "$ref": "#/components/schemas/Shift" }
+          "offer": {"$ref": "#/components/schemas/ShiftOffer"},
+          "assignment": {"$ref": "#/components/schemas/ShiftAssignment"},
+          "shift": {"$ref": "#/components/schemas/Shift"}
         }
       },
       "TimesheetCreate": {
@@ -1128,61 +2316,585 @@
         "required": ["performer_id", "shift_id", "work_date", "hours"],
         "additionalProperties": false,
         "properties": {
-          "performer_id": { "type": "string", "minLength": 1 },
-          "shift_id": { "type": "string", "minLength": 1 },
-          "work_date": { "type": "string", "format": "date" },
-          "hours": { "type": "number", "exclusiveMinimum": 0, "maximum": 24 }
+          "performer_id": {"type": "string", "minLength": 1},
+          "shift_id": {"type": "string", "minLength": 1},
+          "work_date": {"type": "string", "format": "date"},
+          "hours": {"type": "number", "exclusiveMinimum": 0, "maximum": 24}
         }
       },
       "Timesheet": {
         "allOf": [
-          { "$ref": "#/components/schemas/TimesheetCreate" },
-          { "type": "object", "required": ["id", "created_at"], "properties": { "id": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } }
+          {"$ref": "#/components/schemas/TimesheetCreate"},
+          {"type": "object", "required": ["id", "created_at"], "properties": {"id": {"type": "string"}, "created_at": {"type": "string", "format": "date-time"}}}
         ]
       },
       "OperationsSummary": {
         "type": "object",
         "required": ["clients", "performers", "shifts", "offerCampaigns", "offers", "assignments", "timesheets"],
         "properties": {
-          "clients": { "type": "integer", "minimum": 0 },
-          "performers": { "type": "integer", "minimum": 0 },
-          "shifts": { "type": "integer", "minimum": 0 },
-          "offerCampaigns": { "type": "integer", "minimum": 0 },
-          "offers": { "type": "integer", "minimum": 0 },
-          "assignments": { "type": "integer", "minimum": 0 },
-          "timesheets": { "type": "integer", "minimum": 0 }
+          "clients": {"type": "integer", "minimum": 0},
+          "performers": {"type": "integer", "minimum": 0},
+          "shifts": {"type": "integer", "minimum": 0},
+          "offerCampaigns": {"type": "integer", "minimum": 0},
+          "offers": {"type": "integer", "minimum": 0},
+          "assignments": {"type": "integer", "minimum": 0},
+          "timesheets": {"type": "integer", "minimum": 0}
         }
       },
       "AutoCloseResult": {
         "type": "object",
         "required": ["closed", "count"],
+        "properties": {"closed": {"type": "array", "items": {"type": "string"}}, "count": {"type": "integer", "minimum": 0}}
+      },
+      "Error": {"type": "object", "required": ["detail"], "properties": {"detail": {}}},
+      "PersonId": {"type": "string", "pattern": "^[0-9]+$", "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."},
+      "RoleCode": {"type": "string", "enum": ["manager", "supervisor", "administrator", "external_user"]},
+      "RoleAssignmentCreate": {
+        "type": "object",
+        "required": ["role_code", "valid_from", "reason"],
+        "additionalProperties": false,
         "properties": {
-          "closed": { "type": "array", "items": { "type": "string" } },
-          "count": { "type": "integer", "minimum": 0 }
+          "role_code": {"$ref": "#/components/schemas/RoleCode"},
+          "operator_employment_period_id": {"type": ["string", "null"], "format": "uuid"},
+          "operator_position_assignment_id": {"type": ["string", "null"], "format": "uuid"},
+          "membership_id": {"type": ["string", "null"], "format": "uuid"},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
         }
       },
-      "Error": {
+      "RoleAssignment": {
         "type": "object",
-        "required": ["detail"],
-        "properties": { "detail": {} }
+        "required": ["assignment_id", "user_id", "role_code", "status", "valid_from"],
+        "properties": {
+          "assignment_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]},
+          "role_code": {"$ref": "#/components/schemas/RoleCode"},
+          "status": {"type": "string", "enum": ["active", "revoked"]},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "valid_to": {"type": ["string", "null"], "format": "date-time"},
+          "operator_employment_period_id": {"type": ["string", "null"], "format": "uuid"},
+          "operator_position_assignment_id": {"type": ["string", "null"], "format": "uuid"},
+          "organization_id": {"type": ["string", "null"], "format": "uuid"}
+        }
+      },
+      "RoleAssignmentRevoke": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "RoleAssignmentRevoked": {
+        "type": "object",
+        "required": ["assignment_id", "status", "valid_to", "revoked_by_user_id", "reason"],
+        "properties": {
+          "assignment_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["revoked"]},
+          "valid_to": {"type": "string", "format": "date-time"},
+          "revoked_by_user_id": {"type": "string", "format": "uuid"},
+          "reason": {"type": "string"}
+        }
+      },
+      "OperatorEmploymentPeriodCreate": {
+        "type": "object",
+        "required": ["starts_at", "position_code", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "starts_at": {"type": "string", "format": "date-time"},
+          "position_code": {"type": "string", "minLength": 1, "maxLength": 64},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
+        }
+      },
+      "OperatorEmploymentPeriod": {
+        "type": "object",
+        "required": ["operator_employment_period_id", "user_id", "status", "starts_at", "position_assignment", "created_at"],
+        "properties": {
+          "operator_employment_period_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "position_assignment": {"$ref": "#/components/schemas/OperatorPositionAssignment"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "OperatorPositionAssignment": {
+        "type": "object",
+        "required": ["operator_position_assignment_id", "position_code", "status", "starts_at"],
+        "properties": {
+          "operator_position_assignment_id": {"type": "string", "format": "uuid"},
+          "position_code": {"type": "string"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"}
+        }
+      },
+      "OperatorEmploymentPeriodTerminate": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "OperatorEmploymentPeriodTerminated": {
+        "type": "object",
+        "required": ["operator_employment_period_id", "status", "ends_at", "revoked_role_assignments"],
+        "properties": {
+          "operator_employment_period_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["terminated"]},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "revoked_role_assignments": {"type": "integer", "minimum": 0}
+        }
+      },
+      "ExternalMembershipCreate": {
+        "type": "object",
+        "required": ["organization_id", "valid_from"],
+        "additionalProperties": false,
+        "properties": {
+          "organization_id": {"type": "string", "format": "uuid"},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "valid_to": {"type": ["string", "null"], "format": "date-time"}
+        }
+      },
+      "ExternalMembership": {
+        "type": "object",
+        "required": ["membership_id", "user_id", "organization_id", "status", "valid_from", "created_at"],
+        "properties": {
+          "membership_id": {"type": "string", "format": "uuid"},
+          "user_id": {"type": "string", "format": "uuid"},
+          "organization_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["active", "revoked"]},
+          "valid_from": {"type": "string", "format": "date-time"},
+          "valid_to": {"type": ["string", "null"], "format": "date-time"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "ExternalMembershipRevoke": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "ExternalMembershipRevoked": {
+        "type": "object",
+        "required": ["membership_id", "status", "valid_to", "revoked_role_assignments"],
+        "properties": {
+          "membership_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["revoked"]},
+          "valid_to": {"type": "string", "format": "date-time"},
+          "revoked_role_assignments": {"type": "integer", "minimum": 0}
+        }
+      },
+      "PerformerLinkUpdate": {
+        "type": "object",
+        "required": ["person_id"],
+        "additionalProperties": false,
+        "properties": {"person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}}
+      },
+      "PerformerLink": {
+        "type": "object",
+        "required": ["user_id", "person_id"],
+        "properties": {"user_id": {"type": "string", "format": "uuid"}, "person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}}
+      },
+      "ContactInput": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {"type": {"type": "string", "enum": ["phone", "email"]}, "value": {"type": "string", "minLength": 1}, "is_primary": {"type": "boolean", "default": false}}
+      },
+      "PersonCreate": {
+        "type": "object",
+        "required": ["surname", "firstname", "gender"],
+        "properties": {
+          "surname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "firstname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "patronymic": {"type": ["string", "null"], "maxLength": 50},
+          "gender": {"type": "string", "enum": ["M", "F", "U"]},
+          "contacts": {"type": "array", "items": {"$ref": "#/components/schemas/ContactInput"}}
+        }
+      },
+      "PossibleDuplicate": {
+        "type": "object",
+        "required": ["person_id", "match_reasons"],
+        "properties": {"person_id": {"$ref": "#/components/schemas/PersonId"}, "match_reasons": {"type": "array", "items": {"type": "string"}}}
+      },
+      "PersonCreated": {
+        "type": "object",
+        "required": ["person_id", "identity_status", "created_at", "possible_duplicates"],
+        "properties": {
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "identity_status": {"type": "string", "enum": ["provisional", "verified", "merged"]},
+          "created_at": {"type": "string", "format": "date-time"},
+          "possible_duplicates": {"type": "array", "items": {"$ref": "#/components/schemas/PossibleDuplicate"}}
+        }
+      },
+      "FunnelStage": {
+        "type": "string",
+        "enum": [
+          "PERFORMER_BLANK",
+          "PERFORMER_PROFILE",
+          "PERFORMER_DOCS_PENDING",
+          "PERFORMER_READY_NON_MEDICAL",
+          "PERFORMER_READY_NON_FOOD",
+          "PERFORMER_READY_FOOD",
+          "PERFORMER_BOOKED_SHIFT",
+          "PERFORMER_FIRST_SHIFT_COMPLETED",
+          "PERFORMER_FIFTH_SHIFT_COMPLETED",
+          "PERFORMER_PROFILE_DELETED"
+        ],
+        "description": "PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5."
+      },
+      "EngagementType": {"type": "string", "enum": ["gph", "self_employed"], "description": "Тип оформления исполнителя: договор ГПХ или самозанятость."},
+      "EngagementTypeValidationStatus": {"type": "string", "enum": ["pending", "verified", "rejected"]},
+      "MedicalBookStatus": {"type": "string", "enum": ["none", "non_food", "food"]},
+      "PerformerProfileUpdate": {
+        "type": "object",
+        "required": ["profile_status"],
+        "additionalProperties": false,
+        "properties": {
+          "profile_status": {"type": "string", "enum": ["active", "inactive"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "change_reason": {"type": "string", "maxLength": 255}
+        }
+      },
+      "PerformerProfile": {
+        "type": "object",
+        "required": [
+          "person_id",
+          "display_name",
+          "profile_status",
+          "engagement_type",
+          "engagement_type_validation_status",
+          "engagement_type_selected_at",
+          "medical_book_status",
+          "funnel_stage",
+          "funnel_stage_changed_at",
+          "completed_shifts_count",
+          "work_periods",
+          "addresses",
+          "documents",
+          "identifiers",
+          "updated_at"
+        ],
+        "properties": {
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "display_name": {"type": "string", "minLength": 1, "maxLength": 255},
+          "profile_status": {"type": "string", "enum": ["active", "inactive"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "engagement_type_selected_at": {"type": "string", "format": "date-time"},
+          "engagement_type_validated_at": {"type": ["string", "null"], "format": "date-time"},
+          "engagement_type_validated_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+          "engagement_type_rejection_reason": {"type": ["string", "null"], "maxLength": 255},
+          "medical_book_status": {"$ref": "#/components/schemas/MedicalBookStatus"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"},
+          "funnel_stage_changed_at": {"type": "string", "format": "date-time"},
+          "completed_shifts_count": {"type": "integer", "minimum": 0},
+          "first_booked_at": {"type": ["string", "null"], "format": "date-time"},
+          "first_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "fifth_shift_completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "work_periods": {"type": "array", "items": {"$ref": "#/components/schemas/PerformerWorkPeriod"}},
+          "addresses": {"type": "array", "items": {"$ref": "#/components/schemas/PersonAddress"}},
+          "documents": {"type": "array", "items": {"$ref": "#/components/schemas/Document"}},
+          "identifiers": {"type": "array", "items": {"$ref": "#/components/schemas/Identifier"}},
+          "updated_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "EngagementTypeVerify": {
+        "type": "object",
+        "required": ["decision", "reason"],
+        "additionalProperties": false,
+        "properties": {"decision": {"type": "string", "enum": ["verified", "rejected"]}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "EngagementTypeVerification": {
+        "type": "object",
+        "required": ["person_id", "engagement_type", "engagement_type_validation_status", "engagement_type_validated_at", "funnel_stage"],
+        "properties": {
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "engagement_type_validation_status": {"$ref": "#/components/schemas/EngagementTypeValidationStatus"},
+          "engagement_type_validated_at": {"type": "string", "format": "date-time"},
+          "engagement_type_validated_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+          "engagement_type_rejection_reason": {"type": ["string", "null"], "maxLength": 255},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"}
+        }
+      },
+      "PerformerWorkPeriodCreate": {
+        "type": "object",
+        "required": ["starts_at", "engagement_type", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "starts_at": {"type": "string", "format": "date-time"},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
+        }
+      },
+      "PerformerWorkPeriod": {
+        "type": "object",
+        "required": ["work_period_id", "person_id", "status", "engagement_type", "starts_at", "created_at"],
+        "properties": {
+          "work_period_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "status": {"type": "string", "enum": ["active", "terminated"]},
+          "engagement_type": {"$ref": "#/components/schemas/EngagementType"},
+          "starts_at": {"type": "string", "format": "date-time"},
+          "ends_at": {"type": ["string", "null"], "format": "date-time"},
+          "personnel_number": {"type": ["string", "null"], "maxLength": 250},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PerformerWorkPeriodTerminate": {
+        "type": "object",
+        "required": ["effective_at", "reason"],
+        "additionalProperties": false,
+        "properties": {"effective_at": {"type": "string", "format": "date-time"}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "PerformerWorkPeriodTerminated": {
+        "type": "object",
+        "required": ["work_period_id", "status", "ends_at", "funnel_stage"],
+        "properties": {
+          "work_period_id": {"$ref": "#/components/schemas/PersonId"},
+          "status": {"type": "string", "enum": ["terminated"]},
+          "ends_at": {"type": "string", "format": "date-time"},
+          "funnel_stage": {"$ref": "#/components/schemas/FunnelStage"}
+        }
+      },
+      "PersonAddressCreate": {
+        "type": "object",
+        "required": ["address_type", "country_code", "region", "city"],
+        "additionalProperties": false,
+        "properties": {
+          "address_type": {"type": "string", "enum": ["registration", "work_search"]},
+          "is_primary": {"type": "boolean", "default": false},
+          "country_code": {"type": "string", "pattern": "^[A-Z]{2}$"},
+          "country": {"type": ["string", "null"], "maxLength": 250},
+          "region": {"type": "string", "minLength": 1, "maxLength": 250},
+          "city": {"type": "string", "minLength": 1, "maxLength": 250},
+          "street": {"type": ["string", "null"], "maxLength": 250},
+          "house": {"type": ["string", "null"], "maxLength": 250},
+          "block": {"type": ["string", "null"], "maxLength": 250},
+          "flat": {"type": ["string", "null"], "maxLength": 250},
+          "postal_code": {"type": ["string", "null"], "maxLength": 32},
+          "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+          "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180}
+        }
+      },
+      "PersonAddress": {
+        "type": "object",
+        "required": ["person_address_id", "person_id", "address_type", "is_primary", "country_code", "region", "city", "created_at"],
+        "properties": {
+          "person_address_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "address_type": {"type": "string", "enum": ["registration", "work_search"]},
+          "is_primary": {"type": "boolean"},
+          "country_code": {"type": "string"},
+          "country": {"type": ["string", "null"], "maxLength": 250},
+          "region": {"type": "string"},
+          "city": {"type": "string"},
+          "street": {"type": ["string", "null"], "maxLength": 250},
+          "house": {"type": ["string", "null"], "maxLength": 250},
+          "block": {"type": ["string", "null"], "maxLength": 250},
+          "flat": {"type": ["string", "null"], "maxLength": 250},
+          "postal_code": {"type": ["string", "null"], "maxLength": 32},
+          "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+          "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "PersonAddressSetPrimary": {"type": "object", "required": ["is_primary"], "additionalProperties": false, "properties": {"is_primary": {"type": "boolean"}}},
+      "DocumentCreate": {
+        "type": "object",
+        "required": ["document_type", "issuing_country_code", "document_number", "issued_at"],
+        "properties": {
+          "document_type": {"type": "string", "enum": ["passport", "name_change_certificate"]},
+          "passport_kind": {"type": ["string", "null"], "enum": ["national", "foreign", "other", null]},
+          "issuing_country_code": {"type": "string", "pattern": "^[A-Za-z]{2}$"},
+          "document_number": {"type": "string", "minLength": 1, "maxLength": 64},
+          "issued_at": {"type": "string", "format": "date"},
+          "valid_from": {"type": ["string", "null"], "format": "date"},
+          "valid_to": {"type": ["string", "null"], "format": "date"},
+          "is_primary": {"type": "boolean", "default": false}
+        }
+      },
+      "Document": {
+        "type": "object",
+        "required": ["document_id", "person_id", "document_type", "issuing_country_code", "verification_status", "status", "issued_at"],
+        "properties": {
+          "document_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "document_type": {"type": "string"},
+          "passport_kind": {"type": ["string", "null"]},
+          "issuing_country_code": {"type": "string"},
+          "verification_status": {"type": "string", "enum": ["pending", "verified", "rejected"]},
+          "status": {"type": "string", "enum": ["pending_verification", "active", "expired", "replaced", "revoked"]},
+          "issued_at": {"type": "string", "format": "date"},
+          "valid_from": {"type": ["string", "null"], "format": "date"},
+          "valid_to": {"type": ["string", "null"], "format": "date"},
+          "is_primary": {"type": ["boolean", "null"]}
+        }
+      },
+      "DocumentVerify": {
+        "type": "object",
+        "required": ["decision", "reason"],
+        "properties": {"decision": {"type": "string", "enum": ["verified", "rejected"]}, "reason": {"type": "string", "minLength": 1, "maxLength": 255}}
+      },
+      "DocumentVerification": {
+        "type": "object",
+        "required": ["document_id", "verification_status", "status", "verified_at"],
+        "properties": {
+          "document_id": {"$ref": "#/components/schemas/PersonId"},
+          "verification_status": {"type": "string", "enum": ["verified", "rejected"]},
+          "status": {"type": "string"},
+          "verified_at": {"type": "string", "format": "date-time"},
+          "verified_by_user_id": {"type": ["string", "null"], "format": "uuid"}
+        }
+      },
+      "DocumentReplace": {
+        "type": "object",
+        "required": ["replacement_document_id", "effective_at", "reason_code"],
+        "properties": {
+          "replacement_document_id": {"$ref": "#/components/schemas/PersonId"},
+          "effective_at": {"type": "string", "format": "date-time"},
+          "reason_code": {"type": "string", "enum": ["expired_by_age", "damaged", "lost", "other"]}
+        }
+      },
+      "DocumentReplacement": {
+        "type": "object",
+        "required": ["old_document_id", "replacement_document_id", "old_status", "new_status", "effective_at"],
+        "properties": {
+          "old_document_id": {"$ref": "#/components/schemas/PersonId"},
+          "replacement_document_id": {"$ref": "#/components/schemas/PersonId"},
+          "old_status": {"type": "string"},
+          "new_status": {"type": "string"},
+          "effective_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "IdentifierCreate": {
+        "type": "object",
+        "required": ["identifier_type", "country_code", "identifier_value"],
+        "properties": {
+          "identifier_type": {"type": "string", "enum": ["inn", "snils"]},
+          "country_code": {"type": "string", "enum": ["RU"]},
+          "identifier_value": {"type": "string", "minLength": 1, "maxLength": 32}
+        }
+      },
+      "Identifier": {
+        "type": "object",
+        "required": ["identifier_id", "person_id", "identifier_type", "country_code", "verification_status", "status", "created_at"],
+        "properties": {
+          "identifier_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "identifier_type": {"type": "string", "enum": ["inn", "snils"]},
+          "country_code": {"type": "string"},
+          "verification_status": {"type": "string", "enum": ["pending", "verified", "rejected"]},
+          "status": {"type": "string", "enum": ["active", "merged", "revoked"]},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "IdentifierVerify": {
+        "type": "object",
+        "required": ["decision", "verification_method", "reason"],
+        "properties": {
+          "decision": {"type": "string", "enum": ["verified", "rejected"]},
+          "verification_method": {"type": "string", "enum": ["official_source", "manual_document"]},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 255}
+        }
+      },
+      "IdentifierVerification": {
+        "type": "object",
+        "required": ["identifier_id", "person_id", "identifier_type", "country_code", "verification_status", "resolution"],
+        "properties": {
+          "identifier_id": {"$ref": "#/components/schemas/PersonId"},
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "identifier_type": {"type": "string", "enum": ["inn", "snils"]},
+          "country_code": {"type": "string"},
+          "verification_status": {"type": "string", "enum": ["verified", "rejected"]},
+          "verified_at": {"type": ["string", "null"], "format": "date-time"},
+          "verified_by_user_id": {"type": ["string", "null"], "format": "uuid"},
+          "resolution": {"type": "string", "enum": ["new_identifier", "linked_existing_person"]},
+          "merged_from_person_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}
+        }
+      },
+      "LegalNameChange": {
+        "type": "object",
+        "required": ["surname", "firstname", "effective_at", "reason_code"],
+        "properties": {
+          "surname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "firstname": {"type": "string", "minLength": 1, "maxLength": 50},
+          "patronymic": {"type": ["string", "null"], "maxLength": 50},
+          "effective_at": {"type": "string", "format": "date-time"},
+          "reason_code": {"type": "string", "enum": ["marriage", "divorce", "court_order", "correction", "other"]},
+          "source_document_id": {"oneOf": [{"$ref": "#/components/schemas/PersonId"}, {"type": "null"}]}
+        }
+      },
+      "LegalNameChanged": {
+        "type": "object",
+        "required": ["person_id", "surname", "firstname", "effective_at", "name_version"],
+        "properties": {
+          "person_id": {"$ref": "#/components/schemas/PersonId"},
+          "surname": {"type": "string"},
+          "firstname": {"type": "string"},
+          "patronymic": {"type": ["string", "null"]},
+          "effective_at": {"type": "string", "format": "date-time"},
+          "name_version": {"type": "integer", "minimum": 1}
+        }
+      },
+      "MergeCreate": {
+        "type": "object",
+        "required": ["canonical_person_id", "reason_code"],
+        "properties": {
+          "canonical_person_id": {"$ref": "#/components/schemas/PersonId"},
+          "reason_code": {"type": "string", "enum": ["verified_identifier", "manual_review", "data_correction"]}
+        }
+      },
+      "MergeResult": {
+        "type": "object",
+        "required": ["duplicate_person_id", "canonical_person_id", "merged_at", "merge_status"],
+        "properties": {
+          "duplicate_person_id": {"$ref": "#/components/schemas/PersonId"},
+          "canonical_person_id": {"$ref": "#/components/schemas/PersonId"},
+          "merged_at": {"type": "string", "format": "date-time"},
+          "merge_status": {"type": "string", "enum": ["merged"]}
+        }
+      },
+      "ExternalAssignmentStats": {
+        "type": "object",
+        "required": ["organization_id", "generated_at", "total_shifts", "assigned_shifts", "unassigned_shifts"],
+        "properties": {
+          "organization_id": {"type": "string", "format": "uuid"},
+          "generated_at": {"type": "string", "format": "date-time"},
+          "total_shifts": {"type": "integer", "minimum": 0},
+          "assigned_shifts": {"type": "integer", "minimum": 0},
+          "unassigned_shifts": {"type": "integer", "minimum": 0}
+        }
+      },
+      "CampaignOffer": {
+        "type": "object",
+        "required": ["id", "campaign_id", "shift_id", "performer_id", "status", "expires_at", "sent_at", "public_url", "token"],
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "campaign_id": {"type": "string", "format": "uuid"},
+          "shift_id": {"type": "string", "format": "uuid"},
+          "performer_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string", "enum": ["draft", "sent", "viewed", "accepted", "declined", "won", "lost", "expired", "cancelled"]},
+          "expires_at": {"type": "string", "format": "date-time"},
+          "sent_at": {"type": "string", "format": "date-time"},
+          "public_url": {"type": "string"},
+          "token": {"type": "string", "description": "Одноразовый секрет предложения; возвращается только в исходном ответе и не логируется"}
+        }
       }
     },
     "responses": {
-      "BadRequest": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Unauthorized": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Forbidden": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "NotFound": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Conflict": { "description": "Conflict", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Gone": { "description": "Gone", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "ValidationError": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "InternalServerError": { "description": "Internal server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+      "BadRequest": {"description": "Bad request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unauthorized": {"description": "Unauthorized", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Forbidden": {"description": "Forbidden", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "NotFound": {"description": "Not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Conflict": {"description": "Conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Gone": {"description": "Gone", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "ValidationError": {"description": "Validation error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "InternalServerError": {"description": "Internal server error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    }
+    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}}
   }
 }

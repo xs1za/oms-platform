@@ -45,10 +45,10 @@
 
 1. Измените API-контракт в `platform/contracts/openapi_oms_microservices.json`.
 2. Если нужны новые examples/scripts, добавьте или поправьте их в `platform/contracts/postman_oms_microservices_collection.json`.
-3. Запустите генератор в обычном overlay-режиме:
+3. Запустите генератор в обычном overlay-режиме. При изменении контракта добавьте `--refresh-responses`, чтобы сохранённые примеры ответов совпали со схемами:
 
 ```powershell
-python platform/scripts/generate_postman_collection.py
+python platform/scripts/generate_postman_collection.py --refresh-responses
 ```
 
 4. Проверьте JSON-файлы:
@@ -74,6 +74,8 @@ python -m json.tool platform/contracts/postman_oms_microservices_collection.json
 - raw JSON body получает пример из OpenAPI;
 - existing examples и scripts сохраняются.
 - OpenAPI operations, которых нет в collection, добавляются автоматически;
+- операции, которых больше нет в OpenAPI, удаляются из collection;
+- каждый путь OpenAPI должен попасть ровно в одну папку сервиса; health-пути проверяются по `x-postman-services`. При нарушении генератор завершается с ошибкой;
 - дубли по `method + path` удаляются с учетом того, что `{taskId}` и `{{reportTaskId}}` считаются одним path-параметром.
 
 ## Режимы генерации
@@ -119,7 +121,7 @@ python platform/scripts/generate_postman_collection.py `
 - создает базовую Postman collection v2.1;
 - добавляет service folders `OMS1`-`OMS5`;
 - добавляет requests, descriptions, JSON body examples и mock-ready response examples из OpenAPI;
-- добавляет переменные `oms1_base_url`-`oms5_base_url` и `access_token`.
+- добавляет переменные `oms1_base_url`-`oms5_base_url`, `access_token` и `service_token`.
 
 Ограничение: from-scratch режим не может восстановить ручные Postman scripts, сложные сценарии polling и custom mock examples, если они не описаны в OpenAPI. Для сохранения таких вещей используйте overlay-режим.
 

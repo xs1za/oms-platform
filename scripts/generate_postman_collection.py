@@ -8,6 +8,7 @@ scripts. Use --from-scratch to create a collection only from OpenAPI.
 
 Usage:
     python platform/scripts/generate_postman_collection.py
+    python platform/scripts/generate_postman_collection.py --refresh-responses
     python platform/scripts/generate_postman_collection.py --openapi openapi.json --overlay collection.json --output collection.json
     python platform/scripts/generate_postman_collection.py --from-scratch --output collection.json
 """
@@ -34,6 +35,19 @@ SERVICE_BASE_URL_VARIABLES = {
     "OMS4 Notification Service": "{{oms4_base_url}}",
     "OMS5 Operations Service": "{{oms5_base_url}}",
 }
+# Longest prefixes come first so /api/v1/people/{personId}/addresses is not
+# swallowed by /api/v1/people.
+SERVICE_PATH_PREFIXES = (
+    ("/admin/users/{userId}/operator-employment-periods", "OMS1 Auth Service"),
+    ("/admin/operator-employment-periods", "OMS1 Auth Service"),
+    ("/admin/users/{userId}/external-memberships", "OMS1 Auth Service"),
+    ("/admin/external-memberships", "OMS1 Auth Service"),
+    ("/admin/users/{userId}/performer-link", "OMS1 Auth Service"),
+    ("/api/v1/people/{personId}/addresses", "OMS2 Employee Service"),
+    ("/api/v1/work-periods", "OMS2 Employee Service"),
+    ("/api/v1/people", "OMS2 Employee Service"),
+    ("/external/assignment-stats", "OMS5 Operations Service"),
+)
 
 
 def empty_collection(openapi: dict[str, Any]) -> dict[str, Any]:
@@ -50,6 +64,7 @@ def empty_collection(openapi: dict[str, Any]) -> dict[str, Any]:
             {"key": "oms4_base_url", "value": "http://oms.local/oms4"},
             {"key": "oms5_base_url", "value": "http://oms.local/oms5"},
             {"key": "access_token", "value": ""},
+            {"key": "service_token", "value": ""},
         ],
     }
 
@@ -211,6 +226,9 @@ def service_name_for_operation(path: str, operation: dict[str, Any]) -> str:
         return "OMS1 Auth Service"
     if path.startswith("/api/employees"):
         return "OMS2 Employee Service"
+    for prefix, service_name in SERVICE_PATH_PREFIXES:
+        if path == prefix or path.startswith(prefix + "/"):
+            return service_name
     if path.startswith("/api/v1/report-tasks"):
         return "OMS3 Report Service"
     if path.startswith("/notifications"):
@@ -286,6 +304,17 @@ def example_from_schema(schema: Any) -> Any:
         return schema["const"]
     if "enum" in schema and schema["enum"]:
         return schema["enum"][0]
+    if "allOf" in schema:
+        merged: dict[str, Any] = {"type": "object", "properties": {}}
+        for part in schema["allOf"]:
+            if isinstance(part, dict) and isinstance(part.get("properties"), dict):
+                merged["properties"].update(part["properties"])
+        return example_from_schema(merged)
+    if "oneOf" in schema and schema["oneOf"]:
+        return example_from_schema(schema["oneOf"][0])
+    if "anyOf" in schema and schema["anyOf"]:
+        non_null = [item for item in schema["anyOf"] if item.get("type") != "null"]
+        return example_from_schema(non_null[0] if non_null else schema["anyOf"][0])
     schema_type = schema.get("type")
     if isinstance(schema_type, list):
         schema_type = next((item for item in schema_type if item != "null"), "null")
@@ -348,6 +377,8 @@ def header_parameter_value(parameter: dict[str, Any]) -> str:
             return str(schema["example"])
     if parameter.get("name") == "Idempotency-Key":
         return "{{$guid}}"
+    if parameter.get("name") == "X-Service-Token":
+        return "{{service_token}}"
     return ""
 
 
@@ -486,7 +517,11 @@ def health_example(service_code: str, path: str, status_code: int) -> dict[str, 
         if service_code == "OMS1":
             checks = {"jwt": {"status": status_value}, "kafka": {"status": status_value, "endpoint": "kafka.oms.svc.cluster.local:9092"}}
         elif service_code == "OMS2":
-            checks = {"database": {"status": status_value}, "kafka": {"status": status_value, "endpoint": "kafka.oms.svc.cluster.local:9092"}}
+            checks = {
+                "database": {"status": status_value},
+                "kafka": {"status": status_value, "endpoint": "kafka.oms.svc.cluster.local:9092"},
+                "personal_data_keys": {"status": status_value},
+            }
         elif service_code == "OMS4":
             checks = {
                 "kafka": {"status": status_value, "endpoint": "kafka.oms.svc.cluster.local:9092"},
@@ -573,6 +608,83 @@ def remove_duplicate_operation_items(items: list[dict[str, Any]], seen: set[tupl
         deduped.append(item)
 
     items[:] = deduped
+
+
+def remove_stale_operations(collection: dict[str, Any], openapi: dict[str, Any]) -> None:
+    """Drop collection requests whose method/path no longer exists in OpenAPI."""
+    allowed = {(method, path) for method, path, _ in iter_openapi_operations(openapi)}
+
+    def prune(items: list[dict[str, Any]]) -> None:
+        kept: list[dict[str, Any]] = []
+        for item in items:
+            if "item" in item and isinstance(item["item"], list):
+                prune(item["item"])
+                kept.append(item)
+                continue
+
+            request = item.get("request")
+            if isinstance(request, dict):
+                key = (str(request.get("method", "GET")).upper(), normalize_path(request_url_raw(request)))
+                if key not in allowed:
+                    continue
+            kept.append(item)
+
+        items[:] = kept
+
+    prune(collection.get("item", []))
+
+
+def collect_service_folder_operations(
+    service_name: str, items: list[dict[str, Any]]
+) -> list[tuple[str, str, str]]:
+    operations: list[tuple[str, str, str]] = []
+    for item in items:
+        if "item" in item and isinstance(item["item"], list):
+            operations.extend(collect_service_folder_operations(service_name, item["item"]))
+            continue
+        request = item.get("request")
+        if isinstance(request, dict):
+            method = str(request.get("method", "GET")).upper()
+            operations.append((service_name, method, normalize_path(request_url_raw(request))))
+    return operations
+
+
+def validate_folder_coverage(collection: dict[str, Any], openapi: dict[str, Any]) -> None:
+    """Ensure every OpenAPI operation sits in exactly the expected service folder."""
+    placed: list[tuple[str, str, str]] = []
+    for folder in collection.get("item", []):
+        name = folder.get("name")
+        if name in SERVICE_BASE_URL_VARIABLES and isinstance(folder.get("item"), list):
+            placed.extend(collect_service_folder_operations(name, folder["item"]))
+
+    errors: list[str] = []
+    allowed = {(method, path) for method, path, _ in iter_openapi_operations(openapi)}
+    for service_name, method, path in placed:
+        if (method, path) not in allowed:
+            errors.append(f"{method} {path} is in {service_name} but not in OpenAPI")
+
+    for method, path, operation in iter_openapi_operations(openapi):
+        matches = [(service_name, m, p) for service_name, m, p in placed if m == method and p == path]
+        postman_services = operation.get("x-postman-services")
+        if isinstance(postman_services, list) and postman_services:
+            expected_services = [name for name in postman_services if isinstance(name, str)]
+            for service_name in expected_services:
+                count = sum(1 for placed_service, m, p in matches if placed_service == service_name)
+                if count != 1:
+                    errors.append(f"{method} {path} must appear once in {service_name}, found {count}")
+            unexpected = [service_name for service_name, m, p in matches if service_name not in expected_services]
+            if unexpected:
+                errors.append(f"{method} {path} is in unexpected folders: {sorted(set(unexpected))}")
+            continue
+
+        expected_service = service_name_for_operation(path, operation)
+        if len(matches) != 1:
+            errors.append(f"{method} {path} must appear once in a service folder, found {len(matches)}")
+        elif matches[0][0] != expected_service:
+            errors.append(f"{method} {path} is in {matches[0][0]}, expected {expected_service}")
+
+    if errors:
+        raise SystemExit("Folder coverage check failed:\n- " + "\n- ".join(errors))
 
 
 def operation_request_schema(openapi: dict[str, Any], operation: dict[str, Any]) -> dict[str, Any] | None:
@@ -676,7 +788,13 @@ def ensure_raw_json_body(request: dict[str, Any], schema: dict[str, Any] | None,
     raw_options["schema"] = schema
 
 
-def update_item_from_openapi(item: dict[str, Any], openapi: dict[str, Any], operations: dict[tuple[str, str], dict[str, Any]]) -> None:
+def update_item_from_openapi(
+    item: dict[str, Any],
+    openapi: dict[str, Any],
+    operations: dict[tuple[str, str], dict[str, Any]],
+    *,
+    refresh_responses: bool = False,
+) -> None:
     request = item.get("request")
     if not isinstance(request, dict):
         return
@@ -692,27 +810,54 @@ def update_item_from_openapi(item: dict[str, Any], openapi: dict[str, Any], oper
     generated_description = operation_description(operation, schema)
 
     merge_description(item, request, generated_description)
+    if not path.startswith("/health"):
+        item["name"] = display_name_for_operation(method, path, operation)
     ensure_raw_json_body(request, schema, example)
     merge_openapi_query_parameters(request, operation)
     merge_openapi_header_parameters(request, operation)
     normalize_request_headers(request)
+    if refresh_responses:
+        item["response"] = response_examples_from_openapi(openapi, operation)
     normalize_health_response_examples(item)
 
 
-def walk_items(items: list[dict[str, Any]], openapi: dict[str, Any], operations: dict[tuple[str, str], dict[str, Any]]) -> None:
+def walk_items(
+    items: list[dict[str, Any]],
+    openapi: dict[str, Any],
+    operations: dict[tuple[str, str], dict[str, Any]],
+    *,
+    refresh_responses: bool = False,
+) -> None:
     for item in items:
         if "item" in item and isinstance(item["item"], list):
-            walk_items(item["item"], openapi, operations)
+            walk_items(item["item"], openapi, operations, refresh_responses=refresh_responses)
         else:
-            update_item_from_openapi(item, openapi, operations)
+            update_item_from_openapi(item, openapi, operations, refresh_responses=refresh_responses)
 
 
-def generate_collection(openapi: dict[str, Any], overlay: dict[str, Any], *, from_scratch: bool = False) -> dict[str, Any]:
+def ensure_collection_variable(collection: dict[str, Any], key: str, value: str = "") -> None:
+    variables = collection.setdefault("variable", [])
+    if any(isinstance(item, dict) and item.get("key") == key for item in variables):
+        return
+    variables.append({"key": key, "value": value})
+
+
+def generate_collection(
+    openapi: dict[str, Any],
+    overlay: dict[str, Any],
+    *,
+    from_scratch: bool = False,
+    refresh_responses: bool = False,
+) -> dict[str, Any]:
     collection = copy.deepcopy(overlay)
+    ensure_collection_variable(collection, "access_token")
+    ensure_collection_variable(collection, "service_token")
     operations = build_operation_index(openapi)
-    walk_items(collection.get("item", []), openapi, operations)
+    walk_items(collection.get("item", []), openapi, operations, refresh_responses=refresh_responses)
+    remove_stale_operations(collection, openapi)
     remove_duplicate_operation_items(collection.get("item", []))
     append_missing_openapi_operations(collection, openapi)
+    validate_folder_coverage(collection, openapi)
 
     overlay_note = "without overlay. " if from_scratch else "with examples/scripts preserved from the Postman collection overlay. "
     collection.setdefault("info", {})["description"] = (
@@ -733,6 +878,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Create the Postman collection from OpenAPI only and ignore --overlay.",
     )
+    parser.add_argument(
+        "--refresh-responses",
+        action="store_true",
+        help="Replace saved response examples with examples generated from OpenAPI.",
+    )
     return parser.parse_args()
 
 
@@ -740,7 +890,12 @@ def main() -> None:
     args = parse_args()
     openapi = load_json(args.openapi)
     overlay = empty_collection(openapi) if args.from_scratch else load_json(args.overlay)
-    collection = generate_collection(openapi, overlay, from_scratch=args.from_scratch)
+    collection = generate_collection(
+        openapi,
+        overlay,
+        from_scratch=args.from_scratch,
+        refresh_responses=args.refresh_responses,
+    )
     write_json(args.output, collection)
 
 

@@ -31,91 +31,9 @@ scripts/     генерация Postman collection из OpenAPI
 
 Скрипт вызывает `.venv\Scripts\python.exe` и по умолчанию запускает `unittest discover -s platform\tests\integration`.
 
-## Быстрый Запуск Существующего Кластера
+## Запуск Существующего Кластера И Создание Нового Кластера
 
-Если kind-кластер `oms-cluster` уже создан, запустить Docker Desktop и поднять kind node:
-
-```powershell
-Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-docker version
-
-if (-not (docker ps --filter "name=oms-cluster-control-plane" --format "{{.Names}}")) { docker start oms-cluster-control-plane }
-kubectl config use-context kind-oms-cluster
-kubectl get nodes
-```
-
-Поднять workloads:
-
-```powershell
-kubectl -n oms scale deployment/kafka deployment/rabbitmq deployment/akhq deployment/prometheus deployment/kube-state-metrics deployment/oms2-postgres --replicas=1
-kubectl -n oms scale deployment/oms1 deployment/oms2 deployment/oms3 deployment/oms4 deployment/oms5 --replicas=1
-kubectl -n oms get pods -w
-```
-
-Создание кластера с нуля описано в `docs/K8S_FULL_SETUP.md`.
-
-## Проверка Ingress
-
-В `C:\Windows\System32\drivers\etc\hosts` должны быть записи:
-
-```text
-127.0.0.1 oms.local
-127.0.0.1 prometheus.oms.local
-127.0.0.1 kafka.oms.local
-127.0.0.1 rabbitmq.oms.local
-```
-
-Проверить сервисы:
-
-```powershell
-curl http://oms.local/oms1/health
-curl http://oms.local/oms2/health/
-curl http://oms.local/oms3/health
-curl http://oms.local/oms4/health
-curl http://oms.local/oms5/health
-curl http://prometheus.oms.local/-/ready
-```
-
-Swagger UI FastAPI-сервисов:
-
-```text
-http://oms.local/oms1/docs
-http://oms.local/oms3/docs
-http://oms.local/oms4/docs
-http://oms.local/oms5/docs
-```
-
-OMS2 Django admin:
-
-```text
-http://oms.local/oms2/admin/
-```
-
-Инфраструктурные UI:
-
-```text
-http://prometheus.oms.local
-http://kafka.oms.local
-http://rabbitmq.oms.local
-```
-
-## Проверка Prometheus Для Freelens
-
-Prometheus разворачивается из Kubernetes manifest `k8s/prometheus.yaml`.
-
-```powershell
-kubectl apply -f k8s/prometheus.yaml
-kubectl -n oms rollout status deployment/prometheus
-kubectl -n oms rollout status deployment/kube-state-metrics
-```
-
-Через Ingress Prometheus доступен для проверки по адресу:
-
-```text
-http://prometheus.oms.local/targets
-```
-
-В Freelens/OpenLens источник метрик указывать как `Helm`, service address `oms/prometheus-server:80`.
+- `docs/K8S_FULL_SETUP.md` - управление Kubernetes/kind.
 
 ## OpenAPI И Postman
 
