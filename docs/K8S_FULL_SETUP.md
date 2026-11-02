@@ -1154,6 +1154,7 @@ kubectl -n oms scale deployment/oms1-postgres --replicas=0
 kubectl -n oms scale deployment/oms2-postgres --replicas=0
 kubectl -n oms scale deployment/oms3-postgres --replicas=0
 kubectl -n oms scale deployment/oms4-postgres --replicas=0
+kubectl -n oms scale deployment/oms5-postgres --replicas=0
 kubectl -n oms delete daemonset prometheus-node-exporter
 $kafkaTopicsInitStatus = kubectl -n oms get job kafka-topics-init -o jsonpath="{.status.succeeded}" 2>$null
 if ($kafkaTopicsInitStatus -eq "1") { kubectl -n oms delete job kafka-topics-init --wait=true }
