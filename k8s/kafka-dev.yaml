@@ -141,6 +141,7 @@ spec:
               ensure_topic operations.client_created 1
               ensure_topic operations.performer.created 1
               ensure_topic operations.performer.updated 1
+              ensure_topic operations.performer.v1 3
               ensure_topic operations.shift.created 1
               ensure_topic operations.shift.status_changed 3
               ensure_topic operations.shift.offer_campaign_created 1

@@ -1,8 +1,8 @@
 # OMS Platform
 
-`oms-platform` содержит общую инфраструктуру и документацию для локального запуска OMS1-OMS5 в Kubernetes/kind.
+`oms-platform` содержит общую инфраструктуру, API-контракты и документацию для локальной работы с OMS1-OMS5 в Kubernetes/kind.
 
-Сервисный код хранится в отдельных репозиториях:
+Репозитории сервисов:
 
 ```text
 oms1-auth-service
@@ -15,54 +15,44 @@ oms5-operations-service
 ## Структура
 
 ```text
-contracts/   OpenAPI source of truth и Postman collection
-docs/        инструкции по Kubernetes, Swagger, Postman, OpenLens/Freelens и versioning
-k8s/         namespace, Kafka, RabbitMQ, Prometheus, Ingress и kind cluster config
-scripts/     генерация Postman collection из OpenAPI
+contracts/          OpenAPI source of truth и Postman collection
+docs/               инструкции, архитектура и runbooks
+k8s/                kind, Kafka, RabbitMQ, Prometheus, Ingress и production manifests
+scripts/            генерация Postman collection и запуск integration tests
+tests/integration/  межсервисные integration tests
 ```
 
 ## Integration Tests
 
-Запускать integration tests нужно через workspace virtualenv, чтобы не использовать системный Python без зависимостей сервисов:
+Запускать из корня workspace через virtualenv:
 
 ```powershell
-.\platform\scripts\test_integration.ps1
+./platform/scripts/test_integration.ps1
 ```
 
-Скрипт вызывает `.venv\Scripts\python.exe` и по умолчанию запускает `unittest discover -s platform\tests\integration`.
+Скрипт использует `.venv/Scripts/python.exe` и по умолчанию запускает `unittest discover -s platform/tests/integration`.
 
-## Запуск Существующего Кластера И Создание Нового Кластера
+## OpenAPI и Postman
 
-- `docs/K8S_FULL_SETUP.md` - управление Kubernetes/kind.
+Source of truth: `platform/contracts/openapi_oms_microservices.json`.
+Postman collection: `platform/contracts/postman_oms_microservices_collection.json`.
 
-## OpenAPI И Postman
-
-Source of truth:
-
-```text
-contracts/openapi_oms_microservices.json
-```
-
-Postman collection:
-
-```text
-contracts/postman_oms_microservices_collection.json
-```
-
-Сгенерировать Postman collection:
+Сгенерировать коллекцию из корня workspace:
 
 ```powershell
-python scripts/generate_postman_collection.py
+python platform/scripts/generate_postman_collection.py
 ```
 
-```
+Генератор обновляет коллекцию из OpenAPI, сохраняя примеры и скрипты Postman.
 
-## Основные Документы
+## Основные документы
 
-- `docs/K8S_FULL_SETUP.md` - полный локальный запуск Kubernetes/kind.
+- `docs/K8S_FULL_SETUP.md` - локальный запуск Kubernetes/kind.
+- `docs/PROBLEM_EVENT_WORKERS_PRODUCTION_RUNBOOK.md` - production-развертывание workers OMS3/OMS4.
 - `docs/POSTMAN_OPENAPI_WORKFLOW.md` - OpenAPI и Postman workflow.
 - `docs/SWAGGER_UPDATE_GUIDE.md` - публикация OpenAPI в Swagger UI.
 - `docs/API_VERSIONING_AND_REPO_COMMITS.md` - API versioning и multi-repo workflow.
+- `docs/ARCHITECTURAL DESIGN.md` - архитектурное описание платформы.
 - `docs/OMS5_SHIFT_DESIGN.md` - legacy OMS5 Shift Domain Design.
 - `docs/OPENLENS_GUIDE.md` - OpenLens/Freelens для kind-кластера.
-- `docs/kafka_interservice_sequence.puml` - Kafka sequence diagram.
+- `docs/kafka_interservice_sequence.puml` - Kafka topic inventory and interservice flows for OMS1-OMS5.
