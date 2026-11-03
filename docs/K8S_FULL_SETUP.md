@@ -736,6 +736,17 @@ updated
 http://oms.local/oms2/admin/
 ```
 
+### 9.3. Сброс dev-контура перед QA-прогоном
+
+Перед приёмкой данных операторов и исполнителей схемы OMS1, OMS2 и OMS5 пересоздаются скриптом `platform/docs/qa/reset_dev_data.py`. Скрипт работает только с Kind-кластером (`kind` или `oms-cluster` в контексте) и namespace `oms`, требует `ALLOW_DEV_RESET=yes` и подтверждение `RESET`, не удаляет secrets, PVC, deployments и не трогает базы OMS3 и OMS4.
+
+```powershell
+$env:ALLOW_DEV_RESET="yes"
+python platform/docs/qa/reset_dev_data.py
+```
+
+Порядок импорта QA-данных после сброса описан в `docs/qa/OMS5-INT-0003_QA_shifts_import.md`.
+
 ## 10. Настроить локальный DNS через hosts
 
 Откройте файл от имени администратора:

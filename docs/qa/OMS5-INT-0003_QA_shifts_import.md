@@ -1,562 +1,518 @@
-# [OMS5-INT-0003] QA: подготовка и выполнение импорта смен из отчёта
+# [OMS5-INT-0003] QA: сброс dev-контура и импорт операторов, исполнителей и смен
 
 ## Проверяемое требование
 
-Инструкция покрывает приёмочную проверку импорта тестовых данных для смен ноябрь 2026:
+Инструкция покрывает приёмочную проверку QA-контура после перехода на новую модель:
 
-- 5 сотрудников с доступом в админку (не исполнители);
-- 20 исполнителей, для которых создаются 20 Employee с номерами `QA-EMP-006...025` и связанные профили `QA-PERF-001...020`;
-- 10 городов РФ и 6 городов РБ с реальными адресами и координатами WGS84;
-- 3 уровня оргструктуры клиента: головной клиент → дивизион → магазин;
-- смены с 01.11.2026 по 30.11.2026 длительностью 9 часов, начало в 08:00 по местному времени города;
-- по 2 смены в каждом городе РФ и по 1 смене в каждом городе РБ за день;
-- импорт из mock-отчёта `report_shifts.csv`, повторный запуск не создаёт дубликатов.
+- сброс схем OMS1, OMS2 и OMS5 и пересоздание topic-ов Kafka;
+- 5 операторов в OMS1 с периодами найма, назначениями на `operator_software` и ролями; `person_id` у операторов пустой;
+- 20 исполнителей в OMS2 с контактами, паспортами, ИНН, СНИЛС, адресами, периодами работы и стадиями воронки;
+- 70 клиентов и 780 смен ноября 2026 в OMS5;
+- 20 строк `performers` в OMS5, собранных consumer-ом `people.performer.v1` из событий OMS2;
+- повторный импорт не создаёт дубликатов.
 
 ## Состав поставки
 
 | Артефакт | Путь | Назначение |
 | --- | --- | --- |
+| Сброс dev-контура | `platform/docs/qa/reset_dev_data.py` | Пересоздаёт схемы OMS1, OMS2, OMS5 и topic-и Kafka |
 | Генератор и импортёр | `platform/docs/qa/generate_and_import.py` | Генерирует отчёт и пишет данные в OMS1, OMS2, OMS5 |
 | Mock-отчёт | `platform/docs/qa/report_shifts.csv` | Входной файл импорта, 780 строк за ноябрь 2026 |
-| Состояние импорта | `/tmp/import_state.json` в поде, при необходимости копируется в `platform/docs/qa/import_state.json` | Соответствие `personnel_number` → `person_id`, счётчики прогона |
+| Пример состояния | `platform/docs/qa/import_state.example.json` | Структура state-файла без персональных данных |
+| Манифест Kafka | `platform/k8s/kafka-dev.yaml` | Создаёт `people.access.v1`, `people.performer.v1`, `operations.performer.v1` |
 
 ## Предусловия
 
-Кластер Kind `oms-cluster`, namespace `oms`. Подняты `oms1`, `oms2`, `oms5` с базами, Kafka и топики `people.access.v1`, `people.performer.v1`.
+Кластер Kind `oms-cluster`, namespace `oms`. Развёрнуты `oms1`, `oms2`, `oms2-outbox-worker`, `oms5`, их базы, Kafka и Job `kafka-topics-init`.
 
 ```powershell
 kubectl -n oms get pods | Select-String "oms1|oms2|oms5|kafka"
 ```
 
-Базы могут содержать данные предыдущих прогонов, демонстраций и smoke-проверок. Импорт ничего не удаляет и не перезаписывает: он дополняет базу, а существующие клиенты, смены, кампании и назначения остаются без изменений. Поэтому проверки ниже считают только QA-данные по префиксам `QA-*` и `qa.operator.*`, а не общее число строк.
+Версии образов должны соответствовать связанным задачам:
 
-Импорт пишет напрямую в PostgreSQL, поэтому нужен доступ к портам баз. Ingress его не даёт.
+- OMS1 содержит миграции `OMS1-BACK-0003` (периоды найма, назначения, роли) и `0004_bigint_person_ids`;
+- OMS2 содержит `OMS2-BACK-0002`: таблицы `PerformerProfile`, `PerformerWorkPeriod`, `PersonDocument`, `PersonIdentifier`, `PersonAddress`, модули `apps/employees/funnel.py` и `apps/employees/operations_consumer.py`. Без этого модуля импорт завершается `ModuleNotFoundError: No module named 'apps.employees.funnel'`, а миграция `0004_performer_domain` не применяется;
+- OMS5 содержит миграцию `002_performer_funnel_and_outbox`;
+- deployment `oms2-operations-consumer` создаётся задачей `OMS2-BACK-0002`. Пока его нет, сквозной сценарий стадий `PERFORMER_FIRST_SHIFT_COMPLETED` выполняется командой `manage.py consume_operations_performer`, см. шаг 7.
 
-### Доступ к базам и ingress
-
-`platform/k8s/ingress.yaml` маршрутизирует только HTTP: пути `/oms1`…`/oms5` на сервисы `oms1`…`oms5` (порт 80), плюс Prometheus, AKHQ и RabbitMQ UI. Сервисы `oms*-postgres` — `ClusterIP` с портом 5432, TCP-маршрутов для них в ingress нет, контроллер запущен без `--tcp-services-configmap`. Публиковать PostgreSQL через ingress не нужно и не следует.
-
-Отсюда два варианта запуска:
-
-- **Вариант A, в кластере**: скрипт выполняется внутри пода `oms2`, базы доступны по DNS `oms2-postgres:5432` и `oms5-postgres:5432`. Port-forward не нужен.
-- **Вариант B, с хоста**: нужен `kubectl port-forward` до каждой базы.
-
-Для варианта B:
+Проверить, что старые таблицы OMS2 удалены миграцией:
 
 ```powershell
-kubectl -n oms port-forward deploy/oms2-postgres 5432:5432
-kubectl -n oms port-forward deploy/oms5-postgres 5434:5432
-kubectl -n oms port-forward deploy/oms1-postgres 5433:5432
+kubectl -n oms exec deploy/oms2 -- python manage.py showmigrations employees
 ```
 
-Каждая команда занимает отдельное окно терминала. Пароли баз берутся из секретов:
+Ожидается, что `0004_performer_domain` отмечен `[X]`.
+
+## Порядок запуска
+
+```text
+1. reset_dev_data.py
+2. OMS1 seed (admin и service clients) — выполняет init-контейнер deployment/oms1
+3. import OMS1 (5 операторов)
+4. import OMS2 (20 исполнителей)
+5. import OMS5 (70 клиентов, 780 смен)
+6. ожидание проекции 20 performers
+7. проверки
+```
+
+Шаги 3 и 4 независимы. OMS5 не зависит от OMS2, но проекция появляется только после шага 4: события `people.performer_profile.changed` публикует `oms2-outbox-worker`, их читает consumer OMS5 `people.performer.v1`.
+
+## Шаг 1. Сброс dev-контура
+
+Скрипт требует Python 3.11 и `kubectl`. Внешние пакеты не нужны.
 
 ```powershell
-kubectl -n oms get secret oms2-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms1-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
+cd D:\ProjectsDocker\extrawork
+$env:ALLOW_DEV_RESET="yes"
+python platform\docs\qa\reset_dev_data.py
 ```
 
-Переменные окружения:
+Скрипт выводит цели сброса и ждёт подтверждение:
 
-| Переменная | Обязательность | Значение для варианта B (хост) | Значение для варианта A (в кластере) |
-| --- | --- | --- | --- |
-| `OMS5_DATABASE_URL` | для OMS5 | `postgresql://oms5:<oms5-pass>@127.0.0.1:5434/oms5` | `postgresql://oms5:<oms5-pass>@oms5-postgres:5432/oms5` |
-| `OMS2_DATABASE_URL` | для OMS2 | `postgis://oms2:<oms2-pass>@127.0.0.1:5432/oms2` | берётся из `$DATABASE_URL` пода |
-| `OMS1_DATABASE_URL` | для OMS1 | `postgresql://oms1:<oms1-pass>@127.0.0.1:5433/oms1` | `postgresql://oms1:<oms1-pass>@oms1-postgres:5432/oms1` |
-| `OMS2_PROJECT_DIR` | для OMS2 | `D:\ProjectsDocker\extrawork\OMS2` | `/app` |
-| `PERSON_DATA_ENCRYPTION_KEY` | для OMS2 | значение из `oms2-secret` | берётся из env пода автоматически |
-| `PERSON_IDENTIFIER_HMAC_KEY` | для OMS2 | значение из `oms2-secret` | берётся из env пода автоматически |
-| `QA_OPERATOR_PASSWORD` | нет | любой пароль, по умолчанию `QaOperator!2026` | то же |
+```text
+Введите RESET для продолжения:
+```
 
-Куда именно вписывать значения:
+Что делает сброс:
 
-| Способ запуска | Где задаются переменные |
+1. Проверяет `kubectl config current-context`: контекст должен содержать `kind` или `oms-cluster`.
+2. Берёт namespace из контекста (`oms` по умолчанию). Другой namespace принимается только с флагом `--namespace`.
+3. Масштабирует в 0 `oms1`, `oms2`, `oms2-outbox-worker`, `oms5` и ждёт завершения подов. `oms2-operations-consumer` пропускается, если deployment ещё не создан.
+4. Пересоздаёт схему `public` в базах OMS1, OMS2 и OMS5. Для OMS2 дополнительно выполняется `CREATE EXTENSION IF NOT EXISTS postgis`: без него миграции не создадут `PointField` в `Address.location`.
+5. Удаляет topic-и `people.access.v1`, `people.performer.v1`, `operations.performer.v1` и ждёт завершения удаления.
+6. Удаляет consumer groups `oms1.people.access`, `oms5.people.performer`, `oms2.operations.performer` и проверяет, что их нет.
+7. Удаляет Job `kafka-topics-init` (и legacy-имя `kafka-topic-init`, если оно есть), применяет `platform/k8s/kafka-dev.yaml`, ждёт завершения Job и проверяет наличие трёх topic-ов.
+8. Масштабирует сервисы в 1, ждёт `kubectl rollout status` и проверяет `/health/ready/` у OMS1, OMS2 и OMS5.
+
+Скрипт не удаляет secrets, PVC, deployments, services и ingress, не трогает базы OMS3 и OMS4 и не переносит старые данные. Повторный запуск безопасен: пустая схема и отсутствующий topic не считаются ошибкой.
+
+Код возврата:
+
+| Ситуация | Код |
 | --- | --- |
-| Вариант B, `docker run` | флагами `-e ИМЯ="значение"` в команде `docker run` |
-| Вариант A, `kubectl exec` | аргументами `env ИМЯ="значение"` после `--`; в примерах используется `QA_OMS5_DSN`, потому что `OMS5_DATABASE_URL` собирается внутри `sh -c` |
-| Генерация отчёта на хосте | не требуются вообще, скрипт не обращается к БД |
+| Успешный сброс | 0 |
+| Нет `ALLOW_DEV_RESET=yes` | 2 |
+| Чужой context, чужой namespace без флага, отказ от подтверждения, ошибка шага | 1 |
 
-`$env:ИМЯ="значение"` в PowerShell действует только в текущем окне и не переживает его закрытие. Для постоянного хранения есть `setx`, но для QA-прогона это лишнее: проще держать значения в блокноте и вставлять в команду. Если переменная задана в одном окне, а команда выполняется в другом, скрипт её не увидит.
-
-Как получить пароли и ключи:
+Сброс без переменной `ALLOW_DEV_RESET` не выполняет ни одного изменения:
 
 ```powershell
-kubectl -n oms get secret oms2-secret -o jsonpath='{.data.POSTGRES_PASSWORD}'          | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}'          | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms1-secret -o jsonpath='{.data.POSTGRES_PASSWORD}'          | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms2-secret -o jsonpath='{.data.PERSON_DATA_ENCRYPTION_KEY}'  | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n oms get secret oms2-secret -o jsonpath='{.data.PERSON_IDENTIFIER_HMAC_KEY}'  | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
+Remove-Item Env:\ALLOW_DEV_RESET
+python platform\docs\qa\reset_dev_data.py
+"exit=$LASTEXITCODE"
 ```
 
-Порты в DSN варианта B — это локальные порты из `kubectl port-forward`, а не порты сервисов в кластере: OMS2 слушает `5432`, OMS5 `5434`, OMS1 `5433` на `127.0.0.1`. Внутри кластера у всех баз порт `5432`, отличаются только имена хостов.
+Ожидается `exit=2`.
 
-Импорт OMS2 использует Django ORM и требует библиотек GDAL/GEOS, которых нет на Windows-хосте. Шаги OMS2 и OMS5 выполняются внутри образа `oms2`, шаг OMS1 — внутри образа `oms1`, где есть `bcrypt`.
+## Доступ к базам
 
-## Подключение из DBeaver или pgAdmin
-
-Для ручных выборок и проверки SQL удобнее GUI. Ingress базы не публикует, поэтому подключение идёт через те же port-forward, что и вариант B:
-
-```powershell
-kubectl -n oms port-forward deploy/oms2-postgres 5432:5432
-kubectl -n oms port-forward deploy/oms5-postgres 5434:5432
-kubectl -n oms port-forward deploy/oms1-postgres 5433:5432
-```
-
-Параметры подключения:
-
-| База | Host | Port | Database | User | Password | SSL |
-| --- | --- | --- | --- | --- | --- | --- |
-| OMS1 | `127.0.0.1` | `5433` | `oms1` | `oms1` | `POSTGRES_PASSWORD` из `oms1-secret` | off |
-| OMS2 | `127.0.0.1` | `5432` | `oms2` | `oms2` | `POSTGRES_PASSWORD` из `oms2-secret` | off |
-| OMS5 | `127.0.0.1` | `5434` | `oms5` | `oms5` | `POSTGRES_PASSWORD` из `oms5-secret` | off |
-
-DBeaver:
-
-1. Database → New Database Connection → PostgreSQL.
-2. В Host указать `127.0.0.1`, в Port — локальный порт из таблицы, в Database — имя базы, в Username/Password — значения из секрета.
-3. На вкладке SSL снять «Use SSL», иначе соединение может упасть на самоподписанном сертификате.
-4. Test Connection. Если драйвер не установлен, DBeaver предложит скачать его.
-5. SQL Editor → вставить запросы из шагов 5 и 6 → Execute. Схема `public`.
-
-pgAdmin:
-
-1. Object → Register → Server.
-2. General: произвольное имя, например `oms5-qa`.
-3. Connection: Host `127.0.0.1`, Port `5434`, Maintenance database `oms5`, Username `oms5`, Password из секрета.
-4. Parameters: SSL mode `disable`.
-5. Query Tool → выполнить SQL из инструкции.
-
-Ограничения:
-
-- Окно с `port-forward` должно оставаться открытым. При закрытии окна соединение в GUI обрывается, а не «подвисает».
-- В GUI выполняйте только `SELECT`. Изменение схемы и данных делает приложение и импортёр, ручные `UPDATE`/`DELETE` на QA-стенде легко ломают идемпотентность и счётчики.
-- Импорт и GUI можно использовать одновременно: скрипт работает через отдельное соединение.
-- Если port-forward не поднимается, быстрый вариант без GUI — `kubectl -n oms exec deploy/oms5-postgres -- psql -U oms5 -d oms5 -c "..."`, как в шагах 5 и 6.
-
-
-## Формат отчёта
-
-Файл содержит 19 колонок:
-
-```text
-shift_key,shift_id,head_external_id,head_name,division_external_id,division_name,
-store_external_id,store_name,city,country_code,timezone,address,lon,lat,
-starts_at_local,starts_at_utc,ends_at_utc,employee_personnel_number,performer_external_id
-```
-
-`starts_at_local` — местное время города, `starts_at_utc`/`ends_at_utc` — UTC с суффиксом `Z`. `shift_id` — UUIDv5 от `shift_key`, `shift_key` — `shift.v1|<store_external_id>|<starts_at_utc>`.
-
-## Бизнес-ключи
-
-| Сущность | Ключ | Пример |
-| --- | --- | --- |
-| Employee (оператор) | `personnel_number` | `QA-EMP-001` … `QA-EMP-005` |
-| Employee (исполнитель) | `personnel_number` | `QA-EMP-006` … `QA-EMP-025` |
-| Performer | `QA-PERF-*` в отчёте состояния | `QA-PERF-001` … `QA-PERF-020` |
-| Головной клиент | `clients.external_id` | `QA-CLI-RF-01` … `QA-CLI-RF-10`, `QA-CLI-BY-01` |
-| Дивизион | `clients.external_id` | `QA-DIV-RF-01-1` … `QA-DIV-RF-01-3` |
-| Магазин | `clients.external_id` | `QA-STORE-RF-01-01`, `QA-STORE-RF-01-02` |
-| Смена | UUIDv5, ограничение `(client_id, starts_at)` | `317784c8-…` |
-
-В БД OMS2 добавлено ограничение уникальности `employment_episode.personnel_number`, в OMS5 — уникальные индексы `clients.external_id` и `shifts(client_id, starts_at)`.
-
-## Шаг 1. Генерация отчёта
-
-Генерация не требует БД и выполняется на хосте. Период обязателен: `--from` и `--to` в формате `YYYY-MM-DD`, значения по умолчанию отсутствуют.
-
-```powershell
-cd D:\ProjectsDocker\extrawork\platform\docs\qa
-python generate_and_import.py --generate-only --from 2026-11-01 --to 2026-11-30
-```
-
-Другой период задаётся теми же параметрами, например декабрь:
-
-```powershell
-python generate_and_import.py --generate-only --from 2026-12-01 --to 2026-12-31 --report report_shifts_december.csv
-```
-
-Ожидаемый вывод:
-
-```text
-[1/3] Отчёт сгенерирован: ...\report_shifts.csv (строк: 780, период 2026-11-01..2026-11-30)
-[2/3] Отчёт проверен: 780 смен (2026-11-01..2026-11-30), дублей нет
-```
-
-Количество строк всегда равно `дни × 26`: 26 смен в день (20 в городах РФ и 6 в городах РБ). Для ноября это 780, для декабря 806.
-
-Генератор не использует `random` без seed: повторный запуск даёт побайтово тот же файл. Проверка:
-
-```powershell
-Get-FileHash .\report_shifts.csv -Algorithm SHA256
-python generate_and_import.py --generate-only --from 2026-11-01 --to 2026-11-30
-Get-FileHash .\report_shifts.csv -Algorithm SHA256
-```
-
-Хеши совпадают.
-
-## Шаг 2. Валидация отчёта до импорта
-
-```powershell
-$rows = Import-Csv .\report_shifts.csv
-
-"Строк: $($rows.Count)"                                                              # 780 для ноября
-"Уникальных ключей: $(($rows.shift_key | Sort-Object -Unique).Count)"                 # равно числу строк
-"Магазинов: $(($rows.store_external_id | Sort-Object -Unique).Count)"                 # 26
-"Городов: $(($rows.city | Sort-Object -Unique).Count)"                                # 16
-"Смен РФ: $(($rows | ? country_code -eq 'RU').Count)"                                 # 600 для ноября
-"Смен РБ: $(($rows | ? country_code -eq 'BY').Count)"                                 # 180 для ноября
-```
-
-Длительность и период:
-
-```powershell
-$durations = $rows | ForEach-Object { ([datetime]$_.ends_at_utc) - ([datetime]$_.starts_at_utc) }
-$durations | Sort-Object -Unique                                                       # 09:00:00
-
-$rows | Where-Object {
-    ([datetime]$_.starts_at_utc) -lt [datetime]'2026-11-01' -or
-    ([datetime]$_.starts_at_utc) -ge [datetime]'2026-12-01'
-}                                                                                       # пусто
-```
-
-Распределение по городам:
-
-```powershell
-$rows | Group-Object city | Select-Object Name, Count
-```
-
-30 строк на каждый город РФ и 30 на каждый город РБ за 30-дневный месяц: 60 и 30 соответственно (2 смены и 1 смена в день).
-
-Соответствие местного времени и UTC:
-
-| Город | Смещение | `starts_at_utc` | `ends_at_utc` |
-| --- | --- | --- | --- |
-| Калининград | UTC+2 | `06:00:00Z` | `15:00:00Z` |
-| Москва, Санкт-Петербург, Казань, Волгоград | UTC+3 | `05:00:00Z` | `14:00:00Z` |
-| Самара | UTC+4 | `04:00:00Z` | `13:00:00Z` |
-| Екатеринбург, Челябинск | UTC+5 | `03:00:00Z` | `12:00:00Z` |
-| Омск | UTC+6 | `02:00:00Z` | `11:00:00Z` |
-| Новосибирск | UTC+7 | `01:00:00Z` | `10:00:00Z` |
-| Минск, Брест, Витебск, Гродно, Гомель, Могилёв | UTC+3 | `05:00:00Z` | `14:00:00Z` |
-
-Проверка координат: для РФ широта 41–82, долгота 19–180; для РБ широта 51–56, долгота 23–33. Адрес магазина непустой у всех 26 магазинов.
-
-## Шаг 3. Код запуска импорта OMS5 и OMS2
-
-### Вариант A. В кластере, без port-forward
-
-Скрипт передаётся в под через stdin, файлы отчёта и состояния остаются в `/tmp` пода. DSN OMS2 берётся из переменной окружения пода, DSN OMS5 собирается из секрета.
-
-```powershell
-cd D:\ProjectsDocker\extrawork\platform\docs\qa
-
-$oms5Pass = kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-$oms5Dsn  = "postgresql://oms5:$oms5Pass@oms5-postgres:5432/oms5"
-$pod      = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
-
-Get-Content -Raw .\generate_and_import.py |
-  kubectl -n oms exec -i $pod -- env "QA_OMS5_DSN=$oms5Dsn" sh -c 'OMS2_DATABASE_URL="$DATABASE_URL" OMS5_DATABASE_URL="$QA_OMS5_DSN" OMS2_PROJECT_DIR=/app python - --from 2026-11-01 --to 2026-11-30 --report /tmp/report_shifts.csv --state /tmp/import_state.json'
-```
-
-Проверка доступа к базам из пода без port-forward. Переменная `$pod` должна быть задана в этом же окне; если она пустая, `kubectl` отвечает `pod, type/name or --filename must be specified`.
-
-```powershell
-$pod = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
-$oms5Pass = kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-
-kubectl -n oms exec $pod -- python -c "import psycopg; print(psycopg.connect('postgresql://oms5:$oms5Pass@oms5-postgres:5432/oms5').execute('select count(*) from clients').fetchone())"
-```
-
-Если нужно забрать файл состояния на хост:
-
-```powershell
-$pod = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
-$target = "D:\ProjectsDocker\extrawork\platform\docs\qa\import_state.json"
-
-kubectl -n oms exec $pod -- test -f /tmp/import_state.json
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "В поде нет /tmp/import_state.json. Выполните шаг 3 в этом же поде: состояние создаётся импортом."
-} else {
-    $state = kubectl -n oms exec $pod -- cat /tmp/import_state.json
-    $state | Set-Content $target -Encoding utf8
-    Get-Item $target | Select-Object FullName, Length
-}
-```
-
-Почему нужна проверка: если `cat` не находит файл, он пишет ошибку в stderr и ничего не отдаёт в stdout. Пустой конвейер PowerShell не запускает `Set-Content`, поэтому команда завершается без ошибки, но файл на хосте не появляется. Именно так выглядит попытка копирования до выполнения импорта.
-
-Файл создаётся по указанному пути, при работе по этой инструкции — `D:\ProjectsDocker\extrawork\platform\docs\qa\import_state.json`, рядом со скриптом и отчётом. `kubectl exec ... cat` только печатает содержимое в stdout, в поде ничего не копируется.
-
-`/tmp` живёт столько же, сколько под: после рестарта или rollout файл исчезает. Это не блокер — состояние восстанавливается повторным запуском шага 3, импорт идемпотентен и создаст файл заново. Скрипт читает состояние в кодировке `utf-8-sig`, поэтому BOM от PowerShell 5.1 не ломает повторный запуск.
-
-### Вариант B. С хоста через port-forward
-
-Требует трёх port-forward из раздела «Доступ к базам и ingress».
-
-```powershell
-cd D:\ProjectsDocker\extrawork\platform\docs\qa
-
-docker run --rm --network host `
-  -e OMS2_DATABASE_URL="postgis://oms2:<oms2-password>@127.0.0.1:5432/oms2" `
-  -e OMS5_DATABASE_URL="postgresql://oms5:<oms5-password>@127.0.0.1:5434/oms5" `
-  -e OMS2_PROJECT_DIR="/app" `
-  -e PERSON_DATA_ENCRYPTION_KEY="<fernet-key>" `
-  -e PERSON_IDENTIFIER_HMAC_KEY="<hmac-key>" `
-  -v "${PWD}:/qa" -w /qa --entrypoint python oms2:latest generate_and_import.py --from 2026-11-01 --to 2026-11-30
-```
-
-Ключи `PERSON_DATA_*` берутся из `oms2-secret`. Ожидаемый вывод первого прогона в обоих вариантах (для пустой базы; на непустой добавятся только новые QA-строки):
-
-```text
-[1/3] Отчёт сгенерирован: /qa/report_shifts.csv (строк: 780, период 2026-11-01..2026-11-30)
-[2/3] Отчёт проверен: 780 смен (2026-11-01..2026-11-30), дублей нет
-[3/3] Импорт завершён
-  oms5: clients_created=70, shifts_created=780, shifts_skipped=0
-  oms2: employees_created=25, employees_skipped=0, performers_created=20
-```
-
-70 клиентов: 11 головных, 33 дивизиона, 26 магазинов. В шаге OMS2 создаются 45 событий outbox: 25 `people.employment.changed` и 20 `people.performer_profile.changed`, которые затем публикует `oms2-outbox-worker`.
-
-### Импорт дополнительного периода
-
-Скрипт принимает `--from` и `--to`, поэтому база пополняется сменами нового месяца без удаления прежних данных. Сначала генерируется отчёт за декабрь:
-
-```powershell
-python generate_and_import.py --generate-only --from 2026-12-01 --to 2026-12-31 --report report_shifts_december.csv
-```
-
-Ожидается 806 строк: 31 день × 26 смен. Затем отчёт импортируется тем же способом, что и ноябрьский, но с явным указанием файла. В варианте A файл сначала копируется в под:
-
-```powershell
-$oms5Pass = kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-$oms5Dsn  = "postgresql://oms5:$oms5Pass@oms5-postgres:5432/oms5"
-$pod      = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
-
-Get-Content -Raw .\report_shifts_december.csv | kubectl -n oms exec -i $pod -- sh -c 'cat > /tmp/report_shifts_december.csv'
-Get-Content -Raw .\generate_and_import.py | kubectl -n oms exec -i $pod -- env "QA_OMS5_DSN=$oms5Dsn" sh -c 'OMS2_DATABASE_URL="$DATABASE_URL" OMS5_DATABASE_URL="$QA_OMS5_DSN" OMS2_PROJECT_DIR=/app python - --import-only --from 2026-12-01 --to 2026-12-31 --report /tmp/report_shifts_december.csv --state /tmp/import_state.json'
-```
-
-Для варианта B файл уже доступен через volume:
-
-```powershell
-docker run --rm --network host `
-  -e OMS5_DATABASE_URL="postgresql://oms5:<oms5-password>@127.0.0.1:5434/oms5" `
-  -v "${PWD}:/qa" -w /qa --entrypoint python oms2:latest generate_and_import.py --import-only --from 2026-12-01 --to 2026-12-31 --report /qa/report_shifts_december.csv
-```
-
-Ожидаемый вывод:
-
-```text
-[2/3] Отчёт проверен: 806 смен (2026-12-01..2026-12-31), дублей нет
-[3/3] Импорт завершён
-  oms5: clients_created=0, shifts_created=806, shifts_skipped=0
-```
-
-Итог в базе после ноября и декабря: 1586 QA-смен, клиенты и магазины не дублируются, кампании и назначения прежних смен не меняются. Повторный импорт декабрьского файла даёт `shifts_created=0, shifts_skipped=806`.
-
-## Шаг 4. Импорт доступа операторов в OMS1
-
-Выполняется в образе `oms1`, потому что для bcrypt нужен модуль из этого образа.
+Импорт пишет напрямую в PostgreSQL. Ingress публикует только HTTP, TCP-маршрутов для портов 5432 нет.
 
 ### Вариант A. В кластере
 
-У подов `oms1` и `oms2` разные `/tmp`: отчёт и состояние, созданные шагом 3, в поде `oms1` не видны. Переносится только файл состояния, он содержит соответствие `personnel_number` → `person_id`. Отчёт для шага OMS1 не нужен.
+OMS2 использует Django ORM и требует GDAL/GEOS, поэтому шаг OMS2 выполняется в образе `oms2`. Шагу OMS1 нужен `bcrypt`, он есть в образе `oms1`. OMS5 использует `psycopg` и работает в обоих образах.
+
+Пароль OMS5 для DSN берётся из секрета:
 
 ```powershell
 cd D:\ProjectsDocker\extrawork\platform\docs\qa
 
+$oms5Pass = kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
+$oms5Dsn  = "postgresql://oms5:$oms5Pass@oms5-postgres:5432/oms5"
+$oms2Pod  = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
+
+Get-Content -Raw .\generate_and_import.py |
+  kubectl -n oms exec -i $oms2Pod -- env "OMS5_DATABASE_URL=$oms5Dsn" "OMS2_PROJECT_DIR=/app" sh -c 'OMS2_DATABASE_URL="$DATABASE_URL" python - --from 2026-11-01 --to 2026-11-30 --report /tmp/report_shifts.csv --state /tmp/import_state.json'
+```
+
+`OMS2_DATABASE_URL` берётся из переменной `DATABASE_URL` пода, ключи `PERSON_DATA_ENCRYPTION_KEY` и `PERSON_IDENTIFIER_HMAC_KEY` — из `oms2-secret`, они уже в окружении пода.
+
+Шаг OMS1 выполняется отдельно, в поде OMS1:
+
+```powershell
 $oms1Pass = kubectl -n oms get secret oms1-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
 $oms1Dsn  = "postgresql://oms1:$oms1Pass@oms1-postgres:5432/oms1"
 $oms1Pod  = kubectl -n oms get pod -l app=oms1 -o jsonpath='{.items[0].metadata.name}'
-$oms2Pod  = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
-
-kubectl -n oms exec $oms2Pod -- cat /tmp/import_state.json |
-  kubectl -n oms exec -i $oms1Pod -- sh -c 'cat > /tmp/import_state.json'
 
 Get-Content -Raw .\generate_and_import.py |
   kubectl -n oms exec -i $oms1Pod -- env "OMS1_DATABASE_URL=$oms1Dsn" python - --import-only --from 2026-11-01 --to 2026-11-30 --state /tmp/import_state.json
 ```
 
-Если файла состояния в `oms2` уже нет (под перезапускался), сначала повторите шаг 3: он идемпотентен и создаст файл заново.
+Состояние в подах разное: OMS2 пишет в свой `/tmp/import_state.json` исполнителей, OMS1 — операторов. Для отчёта о прогоне заберите оба файла на хост; в репозиторий их не коммитят.
+
+```powershell
+kubectl -n oms exec $oms2Pod -- cat /tmp/import_state.json | Set-Content C:\Temp\import_state_oms2.json -Encoding utf8
+kubectl -n oms exec $oms1Pod -- cat /tmp/import_state.json | Set-Content C:\Temp\import_state_oms1.json -Encoding utf8
+```
 
 ### Вариант B. С хоста
 
+Сброс, генерация отчёта и шаг OMS1 работают с workspace venv:
+
 ```powershell
-docker run --rm --network host `
-  -e OMS1_DATABASE_URL="postgresql://oms1:<oms1-password>@127.0.0.1:5433/oms1" `
-  -v "${PWD}:/qa" -w /qa --entrypoint python oms1:latest generate_and_import.py --import-only --from 2026-11-01 --to 2026-11-30
+D:\ProjectsDocker\extrawork\.venv\Scripts\python.exe platform\docs\qa\reset_dev_data.py
+```
+
+Импорт OMS2 с хоста требует GDAL/GEOS, которых на Windows-хосте нет. Запускайте шаг OMS2 в контейнере, как в варианте A, даже если OMS1 и OMS5 выполняются локально.
+
+Для локальных шагов нужны port-forward:
+
+```powershell
+kubectl -n oms port-forward deploy/oms1-postgres 5433:5432
+kubectl -n oms port-forward deploy/oms5-postgres 5434:5432
+```
+
+## Шаг 2. Генерация отчёта
+
+Генерация не требует БД. Период обязателен: `--from` и `--to` в формате `YYYY-MM-DD`.
+
+```powershell
+python generate_and_import.py --generate-only --from 2026-11-01 --to 2026-11-30
 ```
 
 Ожидаемый вывод:
 
 ```text
-[2/3] Отчёт не требуется: импортируется только доступ OMS1
-[3/3] OMS5 пропущен: не задан OMS5_DATABASE_URL
-[3/3] OMS2 пропущен: не задан OMS2_DATABASE_URL
-[3/3] Импорт завершён
-  oms1: users_created=5, assignments_created=5, password=QaOperator!2026
+[1/6] Отчёт сгенерирован: ...\report_shifts.csv (строк: 780, период 2026-11-01..2026-11-30)
+[2/6] Отчёт проверен: 780 смен (2026-11-01..2026-11-30), дублей нет
 ```
 
-Создаются учётные записи `qa.operator.1...5` с ролью `administrator` и `person_id` из состояния импорта. Пароль задаётся переменной `QA_OPERATOR_PASSWORD` и печатается в консоли; для общих стендов его нужно менять.
+Генератор детерминирован: повторный запуск даёт тот же SHA256.
 
-## Шаг 5. Проверки OMS5
+## Шаг 3. Импорт операторов OMS1
 
-```powershell
-kubectl -n oms exec deploy/oms5-postgres -- psql -U oms5 -d oms5 -c "
-select client_type_code, count(*) from clients where external_id like 'QA-%' group by 1 order by 1;
-select count(*) as qa_shifts, count(distinct s.client_id) as stores
-from shifts s join clients c on c.id = s.client_id where c.external_id like 'QA-STORE-%';
-select count(*) as dupes from (select client_id, starts_at from shifts group by 1,2 having count(*)>1) d;
-select count(*) as bad_duration from shifts s join clients c on c.id = s.client_id
-where c.external_id like 'QA-STORE-%' and s.ends_at - s.starts_at <> interval '9 hours';
-select count(*) as not_object from shifts s join clients c on c.id = s.client_id
-where c.external_id like 'QA-STORE-%' and c.client_type_code <> 'object';"
-```
+Создаются пять учётных записей:
 
-Ожидается: 11 головных, 33 дивизиона, 26 магазинов по префиксу `QA-*`; 780 QA-смен на 26 магазинах; 0 дублей; 0 смен другой длительности; 0 ссылок не на магазин.
+| Username | Display name | Роль | Период | Должность |
+| --- | --- | --- | --- | --- |
+| `qa.operator.1` | Иванов Пётр Сергеевич | `administrator` | `QA-OPS-001` | `operator_software` |
+| `qa.operator.2` | Смирнова Ольга Андреевна | `manager` | `QA-OPS-002` | `operator_software` |
+| `qa.operator.3` | Кузнецов Дмитрий Викторович | `supervisor` | `QA-OPS-003` | `operator_software` |
+| `qa.operator.4` | Попова Елена Игоревна | `manager` | `QA-OPS-004` | `operator_software` |
+| `qa.operator.5` | Соколов Артём Павлович | `supervisor` | `QA-OPS-005` | `operator_software` |
 
-Общее число строк в базе при этом больше: к QA-данным добавляются записи предыдущих прогонов и smoke-проверок. Проверки ниже считают только QA-срез, поэтому подходят и для непустой базы.
+Правила:
 
-Кампании и назначения скрипт не создаёт. Проверяется, что для QA-смен их нет:
+- `users.person_id=null`, `users.scopes=["operations"]`, `users.is_active=true`;
+- пароль из `QA_OPERATOR_PASSWORD`, по умолчанию `QaOperator!2026`; пароль записывается только при создании пользователя и не печатается;
+- период и назначение начинаются `2026-10-01T00:00:00Z`, статус `active`;
+- роль ссылается на `operator_employment_period_id` и `operator_position_assignment_id` OMS1, `valid_from=2026-10-01T00:00:00Z`;
+- `admin` создаёт seed OMS1: период `ADMIN-001` и назначение на `operator_software`.
 
-```sql
-select count(*) from offer_campaigns oc
-join shifts s on s.id = oc.shift_id
-join clients c on c.id = s.client_id
-where c.external_id like 'QA-STORE-%';
+Повторный прогон ищет пользователя по `username`, период по `personnel_number`, назначение по `employment_period_id` и активному статусу, роль по `user_id`, `role_code` и `operator_employment_period_id`.
 
-select count(*) from shift_assignments sa
-join shifts s on s.id = sa.shift_id
-join clients c on c.id = s.client_id
-where c.external_id like 'QA-STORE-%';
-```
-
-Оба значения 0. Ранее созданные кампании и назначения на других сменах остаются как были.
-
-Глубина иерархии:
-
-```sql
-with recursive tree as (
-  select id, parent_client_id, 1 as depth from clients
-  where parent_client_id is null and external_id like 'QA-%'
-  union all
-  select c.id, c.parent_client_id, t.depth + 1
-  from clients c join tree t on c.parent_client_id = t.id
-)
-select max(depth) from tree;
-```
-
-Ожидается 3.
-
-Адрес магазина:
-
-```sql
-select count(*) filter (where address is null) as no_address,
-       count(*) filter (where country_code is null) as no_country,
-       count(*) filter (where lon is null or lat is null) as no_coords
-from clients where client_type_code = 'object' and external_id like 'QA-STORE-%';
-```
-
-Все три значения 0. Дополнительно:
-
-```sql
-select country_code, count(*) from clients
-where client_type_code = 'object' and external_id like 'QA-STORE-%' group by 1;
-```
-
-20 магазинов РФ и 6 магазинов РБ.
-
-## Шаг 6. Проверки OMS2
-
-```powershell
-kubectl -n oms exec deploy/oms2-postgres -- psql -U oms2 -d oms2 -c "
-select count(*) as employees from employees_employmentepisode where personnel_number like 'QA-EMP-%';
-select count(*) as performers from employees_performerprofile pp
-join employees_employmentepisode e on e.person_id = pp.person_id
-where e.personnel_number like 'QA-EMP-%';
-select topic, count(*) from employees_integrationoutbox o
-where exists (
-  select 1 from employees_employmentepisode e
-  where e.personnel_number like 'QA-EMP-%' and e.person_id::text = o.aggregate_id
-) group by 1 order by 1;"
-```
-
-Ожидается 25 сотрудников, 20 профилей и 45 событий по QA-персонам: 25 в `people.access.v1` и 20 в `people.performer.v1`. События других персон в подсчёт не попадают.
-
-Связь исполнителя с Employee проверяется через активный employment episode персоны:
-
-```sql
-select count(*) from employees_performerprofile pp
-join employees_employmentepisode e on e.person_id = pp.person_id and e.status = 'active'
-where e.personnel_number ~ '^QA-EMP-0(0[6-9]|1[0-9]|2[0-5])$';
-```
-
-Ожидается 20.
-
-## Шаг 7. Повторный запуск
-
-Повторить шаги 3 и 4.
-
-Ожидается:
+Ожидаемый первый прогон:
 
 ```text
-oms5: clients_created=0, shifts_created=0, shifts_skipped=780
-oms2: employees_created=0, employees_skipped=25, performers_created=0
-oms1: users_created=0, assignments_created=0
+[3/6] OMS1: операторы импортированы
+  oms1: users_created=5, periods_created=5, assignments_created=5, roles_created=5
 ```
 
-Количество строк в базах не меняется, новые события в outbox не появляются, хеш `report_shifts.csv` совпадает с первым прогоном.
+## Шаг 4. Импорт исполнителей OMS2
 
-## Шаг 8. Частичный сбой
+Создаются 20 персон `QA-EMP-006` … `QA-EMP-025` и профили `QA-PERF-001` … `QA-PERF-020`.
 
-1. Запустить шаг 3, прервать выполнение после блока OMS5 (например, закрыть терминал при появлении `oms5:`).
-2. Проверить, что QA-смены и клиенты уже записаны, а QA-сотрудники в OMS2 ещё не созданы.
-3. Повторить шаг 3.
+Распределение по стадиям:
 
-Ожидается: OMS5 пропускает существующие строки, OMS2 создаёт 25 сотрудников и 20 профилей. Дублей нет, состояние сохраняется в `import_state.json`.
+| Индексы | Стадия | Тип оформления | Подтверждение | Медкнижка | Документы |
+| --- | --- | --- | --- | --- | --- |
+| 1-4 | `PERFORMER_PROFILE` | 2 `gph`, 2 `self_employed` | 2 `verified`, 1 `pending`, 1 `rejected` | `none` | нет |
+| 5-8 | `PERFORMER_DOCS_PENDING` | 2 `gph`, 2 `self_employed` | `verified` | `none` | паспорт `pending`; у 5-6 ИНН `pending`, у 7-8 СНИЛС `pending` |
+| 9-12 | `PERFORMER_READY_NON_MEDICAL` | 2 `gph`, 2 `self_employed` | `verified` | `none` | паспорт, ИНН, СНИЛС `verified` |
+| 13-16 | `PERFORMER_READY_NON_FOOD` | 2 `gph`, 2 `self_employed` | `verified` | `non_food` | паспорт, ИНН, СНИЛС `verified` |
+| 17-20 | `PERFORMER_READY_FOOD` | 2 `gph`, 2 `self_employed` | `verified` | `food` | паспорт, ИНН, СНИЛС `verified` |
+
+Каждая персона импортируется в отдельной транзакции. Контакты, паспорт, ИНН, СНИЛС и адреса создаются с проверкой существующих записей по естественным ключам, поэтому повторный прогон не добавляет дочерние строки. Событие `people.performer_profile.changed` ставится в `IntegrationOutbox` внутри транзакции персоны и только при создании профиля.
+
+Ожидаемый первый прогон:
+
+```text
+[4/6] OMS2: исполнители импортированы
+  oms2: persons_created=20, profiles_created=20, work_periods_created=20, addresses_created=50, contacts_created=40, documents_created=16, identifiers_created=28
+```
+
+Персональные данные в логи не попадают: выводятся только `personnel_number` и стадия.
+
+## Шаг 5. Импорт клиентов и смен OMS5
+
+Импорт сохраняет прежнюю логику: 70 клиентов (11 головных, 33 дивизиона, 26 магазинов) и 780 смен ноября 2026 в статусе `A00_DRAFT`. Исполнители напрямую в OMS5 не пишутся.
+
+Ожидаемый первый прогон:
+
+```text
+[5/6] OMS5: клиенты и смены импортированы
+  oms5: clients_created=70, shifts_created=780, shifts_skipped=0
+```
+
+## Шаг 6. Проекция исполнителей
+
+После импорта OMS2 в `employees_integrationoutbox` находится 20 неопубликованных событий `people.performer_profile.changed`. `oms2-outbox-worker` публикует их в `people.performer.v1`, consumer OMS5 создаёт 20 строк `performers`.
+
+Скрипт ждёт не более 120 секунд (`--wait-seconds`), пока `performers` не достигнет 20, а неопубликованных событий OMS2 не останется. Флаг `--skip-wait` пропускает ожидание и проверки: он нужен, чтобы посмотреть промежуточное состояние, например 20 неопубликованных событий при остановленном outbox worker.
+
+Ожидаемый вывод:
+
+```text
+[6/6] Проекция performers: готова
+```
+
+Если проекция не появилась:
+
+1. Проверить `employees_integrationoutbox` в OMS2: `published_at` заполнен.
+2. Проверить `person_event_inbox` и `person_consumer_state` в OMS5.
+3. Проверить логи `oms2-outbox-worker` и `oms5`.
+4. Проверить, что topic `people.performer.v1` создан.
+5. Убедиться, что consumer group `oms5.people.performer` не осталась с offset-ами от удалённого topic-а: сброс удаляет её вместе с topic-ом.
+
+## Шаг 7. Проверки
+
+Скрипт выполняет проверки автоматически и завершает работу с кодом 1 при расхождении. SQL ниже нужен для ручной приёмки.
+
+### OMS1
+
+```sql
+SELECT count(*) FROM users WHERE username LIKE 'qa.operator.%'; -- 5
+SELECT count(*) FROM operator_employment_periods WHERE personnel_number LIKE 'QA-OPS-%'; -- 5
+SELECT count(*) FROM operator_employment_periods; -- 6 с ADMIN-001
+SELECT count(*) FROM operator_position_assignments; -- 6
+SELECT count(*) FROM access_role_assignments WHERE role_code IN ('manager', 'supervisor', 'administrator'); -- 6
+SELECT count(*) FROM users WHERE username LIKE 'qa.operator.%' AND person_id IS NOT NULL; -- 0
+```
+
+Связь ролей с OMS1:
+
+```sql
+SELECT u.username, p.personnel_number, a.position_code, r.role_code,
+       (r.operator_employment_period_id = p.id) AS period_link,
+       (r.operator_position_assignment_id = a.id) AS position_link
+FROM users u
+JOIN operator_employment_periods p ON p.user_id = u.id
+JOIN operator_position_assignments a ON a.employment_period_id = p.id
+JOIN access_role_assignments r ON r.user_id = u.id AND r.operator_employment_period_id = p.id
+ORDER BY u.username;
+```
+
+У всех шести строк `period_link` и `position_link` равны `t`.
+
+Вход оператора и `/auth/verify`:
+
+```powershell
+kubectl -n oms exec deploy/oms1 -- python -c "import json, urllib.request; req=urllib.request.Request('http://127.0.0.1:8000/auth/token', data=json.dumps({'username':'qa.operator.1','password':'QaOperator!2026'}).encode(), headers={'Content-Type':'application/json'}); t=json.load(urllib.request.urlopen(req)); req=urllib.request.Request('http://127.0.0.1:8000/auth/verify', headers={'Authorization':'Bearer '+t['access_token']}); print(json.load(urllib.request.urlopen(req)))"
+```
+
+Ожидается `person_id: None` и роль `administrator`.
+
+### OMS2
+
+```sql
+SELECT count(*) FROM employees_employeepersinfo; -- 20
+SELECT count(*) FROM employees_performerprofile; -- 20
+SELECT count(*) FROM employees_performerengagementtypechange; -- 20
+SELECT count(*) FROM employees_performerworkperiod; -- 20
+SELECT count(*) FROM employees_personaddress; -- 50
+SELECT count(*) FROM employees_personcontact; -- 40
+SELECT count(*) FROM employees_persondocument WHERE document_type = 'passport'; -- 16
+SELECT count(*) FROM employees_personidentifier; -- 28
+SELECT to_regclass('employees_employmentepisode'); -- NULL
+SELECT to_regclass('employees_positionassignment'); -- NULL
+SELECT to_regclass('employees_externalmembership'); -- NULL
+SELECT count(*) FROM employees_integrationoutbox WHERE published_at IS NULL; -- 0 после публикации
+```
+
+Распределение стадий:
+
+```sql
+SELECT funnel_stage, count(*) FROM employees_performerprofile GROUP BY funnel_stage ORDER BY funnel_stage;
+```
+
+| Стадия | Количество |
+| --- | --- |
+| `PERFORMER_PROFILE` | 4 |
+| `PERFORMER_DOCS_PENDING` | 4 |
+| `PERFORMER_READY_NON_MEDICAL` | 4 |
+| `PERFORMER_READY_NON_FOOD` | 4 |
+| `PERFORMER_READY_FOOD` | 4 |
+
+Документы и идентификаторы по статусам:
+
+```sql
+SELECT verification_status, count(*) FROM employees_persondocument GROUP BY 1;
+-- pending 4, verified 12
+SELECT verification_status, count(*) FROM employees_personidentifier GROUP BY 1;
+-- pending 4, verified 24
+```
+
+Проверка до публикации. Останавливается outbox worker, затем выполняется импорт с `--skip-wait`: флаг пропускает ожидание проекции и проверки, поэтому события остаются в `employees_integrationoutbox` неопубликованными. Проверка имеет смысл только на первом прогоне после сброса: повторный импорт новых событий не создаёт.
+
+```powershell
+$oms5Pass = kubectl -n oms get secret oms5-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
+$oms5Dsn  = "postgresql://oms5:$oms5Pass@oms5-postgres:5432/oms5"
+$oms2Pod  = kubectl -n oms get pod -l app=oms2 -o jsonpath='{.items[0].metadata.name}'
+
+kubectl -n oms scale deployment/oms2-outbox-worker --replicas=0
+kubectl -n oms rollout status deployment/oms2-outbox-worker --timeout=120s
+
+Get-Content -Raw .\generate_and_import.py |
+  kubectl -n oms exec -i $oms2Pod -- env "OMS5_DATABASE_URL=$oms5Dsn" "OMS2_PROJECT_DIR=/app" sh -c 'OMS2_DATABASE_URL="$DATABASE_URL" python - --from 2026-11-01 --to 2026-11-30 --report /tmp/report_shifts.csv --state /tmp/import_state.json --skip-wait'
+```
+
+Ожидаемый конец вывода:
+
+```text
+[6/6] Ожидание проекции и проверки пропущены (--skip-wait)
+[6/6] Импорт завершён
+  oms2: persons_created=20, profiles_created=20, work_periods_created=20, addresses_created=50, contacts_created=40, documents_created=16, identifiers_created=28
+  oms5: clients_created=70, shifts_created=780, shifts_skipped=0
+```
+
+Проверка событий:
+
+```sql
+SELECT event_type, count(*) FROM employees_integrationoutbox
+WHERE published_at IS NULL GROUP BY 1;
+-- people.performer_profile.changed | 20
+```
+
+После проверки вернуть worker и повторить импорт уже без `--skip-wait`, чтобы дождаться проекции и выполнить проверки:
+
+```powershell
+kubectl -n oms scale deployment/oms2-outbox-worker --replicas=1
+kubectl -n oms rollout status deployment/oms2-outbox-worker --timeout=120s
+
+Get-Content -Raw .\generate_and_import.py |
+  kubectl -n oms exec -i $oms2Pod -- env "OMS5_DATABASE_URL=$oms5Dsn" "OMS2_PROJECT_DIR=/app" sh -c 'OMS2_DATABASE_URL="$DATABASE_URL" python - --import-only --from 2026-11-01 --to 2026-11-30 --report /tmp/report_shifts.csv --state /tmp/import_state.json'
+```
+
+### OMS5
+
+```sql
+SELECT count(*) FROM clients; -- 70
+SELECT count(*) FROM shifts; -- 780
+SELECT count(*) FROM performers; -- 20
+SELECT count(*) FROM performers WHERE engagement_type IS NULL; -- 0
+SELECT count(*) FROM performers WHERE funnel_stage IS NULL; -- 0
+SELECT count(*) FROM operations_outbox WHERE published_at IS NULL; -- 0
+SELECT funnel_stage, count(*) FROM performers GROUP BY 1 ORDER BY 1;
+```
+
+Распределение стадий в проекции совпадает с OMS2: по 4 на каждую из пяти стадий.
+
+## Шаг 8. Повторный импорт
+
+Повторить шаги 3, 4 и 5 без сброса. Ожидается:
+
+```text
+oms1: users_created=0, periods_created=0, assignments_created=0, roles_created=0
+oms2: persons_created=0, profiles_created=0, work_periods_created=0, addresses_created=0, contacts_created=0, documents_created=0, identifiers_created=0
+oms5: clients_created=0, shifts_created=0, shifts_skipped=780
+```
+
+Дополнительно:
+
+- число строк в `employees_personcontact`, `employees_persondocument`, `employees_personidentifier`, `employees_personaddress` не меняется;
+- новых строк в `employees_integrationoutbox` нет;
+- `performers` в OMS5 остаётся 20;
+- state-файл обновляет `generated_at`, наборы `operators` и `performers` не меняются.
+
+## Шаг 9. Сквозной сценарий стадий завершения
+
+Стадии `PERFORMER_BOOKED_SHIFT`, `PERFORMER_FIRST_SHIFT_COMPLETED` и `PERFORMER_FIFTH_SHIFT_COMPLETED` импорт не создаёт: их формирует поток фактов `operations.performer.v1`.
+
+Сценарий для одного исполнителя:
+
+1. Создать смену в OMS5, перевести её в `A10_CONFIRM`, затем в `A20_SOURCING`.
+2. Создать offer campaign на исполнителя со стадией `PERFORMER_READY_*` и принять оффер.
+3. Перевести смену в `A40_EXECUTION`, `A50_VERIFY`, `A60_SETTLE`. Переход в `A60_SETTLE` создаёт один факт завершения.
+4. Обработать событие consumer-ом OMS2 (`deployment/oms2-operations-consumer` или `python manage.py consume_operations_performer --once`).
+5. После первой завершённой смены стадия исполнителя — `PERFORMER_FIRST_SHIFT_COMPLETED`, после пятой — `PERFORMER_FIFTH_SHIFT_COMPLETED`.
+
+Проверка фактов:
+
+```sql
+SELECT fact_type, count(*) FROM employees_performershiftfact GROUP BY 1; -- assigned/completed
+SELECT assignment_id, fact_type, count(*) FROM employees_performershiftfact
+GROUP BY assignment_id, fact_type HAVING count(*) > 1; -- 0 строк
+```
+
+## State-файл
+
+Файл состояния версии 3 содержит только идентификаторы:
+
+```json
+{
+  "version": 3,
+  "generated_at": "2026-11-01T09:00:00Z",
+  "operators": {
+    "QA-OPS-001": {
+      "user_id": "d4e5f607-1a2b-4c3d-8e9f-0a1b2c3d4e66",
+      "username": "qa.operator.1"
+    }
+  },
+  "performers": {
+    "QA-PERF-001": {
+      "person_id": 6,
+      "personnel_number": "QA-EMP-006"
+    }
+  }
+}
+```
+
+Правила:
+
+- запись атомарная: временный файл рядом, затем `os.replace`;
+- состояние сливается с предыдущим, а не перезаписывается;
+- пароли, телефоны, email и номера документов в файл не попадают;
+- state-файл конкретного прогона в Git не коммитится, в репозитории лежит только `import_state.example.json`.
 
 ## Тест-кейсы
 
 | ID | Сценарий | Ожидание |
 | --- | --- | --- |
-| TC-01 | Первый прогон на непустую базу | +70 клиентов и +780 смен, прежние записи не меняются |
-| TC-02 | Повторный прогон | все счётчики `created=0`, `shifts_skipped=780` |
-| TC-03 | Повторная генерация отчёта | одинаковый SHA256 |
-| TC-04 | Смена с `client_id` дивизиона через API | `422 invalid_client_type` |
-| TC-05 | Клиент с родителем неподходящего типа | `422 invalid_parent_type` |
-| TC-06 | Обрыв после OMS5 | повторный запуск не создаёт дублей |
-| TC-07 | Отчёт с дублем `shift_key` | импорт останавливается с ошибкой валидации |
-| TC-08 | Отчёт с длительностью не 9 часов | импорт останавливается с ошибкой валидации |
-| TC-09 | Вход `qa.operator.1` с паролем из вывода | 200, `/auth/verify` возвращает `person_id` и роль `administrator` |
-| TC-10 | Импорт декабря поверх ноября | +806 смен, итого 1586 QA-смен, клиенты не дублируются |
-| TC-11 | Повторный импорт декабря | `shifts_created=0`, `shifts_skipped=806` |
+| TC-01 | Сброс без `ALLOW_DEV_RESET` | код 2, базы не меняются |
+| TC-02 | Сброс с namespace из контекста, отличным от `oms` | отказ, код 1 |
+| TC-03 | Подтверждение, отличное от `RESET` | код 1, изменений нет |
+| TC-04 | Успешный сброс | схемы пусты, topics созданы, readiness 200 |
+| TC-05 | OMS2 после сброса | расширение `postgis`, колонка `employees_address.location` |
+| TC-06 | Первый импорт | счётчики из шагов 3-5 |
+| TC-07 | Вход `qa.operator.1` | 200, `/auth/verify` возвращает `person_id=null` |
+| TC-08 | Роли операторов | ссылаются на OMS1 period и assignment |
+| TC-09 | OMS2 | 20 персон, нет `operator_software`, стадии по 4 |
+| TC-10 | OMS5 | 70 клиентов, 780 смен, 20 исполнителей |
+| TC-11 | Outbox до публикации | 20 неопубликованных `people.performer_profile.changed` |
+| TC-12 | Повторный импорт | все `created=0`, `shifts_skipped=780` |
+| TC-13 | State-файл и логи | нет паролей, телефонов, email и номеров документов |
+| TC-14 | Первая завершённая смена | `PERFORMER_FIRST_SHIFT_COMPLETED` |
+| TC-15 | Пятая завершённая смена | `PERFORMER_FIFTH_SHIFT_COMPLETED` |
 
-## Открытые ограничения
+## Ограничения
 
-- Адрес магазина хранится в `clients.address`, `country_code`, `timezone`, `lon`, `lat`. Модель `Address` в OMS2 к магазинам не применяется: она относится к Person.
-- PostgreSQL не публикуется через ingress: TCP-маршрутов для портов 5432 нет, поэтому для запуска с хоста нужен port-forward.
-- Офферы и назначения не создаются, смены остаются в статусе `A00_DRAFT`.
-- Пароль операторов печатается в консоли и задаётся общей переменной; для общих стендов нужен отдельный секрет.
-- Скрипт не удаляет QA-данные и не «переимпортирует» период: чтобы пересоздать месяц, строки нужно удалить вручную.
+- Сброс удаляет topic-и и старые события Kafka. Для dev-контура это допустимо, для production скрипт не предназначен.
+- OMS3 и OMS4 не сбрасываются: их данные предыдущих прогонов остаются.
+- Импорт не переносит старые QA-данные: после сброса набор создаётся заново.
+- Импорт OMS2 требует GDAL/GEOS, поэтому с Windows-хоста шаг выполняется в контейнере `oms2`.
+- Пароль операторов общий, задаётся `QA_OPERATOR_PASSWORD`; для общих стендов нужно отдельное значение.
+- Импорт не удаляет данные: чтобы пересоздать период смен, нужен сброс.
 
 ## Критерии приёмки
 
-- в OMS5 по префиксу `QA-*` 70 клиентов (11/33/26) и 780 смен за ноябрь 2026;
-- для двух месяцев ноябрь + декабрь — 1586 QA-смен без дублей;
-- дублей по `(client_id, starts_at)` нет, все QA-смены ссылаются на `object`;
-- глубина QA-иерархии 3, у всех QA-магазинов заполнены адрес, страна и координаты;
-- каждая смена длится 9 часов, начало соответствует 08:00 местного времени;
-- в каждом городе РФ 2 смены в день, в каждом городе РБ 1 смена в день;
-- в OMS2 25 сотрудников с номерами `QA-EMP-*`, 20 профилей исполнителей и 45 событий outbox;
-- в OMS1 5 операторов с активной ролью `administrator`;
-- повторный прогон того же периода не меняет количество записей и хеш отчёта;
-- записи, существовавшие до импорта, остаются без изменений.
+- сброс без `ALLOW_DEV_RESET` завершается с кодом 2 и не меняет базы;
+- после сброса схемы OMS1, OMS2 и OMS5 пусты, deployments запущены, readiness 200;
+- topic-и `people.access.v1`, `people.performer.v1` и `operations.performer.v1` существуют;
+- consumer groups `oms1.people.access`, `oms5.people.performer` и `oms2.operations.performer` удалены до запуска consumer-ов;
+- в OMS1 5 QA-операторов и `admin`: 6 периодов, 6 назначений, 6 ролей; у QA-операторов `person_id=null`;
+- в OMS2 20 персон, 20 профилей, 20 записей аудита, 20 периодов работы, 50 адресов, 40 контактов, 16 паспортов и 28 идентификаторов; записей `operator_software` нет;
+- стадии воронки распределены по 4 на каждую из пяти стадий;
+- в OMS5 70 клиентов и 780 смен; после проекции 20 исполнителей с заполненными `engagement_type` и `funnel_stage`;
+- в `employees_integrationoutbox` 20 неопубликованных событий профиля до публикации и 0 после;
+- в `operations_outbox` нет неопубликованных строк;
+- повторный импорт даёт `created=0` по всем счётчикам и не меняет дочерние таблицы OMS2;
+- state-файл и логи не содержат паролей, телефонов, email и номеров документов.
 
 ## Что приложить к отчёту
 
-- Вывод первого и повторного прогона шага 3 и шага 4.
+- Вывод сброса и вывод первого и повторного импорта по каждому шагу.
 - `SHA256` файла `report_shifts.csv` до и после повторной генерации.
-- Результаты SQL-проверок шагов 5 и 6.
-- Содержимое `import_state.json` после первого прогона.
-- Версии образов `oms1` и `oms2`, commit импортёра.
+- Результаты SQL-проверок OMS1, OMS2 и OMS5.
+- Содержимое state-файлов после первого прогона.
+- Версии образов `oms1`, `oms2` и `oms5`.

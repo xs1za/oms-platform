@@ -63,7 +63,7 @@ class Oms1AuthPostgresTest(unittest.TestCase):
             users = db.query(self.models.User).all()
             clients = db.query(self.models.ServiceClient).all()
 
-        self.assertEqual(second_result, {"users": 0, "service_clients": 0})
+        self.assertEqual(second_result, {"users": 0, "service_clients": 0, "assignments": 0})
         self.assertEqual(len(users), 1)
         self.assertEqual(len(clients), 4)
         self.assertNotEqual(users[0].password_hash, "admin-test-password")
