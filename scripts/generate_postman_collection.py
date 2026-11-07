@@ -352,8 +352,7 @@ def create_item_from_operation(openapi: dict[str, Any], method: str, path: str, 
         request["description"] = generated_description
     if schema:
         ensure_raw_json_body(request, schema, example)
-    if operation.get("security"):
-        merge_request_header(request, "Authorization", "Bearer {{access_token}}")
+    merge_security_headers(request, operation)
     merge_openapi_header_parameters(request, operation)
     normalize_request_headers(request)
 
@@ -440,6 +439,26 @@ def merge_request_header(request: dict[str, Any], key: str, value: str, descript
     if description:
         new_header["description"] = description
     headers.append(new_header)
+
+
+SECURITY_SCHEME_HEADERS = {
+    "bearerAuth": ("Authorization", "Bearer {{access_token}}"),
+    "serviceTokenAuth": ("X-Service-Token", "{{service_token}}"),
+}
+
+
+def merge_security_headers(request: dict[str, Any], operation: dict[str, Any]) -> None:
+    security = operation.get("security")
+    if not isinstance(security, list):
+        return
+
+    for requirement in security:
+        if not isinstance(requirement, dict):
+            continue
+        for scheme_name in requirement:
+            header = SECURITY_SCHEME_HEADERS.get(scheme_name)
+            if header is not None:
+                merge_request_header(request, header[0], header[1])
 
 
 def merge_openapi_header_parameters(request: dict[str, Any], operation: dict[str, Any]) -> None:

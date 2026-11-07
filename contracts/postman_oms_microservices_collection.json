@@ -528,7 +528,7 @@
               }
             ],
             "url": "{{oms5_base_url}}/performers/sync",
-            "description": "### OMS5 sync performer projection from OMS2\n\nВнутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\",\n    \"display_name\",\n    \"status\",\n    \"engagement_type\",\n    \"engagement_type_validation_status\",\n    \"funnel_stage\",\n    \"medical_book_status\",\n    \"completed_shifts_count\",\n    \"source_version\"\n  ],\n  \"properties\": {\n    \"person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"employee_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Legacy поле на время поэтапного развёртывания; при расхождении с person_id запрос отклоняется 409 person_id_conflict.\"\n    },\n    \"display_name\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    },\n    \"email\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"email\"\n    },\n    \"phone\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    },\n    \"source_version\": {\n      \"type\": \"integer\",\n      \"minimum\": 1\n    },\n    \"engagement_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"gph\",\n        \"self_employed\"\n      ],\n      \"description\": \"Тип оформления исполнителя: договор ГПХ или самозанятость.\"\n    },\n    \"engagement_type_validation_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"pending\",\n        \"verified\",\n        \"rejected\"\n      ]\n    },\n    \"funnel_stage\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"PERFORMER_BLANK\",\n        \"PERFORMER_PROFILE\",\n        \"PERFORMER_DOCS_PENDING\",\n        \"PERFORMER_READY_NON_MEDICAL\",\n        \"PERFORMER_READY_NON_FOOD\",\n        \"PERFORMER_READY_FOOD\",\n        \"PERFORMER_BOOKED_SHIFT\",\n        \"PERFORMER_FIRST_SHIFT_COMPLETED\",\n        \"PERFORMER_FIFTH_SHIFT_COMPLETED\",\n        \"PERFORMER_PROFILE_DELETED\"\n      ],\n      \"description\": \"PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5.\"\n    },\n    \"medical_book_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"none\",\n        \"non_food\",\n        \"food\"\n      ]\n    },\n    \"completed_shifts_count\": {\n      \"type\": \"integer\",\n      \"minimum\": 0\n    },\n    \"first_booked_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"first_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"fifth_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    }\n  }\n}\n```",
+            "description": "### OMS5 sync performer projection from OMS2\n\nВнутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\",\n    \"display_name\",\n    \"status\",\n    \"engagement_type\",\n    \"engagement_type_validation_status\",\n    \"funnel_stage\",\n    \"medical_book_status\",\n    \"completed_shifts_count\",\n    \"source_version\"\n  ],\n  \"properties\": {\n    \"person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"employee_id\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Legacy поле на время поэтапного развёртывания; при расхождении с person_id запрос отклоняется 409 person_id_conflict.\"\n    },\n    \"display_name\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 255\n    },\n    \"email\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"email\"\n    },\n    \"phone\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"active\",\n        \"inactive\"\n      ]\n    },\n    \"source_version\": {\n      \"type\": \"integer\",\n      \"minimum\": 1\n    },\n    \"engagement_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"gph\",\n        \"self_employed\"\n      ],\n      \"description\": \"Тип оформления исполнителя: договор ГПХ или самозанятость.\"\n    },\n    \"engagement_type_validation_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"pending\",\n        \"verified\",\n        \"rejected\"\n      ]\n    },\n    \"funnel_stage\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"PERFORMER_BLANK\",\n        \"PERFORMER_PROFILE\",\n        \"PERFORMER_DOCS_PENDING\",\n        \"PERFORMER_READY_NON_MEDICAL\",\n        \"PERFORMER_READY_NON_FOOD\",\n        \"PERFORMER_READY_FOOD\",\n        \"PERFORMER_BOOKED_SHIFT\",\n        \"PERFORMER_FIRST_SHIFT_COMPLETED\",\n        \"PERFORMER_FIFTH_SHIFT_COMPLETED\",\n        \"PERFORMER_PROFILE_DELETED\"\n      ],\n      \"description\": \"PERFORMER_BLANK не хранится в профиле и используется в отчётах и проекции OMS5.\"\n    },\n    \"medical_book_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"none\",\n        \"non_food\",\n        \"food\"\n      ]\n    },\n    \"completed_shifts_count\": {\n      \"type\": \"integer\",\n      \"minimum\": 0\n    },\n    \"first_booked_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"first_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    },\n    \"fifth_shift_completed_at\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"format\": \"date-time\"\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna@example.test\",\n  \"phone\": \"+375291234567\",\n  \"status\": \"active\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"verified\",\n  \"funnel_stage\": \"PERFORMER_READY_NON_FOOD\",\n  \"medical_book_status\": \"non_food\",\n  \"completed_shifts_count\": 3,\n  \"first_booked_at\": \"2026-10-20T08:00:00Z\",\n  \"first_shift_completed_at\": \"2026-10-21T18:00:00Z\",\n  \"fifth_shift_completed_at\": null,\n  \"source_version\": 3\n}",
@@ -552,7 +552,7 @@
                       "person_id": {
                         "type": "string",
                         "pattern": "^[0-9]+$",
-                        "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                        "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."
                       },
                       "employee_id": {
                         "type": [
@@ -1524,6 +1524,158 @@
               "body": "{\n  \"detail\": \"string\"\n}"
             }
           ]
+        },
+        {
+          "name": "OMS5 get performer projection by person_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Service-Token",
+                "value": "{{service_token}}"
+              }
+            ],
+            "url": "{{oms5_base_url}}/performers/by-person/{{param}}",
+            "description": "### OMS5 get performer projection by person_id\n\nВнутренний endpoint для OMS2, OMS3 и отчётов. Service token передаётся в заголовке X-Service-Token, как в POST /performers/sync. Возвращает полную проекцию исполнителя, включая email и телефон. Merged-профили не возвращаются: поиск идёт по merged_into_performer_id IS NULL."
+          },
+          "response": [
+            {
+              "name": "200 Проекция исполнителя",
+              "status": "Проекция исполнителя",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"63c55740-a965-40c6-b699-a65ef887bcf1\",\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna@example.test\",\n  \"phone\": \"+375291234567\",\n  \"status\": \"active\",\n  \"source_version\": 3,\n  \"synced_at\": \"2026-10-21T18:05:00Z\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"verified\",\n  \"funnel_stage\": \"PERFORMER_READY_NON_FOOD\",\n  \"medical_book_status\": \"non_food\",\n  \"completed_shifts_count\": 3,\n  \"first_booked_at\": \"2026-10-20T08:00:00Z\",\n  \"first_shift_completed_at\": \"2026-10-21T18:00:00Z\",\n  \"fifth_shift_completed_at\": null,\n  \"merged_into_performer_id\": null\n}"
+            },
+            {
+              "name": "401 Нет или неверный service token (service_token_required)",
+              "status": "Нет или неверный service token (service_token_required)",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"service_token_required\",\n    \"message\": \"A valid service token is required\"\n  }\n}"
+            },
+            {
+              "name": "404 Исполнитель не найден (performer_not_found)",
+              "status": "Исполнитель не найден (performer_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"performer_not_found\",\n    \"message\": \"Performer not found\"\n  }\n}"
+            },
+            {
+              "name": "422 person_id не является десятичной строкой (validation_error)",
+              "status": "person_id не является десятичной строкой (validation_error)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"validation_error\",\n    \"message\": \"person_id must be a decimal BIGINT string\"\n  }\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "OMS5 get performer projection by performer_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Service-Token",
+                "value": "{{service_token}}"
+              }
+            ],
+            "url": "{{oms5_base_url}}/performers/{{param}}",
+            "description": "### OMS5 get performer projection by performer_id\n\nВнутренний endpoint для OMS2, OMS3 и отчётов. Service token передаётся в заголовке X-Service-Token, как в POST /performers/sync. Возвращает полную проекцию исполнителя, включая email и телефон. Merged-профиль возвращается с заполненным merged_into_performer_id."
+          },
+          "response": [
+            {
+              "name": "200 Проекция исполнителя",
+              "status": "Проекция исполнителя",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"63c55740-a965-40c6-b699-a65ef887bcf1\",\n  \"person_id\": \"1042\",\n  \"display_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna@example.test\",\n  \"phone\": \"+375291234567\",\n  \"status\": \"active\",\n  \"source_version\": 3,\n  \"synced_at\": \"2026-10-21T18:05:00Z\",\n  \"engagement_type\": \"self_employed\",\n  \"engagement_type_validation_status\": \"verified\",\n  \"funnel_stage\": \"PERFORMER_READY_NON_FOOD\",\n  \"medical_book_status\": \"non_food\",\n  \"completed_shifts_count\": 3,\n  \"first_booked_at\": \"2026-10-20T08:00:00Z\",\n  \"first_shift_completed_at\": \"2026-10-21T18:00:00Z\",\n  \"fifth_shift_completed_at\": null,\n  \"merged_into_performer_id\": null\n}"
+            },
+            {
+              "name": "401 Нет или неверный service token (service_token_required)",
+              "status": "Нет или неверный service token (service_token_required)",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"service_token_required\",\n    \"message\": \"A valid service token is required\"\n  }\n}"
+            },
+            {
+              "name": "422 Невалидный UUID в performerId (invalid_uuid_format)",
+              "status": "Невалидный UUID в performerId (invalid_uuid_format)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"invalid_uuid_format\",\n    \"message\": \"performer_id must be a UUID string\"\n  }\n}"
+            },
+            {
+              "name": "404 Исполнитель с валидным UUID не найден (performer_not_found)",
+              "status": "Исполнитель с валидным UUID не найден (performer_not_found)",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": {\n    \"code\": \"performer_not_found\",\n    \"message\": \"Performer not found\"\n  }\n}"
+            },
+            {
+              "name": "500 Internal server error",
+              "status": "Internal server error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"detail\": \"string\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -2348,7 +2500,7 @@
               }
             ],
             "url": "{{oms2_base_url}}/api/v1/people/{{param}}/documents/{{param}}/replace",
-            "description": "### OMS2 replace passport\n\nПомечает старый подтверждённый паспорт как replaced и переносит признак основного на новый документ. История не удаляется, авторство прежних действий не меняется.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"replacement_document_id\",\n    \"effective_at\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"replacement_document_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"expired_by_age\",\n        \"damaged\",\n        \"lost\",\n        \"other\"\n      ]\n    }\n  }\n}\n```",
+            "description": "### OMS2 replace passport\n\nПомечает старый подтверждённый паспорт как replaced и переносит признак основного на новый документ. История не удаляется, авторство прежних действий не меняется.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"replacement_document_id\",\n    \"effective_at\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"replacement_document_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"expired_by_age\",\n        \"damaged\",\n        \"lost\",\n        \"other\"\n      ]\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"replacement_document_id\": \"778\",\n  \"effective_at\": \"2026-10-28T12:00:00Z\",\n  \"reason_code\": \"expired_by_age\"\n}",
@@ -2366,7 +2518,7 @@
                       "replacement_document_id": {
                         "type": "string",
                         "pattern": "^[0-9]+$",
-                        "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                        "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."
                       },
                       "effective_at": {
                         "type": "string",
@@ -2751,7 +2903,7 @@
               }
             ],
             "url": "{{oms2_base_url}}/api/v1/people/{{param}}/legal-name-changes",
-            "description": "### OMS2 change legal name\n\nСоздаёт новую версию ФИО с сохранением истории и публикует people.identity.changed и people.performer_profile.changed. person_id, username, login methods и роли не меняются. Для marriage, divorce и court_order требуется подтверждённое свидетельство о смене имени.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"surname\",\n    \"firstname\",\n    \"effective_at\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"surname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"firstname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"patronymic\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 50\n    },\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"marriage\",\n        \"divorce\",\n        \"court_order\",\n        \"correction\",\n        \"other\"\n      ]\n    },\n    \"source_document_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    }\n  }\n}\n```",
+            "description": "### OMS2 change legal name\n\nСоздаёт новую версию ФИО с сохранением истории и публикует people.identity.changed и people.performer_profile.changed. person_id, username, login methods и роли не меняются. Для marriage, divorce и court_order требуется подтверждённое свидетельство о смене имени.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"surname\",\n    \"firstname\",\n    \"effective_at\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"surname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"firstname\": {\n      \"type\": \"string\",\n      \"minLength\": 1,\n      \"maxLength\": 50\n    },\n    \"patronymic\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"maxLength\": 50\n    },\n    \"effective_at\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"marriage\",\n        \"divorce\",\n        \"court_order\",\n        \"correction\",\n        \"other\"\n      ]\n    },\n    \"source_document_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"surname\": \"Петрова\",\n  \"firstname\": \"Анна\",\n  \"patronymic\": \"Сергеевна\",\n  \"effective_at\": \"2026-10-29T00:00:00Z\",\n  \"reason_code\": \"marriage\",\n  \"source_document_id\": \"515\"\n}",
@@ -2803,7 +2955,7 @@
                           {
                             "type": "string",
                             "pattern": "^[0-9]+$",
-                            "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                            "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."
                           },
                           {
                             "type": "null"
@@ -2919,7 +3071,7 @@
               }
             ],
             "url": "{{oms2_base_url}}/api/v1/people/{{param}}/merge",
-            "description": "### OMS2 merge duplicate persons\n\nОбъединяет дубль с канонической персоной. Для reason_code=verified_identifier требуется точное совпадение подтверждённого INN/SNILS или паспорта. Публикует people.merged в оба топика; история, идентификаторы и профиль дубля сохраняются со ссылкой на каноническую персону. Требует роль administrator.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"canonical_person_id\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"canonical_person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"verified_identifier\",\n        \"manual_review\",\n        \"data_correction\"\n      ]\n    }\n  }\n}\n```",
+            "description": "### OMS2 merge duplicate persons\n\nОбъединяет дубль с канонической персоной. Для reason_code=verified_identifier требуется точное совпадение подтверждённого INN/SNILS или паспорта. Публикует people.merged в оба топика; история, идентификаторы и профиль дубля сохраняются со ссылкой на каноническую персону. Требует роль administrator.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"canonical_person_id\",\n    \"reason_code\"\n  ],\n  \"properties\": {\n    \"canonical_person_id\": {\n      \"type\": \"string\",\n      \"pattern\": \"^[0-9]+$\",\n      \"description\": \"Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka.\"\n    },\n    \"reason_code\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"verified_identifier\",\n        \"manual_review\",\n        \"data_correction\"\n      ]\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"canonical_person_id\": \"2000\",\n  \"reason_code\": \"verified_identifier\"\n}",
@@ -2936,7 +3088,7 @@
                       "canonical_person_id": {
                         "type": "string",
                         "pattern": "^[0-9]+$",
-                        "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                        "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."
                       },
                       "reason_code": {
                         "type": "string",
@@ -7004,7 +7156,7 @@
               }
             ],
             "url": "{{oms1_base_url}}/admin/users/{{param}}/performer-link",
-            "description": "### OMS1 link user account to OMS2 performer\n\nСвязывает учётную запись с персоной исполнителя OMS2 или снимает связь при person_id=null. Один person_id не может быть связан с двумя активными учётными записями. Изменение увеличивает auth_version.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"person_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    }\n  }\n}\n```",
+            "description": "### OMS1 link user account to OMS2 performer\n\nСвязывает учётную запись с персоной исполнителя OMS2 или снимает связь при person_id=null. Один person_id не может быть связан с двумя активными учётными записями. Изменение увеличивает auth_version.\n\n### Request JSON Schema\n```json\n{\n  \"type\": \"object\",\n  \"required\": [\n    \"person_id\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"person_id\": {\n      \"oneOf\": [\n        {\n          \"type\": \"string\",\n          \"pattern\": \"^[0-9]+$\",\n          \"description\": \"Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka.\"\n        },\n        {\n          \"type\": \"null\"\n        }\n      ]\n    }\n  }\n}\n```",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"person_id\": \"1042\"\n}",
@@ -7023,7 +7175,7 @@
                           {
                             "type": "string",
                             "pattern": "^[0-9]+$",
-                            "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."
+                            "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."
                           },
                           {
                             "type": "null"
