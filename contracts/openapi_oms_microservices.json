@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OMS Microservices OpenAPI",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "OpenAPI contract with request body JSON Schemas for OMS1-OMS5. Import this file into Postman as an API/schema source to populate the Body Schema panel."
   },
   "servers": [
@@ -544,10 +544,166 @@
         "description": "Создаёт смену. Автор берётся из проверенного JWT, поля created_by_* в теле отсутствуют и отклоняются. Для внешнего пользователя client_id обязан быть object в поддереве organization_id из токена, иначе 403 organization_scope_violation."
       }
     },
+    "/performers/by-person/{personId}": {
+      "get": {
+        "operationId": "oms5GetPerformerByPerson",
+        "summary": "OMS5 get performer projection by person_id",
+        "description": "Внутренний endpoint для OMS2, OMS3 и отчётов. Service token передаётся в заголовке X-Service-Token, как в POST /performers/sync. Возвращает полную проекцию исполнителя, включая email и телефон. Merged-профили не возвращаются: поиск идёт по merged_into_performer_id IS NULL.",
+        "security": [{"serviceTokenAuth": []}],
+        "parameters": [
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {"$ref": "#/components/schemas/PersonId"},
+            "description": "Идентификатор персоны OMS2. Формат и сериализация заданы схемой PersonId."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Проекция исполнителя",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Performer"},
+                "example": {
+                  "id": "63c55740-a965-40c6-b699-a65ef887bcf1",
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "email": "anna@example.test",
+                  "phone": "+375291234567",
+                  "status": "active",
+                  "source_version": 3,
+                  "synced_at": "2026-10-21T18:05:00Z",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "verified",
+                  "funnel_stage": "PERFORMER_READY_NON_FOOD",
+                  "medical_book_status": "non_food",
+                  "completed_shifts_count": 3,
+                  "first_booked_at": "2026-10-20T08:00:00Z",
+                  "first_shift_completed_at": "2026-10-21T18:00:00Z",
+                  "fifth_shift_completed_at": null,
+                  "merged_into_performer_id": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или неверный service token (service_token_required)",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Error"},
+                "example": {"detail": {"code": "service_token_required", "message": "A valid service token is required"}}
+              }
+            }
+          },
+          "404": {
+            "description": "Исполнитель не найден (performer_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Error"},
+                "example": {"detail": {"code": "performer_not_found", "message": "Performer not found"}}
+              }
+            }
+          },
+          "422": {
+            "description": "person_id не является десятичной строкой (validation_error)",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Error"},
+                "example": {"detail": {"code": "validation_error", "message": "person_id must be a decimal BIGINT string"}}
+              }
+            }
+          },
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/performers/{performerId}": {
+      "get": {
+        "operationId": "oms5GetPerformer",
+        "summary": "OMS5 get performer projection by performer_id",
+        "description": "Внутренний endpoint для OMS2, OMS3 и отчётов. Service token передаётся в заголовке X-Service-Token, как в POST /performers/sync. Возвращает полную проекцию исполнителя, включая email и телефон. Merged-профиль возвращается с заполненным merged_into_performer_id.",
+        "security": [{"serviceTokenAuth": []}],
+        "parameters": [
+          {
+            "name": "performerId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"},
+            "description": "UUID проекции исполнителя OMS5"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Проекция исполнителя",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Performer"},
+                "example": {
+                  "id": "63c55740-a965-40c6-b699-a65ef887bcf1",
+                  "person_id": "1042",
+                  "display_name": "Анна Сергеевна Иванова",
+                  "email": "anna@example.test",
+                  "phone": "+375291234567",
+                  "status": "active",
+                  "source_version": 3,
+                  "synced_at": "2026-10-21T18:05:00Z",
+                  "engagement_type": "self_employed",
+                  "engagement_type_validation_status": "verified",
+                  "funnel_stage": "PERFORMER_READY_NON_FOOD",
+                  "medical_book_status": "non_food",
+                  "completed_shifts_count": 3,
+                  "first_booked_at": "2026-10-20T08:00:00Z",
+                  "first_shift_completed_at": "2026-10-21T18:00:00Z",
+                  "fifth_shift_completed_at": null,
+                  "merged_into_performer_id": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или неверный service token (service_token_required)",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Error"},
+                "example": {"detail": {"code": "service_token_required", "message": "A valid service token is required"}}
+              }
+            }
+          },
+          "422": {
+            "description": "Невалидный UUID в performerId (invalid_uuid_format)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "detail": {
+                    "code": "invalid_uuid_format",
+                    "message": "performer_id must be a UUID string"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Исполнитель с валидным UUID не найден (performer_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Error"},
+                "example": {"detail": {"code": "performer_not_found", "message": "Performer not found"}}
+              }
+            }
+          },
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
     "/performers/sync": {
       "post": {
         "operationId": "oms5SyncPerformer",
         "summary": "OMS5 sync performer projection from OMS2",
+        "security": [{"serviceTokenAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
@@ -582,8 +738,7 @@
           "422": {"$ref": "#/components/responses/ValidationError"},
           "500": {"$ref": "#/components/responses/InternalServerError"}
         },
-        "description": "Внутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict.",
-        "parameters": [{"name": "X-Service-Token", "in": "header", "required": true, "schema": {"type": "string"}, "description": "Service token OMS2 из секрета OMS2_SERVICE_SECRET"}]
+        "description": "Внутренний reconciliation endpoint. Требует service token OMS2 в заголовке X-Service-Token. Принимает стабильный person_id (десятичная строка BIGINT) и source_version. Повтор той же или более старой версии не меняет проекцию. Legacy employee_id поддерживается только на время развёртывания: при расхождении с person_id возвращается 409 person_id_conflict."
       }
     },
     "/shifts/{shiftId}/transition": {
@@ -2347,7 +2502,7 @@
         "properties": {"closed": {"type": "array", "items": {"type": "string"}}, "count": {"type": "integer", "minimum": 0}}
       },
       "Error": {"type": "object", "required": ["detail"], "properties": {"detail": {}}},
-      "PersonId": {"type": "string", "pattern": "^[0-9]+$", "description": "Стабильный person_id OMS2: BIGINT в БД, десятичная строка в JSON, JWT и Kafka."},
+      "PersonId": {"type": "string", "pattern": "^[0-9]+$", "description": "Стабильный person_id OMS2: BIGINT в БД-источнике, десятичная строка в JSON, JWT и Kafka."},
       "RoleCode": {"type": "string", "enum": ["manager", "supervisor", "administrator", "external_user"]},
       "RoleAssignmentCreate": {
         "type": "object",
@@ -2895,6 +3050,14 @@
       "ValidationError": {"description": "Validation error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
       "InternalServerError": {"description": "Internal server error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
     },
-    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}}
+    "securitySchemes": {
+      "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+      "serviceTokenAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Service-Token",
+        "description": "Внутренний сервисный доступ: потребитель передаёт общий секрет в заголовке X-Service-Token, OMS5 сверяет его с OMS2_SERVICE_SECRET."
+      }
+    }
   }
 }
